@@ -798,6 +798,7 @@ do $$ begin alter publication supabase_realtime add table public.trips; exceptio
 -- Storage
 insert into storage.buckets (id, name, public) values ('qr-codes', 'qr-codes', true) on conflict (id) do nothing;
 insert into storage.buckets (id, name, public) values ('trip-photos', 'trip-photos', true) on conflict (id) do nothing;
+drop policy if exists "public_select" on storage.objects; drop policy if exists "public_insert" on storage.objects; drop policy if exists "public_delete" on storage.objects;
 create policy "public_select" on storage.objects for select using (bucket_id in ('qr-codes','trip-photos'));
 create policy "public_insert" on storage.objects for insert with check (bucket_id in ('qr-codes','trip-photos'));
 create policy "public_delete" on storage.objects for delete using (bucket_id in ('qr-codes','trip-photos'));`;
@@ -970,7 +971,7 @@ async function saveTripModal(){
   toast(id?'Updated':'Created');closeTripModal();renderTripsGrid();renderWorldMap();
 }
 async function deleteTripConfirm(id,title){
-  const trip=S.trips.find(t=>t.id===id);if(trip&&trip.locked){toast(t('tripLocked'));return}
+  const trip=S.trips.find(t=>t.id===id);if(trip&&trip.locked){toast(t('tripLockedNoDelete'));return}
   if(!confirm(t('confirmDeleteTrip',title)))return;const{error}=await sb.from('trips').delete().eq('id',id);if(error){toast('Error');return}S.trips=S.trips.filter(t=>t.id!==id);renderTripsGrid();renderWorldMap();renderCountdown();toast('Deleted');
 }
 
