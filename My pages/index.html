@@ -53,7 +53,7 @@
     #days-sidebar{transition:all .25s ease}
     .sidebar-toggle{position:absolute;left:0;top:50%;transform:translateY(-50%);z-index:10;width:20px;height:48px;background:#6366f1;color:white;border:none;border-radius:0 6px 6px 0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;opacity:.7;transition:opacity .2s}
     .sidebar-toggle:hover{opacity:1}
-    @media(max-width:768px){.sidebar-toggle{display:none}}
+    @media(max-width:768px){.sidebar-toggle{top:auto;bottom:70px;left:4px;width:32px;height:32px;border-radius:50%;opacity:.85;font-size:12px}}
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -127,6 +127,9 @@
       <div class="flex gap-2">
         <div class="flex-1"><label class="text-xs text-gray-500" data-i18n="startDate">出發日期</label><input id="trip-start" type="date" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"></div>
         <div class="flex-1"><label class="text-xs text-gray-500" data-i18n="endDate">回程日期</label><input id="trip-end" type="date" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"></div>
+      </div>
+      <div><label class="text-xs text-gray-500" data-i18n="themeColor">主題色</label>
+        <div id="trip-theme-picker" class="flex gap-2 flex-wrap mt-1"></div>
       </div>
     </div>
     <div class="flex gap-2 mt-4">
@@ -458,6 +461,29 @@
   <div id="photo-list" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
 </div>
 
+<!-- ===== ANNUAL STATS MODAL ===== -->
+<div id="annual-stats-modal" class="overlay hidden">
+  <div class="modal max-w-lg">
+    <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fas fa-chart-bar text-indigo-500"></i> <span data-i18n="annualReport">旅遊統計年報</span></h2>
+    <div class="flex items-center gap-2 mb-4">
+      <button onclick="changeStatsYear(-1)" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100"><i class="fas fa-chevron-left text-xs"></i></button>
+      <span id="stats-year" class="font-bold text-lg"></span>
+      <button onclick="changeStatsYear(1)" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100"><i class="fas fa-chevron-right text-xs"></i></button>
+    </div>
+    <div id="stats-content" class="space-y-4"></div>
+    <button onclick="$('annual-stats-modal').classList.add('hidden')" class="mt-4 w-full bg-gray-100 hover:bg-gray-200 py-2 rounded-lg text-sm font-medium" data-i18n="close">關閉</button>
+  </div>
+</div>
+
+<!-- ===== EMERGENCY INFO MODAL ===== -->
+<div id="emergency-modal" class="overlay hidden">
+  <div class="modal max-w-md">
+    <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fas fa-first-aid text-red-500"></i> <span data-i18n="emergencyInfo">當地緊急資訊</span></h2>
+    <div id="emergency-content" class="space-y-3"></div>
+    <button onclick="$('emergency-modal').classList.add('hidden')" class="mt-4 w-full bg-gray-100 hover:bg-gray-200 py-2 rounded-lg text-sm font-medium" data-i18n="close">關閉</button>
+  </div>
+</div>
+
 <!-- ===== MOBILE SIDEBAR OVERLAY ===== -->
 <div id="mobile-sidebar-overlay" class="mobile-sidebar-overlay" onclick="closeMobileSidebar()"></div>
 
@@ -482,6 +508,7 @@
       <div class="flex gap-2 flex-wrap">
         <button onclick="openTripModal()" class="flex items-center gap-2 bg-white text-indigo-600 font-semibold px-5 py-2.5 rounded-xl hover:bg-indigo-50 transition shadow-lg"><i class="fas fa-plus"></i> <span data-i18n="addTrip">新增旅程</span></button>
         <button onclick="openTemplateModal()" class="flex items-center gap-2 bg-white/20 text-white font-medium px-4 py-2.5 rounded-xl hover:bg-white/30 transition"><i class="fas fa-magic"></i> <span data-i18n="useTemplate">使用模板</span></button>
+        <button onclick="openAnnualStats()" class="flex items-center gap-2 bg-white/20 text-white font-medium px-4 py-2.5 rounded-xl hover:bg-white/30 transition"><i class="fas fa-chart-bar"></i> <span data-i18n="annualReport">年度統計</span></button>
       </div>
     </div>
   </div>
@@ -495,6 +522,11 @@
       <div id="world-map" class="hidden"></div>
     </div>
   </div>
+  <!-- Countdown -->
+  <div id="countdown-section" class="hidden max-w-5xl mx-auto px-4 py-2">
+    <div id="countdown-card" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center gap-4 cursor-pointer hover:shadow-md transition"></div>
+  </div>
+
   <div class="max-w-5xl mx-auto px-4 py-2">
     <div id="trips-loading" class="text-center py-12 text-gray-400"><i class="fas fa-spinner fa-spin text-2xl mb-2"></i><p class="text-sm">載入中...</p></div>
     <div id="trips-empty" class="hidden text-center py-16"></div>
@@ -527,7 +559,7 @@
       <button onclick="openChecklistDrawer()" class="glass border border-white/30 px-2.5 py-1.5 rounded-lg text-xs hover:bg-white/20 transition hide-mobile" title="清單"><i class="fas fa-check-square"></i></button>
       <button onclick="openCredDrawer()" class="glass border border-white/30 px-2.5 py-1.5 rounded-lg text-xs hover:bg-white/20 transition hide-mobile" title="憑證"><i class="fas fa-ticket-alt"></i></button>
       <button onclick="openPhotoDrawer()" class="glass border border-white/30 px-2.5 py-1.5 rounded-lg text-xs hover:bg-white/20 transition hide-mobile" title="照片"><i class="fas fa-camera"></i></button>
-      <button onclick="duplicateTrip()" class="glass border border-white/30 px-2.5 py-1.5 rounded-lg text-xs hover:bg-white/20 transition hide-mobile" title="複製"><i class="fas fa-copy"></i></button>
+      <button onclick="openEmergencyInfo()" class="glass border border-white/30 px-2.5 py-1.5 rounded-lg text-xs hover:bg-white/20 transition hide-mobile" title="緊急資訊"><i class="fas fa-first-aid"></i></button>
       <button onclick="editCurrentTrip()" class="glass border border-white/30 px-2.5 py-1.5 rounded-lg text-xs hover:bg-white/20 transition" title="編輯"><i class="fas fa-edit"></i></button>
     </div>
   </div>
@@ -623,6 +655,14 @@ const LANG = {
   nicknamePlaceholder:'輸入你的暱稱...',
   editProfile:'編輯個人資料',selectEmoji:'選擇頭像',nickname:'暱稱',selectColor:'選擇顏色',
   collapseSidebar:'收合側欄',expandSidebar:'展開側欄',
+  copyTrip:'複製旅程',copyDay:'複製此天',dayCopied:'天數已複製！',duplicating:'複製中...',
+  moveToDay:'移動到其他天',movedToDay:'已移動到',noDays:'沒有其他天數',
+  themeColor:'主題色',
+  annualReport:'旅遊統計年報',countries:'國家/地區數',totalTrips:'總旅程數',
+  topTypes:'最常造訪類型',tripsByMonth:'每月旅程',
+  countdown:'距離出發',countdownDays:'天',countdownToday:'今天出發！',countdownOngoing:'旅途進行中',
+  emergencyInfo:'當地緊急資訊',emergencyPolice:'報警電話',emergencyAmbulance:'急救電話',
+  emergencyEmbassy:'台灣駐外館處',timezone:'時區',voltage:'電壓/插座',
 },
 'en': {
   appTitle:'Travel Planner',appSubtitle:'Real-time collaboration for every journey',startPlanning:'Start Planning',addTrip:'New Trip',editTrip:'Edit Trip',
@@ -654,6 +694,14 @@ const LANG = {
   nicknamePlaceholder:'Enter your nickname...',
   editProfile:'Edit Profile',selectEmoji:'Choose Avatar',nickname:'Nickname',selectColor:'Choose Color',
   collapseSidebar:'Collapse Sidebar',expandSidebar:'Expand Sidebar',
+  copyTrip:'Copy Trip',copyDay:'Copy Day',dayCopied:'Day copied!',duplicating:'Duplicating...',
+  moveToDay:'Move to Day',movedToDay:'Moved to',noDays:'No other days',
+  themeColor:'Theme Color',
+  annualReport:'Annual Report',countries:'Countries',totalTrips:'Total Trips',
+  topTypes:'Top Activity Types',tripsByMonth:'Trips by Month',
+  countdown:'Days until departure',countdownDays:'days',countdownToday:'Departing today!',countdownOngoing:'Trip in progress',
+  emergencyInfo:'Emergency Info',emergencyPolice:'Police',emergencyAmbulance:'Ambulance',
+  emergencyEmbassy:'Taiwan Embassy',timezone:'Timezone',voltage:'Voltage/Plug',
 },
 'fr': {
   appTitle:'Planificateur de Voyage',appSubtitle:'Collaboration en temps réel',startPlanning:'Commencer',addTrip:'Nouveau Voyage',editTrip:'Modifier',
@@ -685,6 +733,14 @@ const LANG = {
   nicknamePlaceholder:'Entrez votre pseudo...',
   editProfile:'Modifier le profil',selectEmoji:'Choisir un avatar',nickname:'Pseudo',selectColor:'Choisir une couleur',
   collapseSidebar:'Réduire',expandSidebar:'Développer',
+  copyTrip:'Copier le voyage',copyDay:'Copier le jour',dayCopied:'Jour copié !',duplicating:'Duplication...',
+  moveToDay:'Déplacer au jour',movedToDay:'Déplacé au',noDays:'Pas d\'autres jours',
+  themeColor:'Couleur du thème',
+  annualReport:'Rapport annuel',countries:'Pays',totalTrips:'Total voyages',
+  topTypes:'Types les plus fréquents',tripsByMonth:'Voyages par mois',
+  countdown:'Jours avant le départ',countdownDays:'jours',countdownToday:'Départ aujourd\'hui !',countdownOngoing:'Voyage en cours',
+  emergencyInfo:'Info d\'urgence',emergencyPolice:'Police',emergencyAmbulance:'Ambulance',
+  emergencyEmbassy:'Ambassade de Taïwan',timezone:'Fuseau horaire',voltage:'Tension/Prise',
 }
 };
 let curLang = localStorage.getItem('tv_lang') || 'zh-TW';
@@ -706,12 +762,17 @@ alter table public.trips add column if not exists start_date date;
 alter table public.trips add column if not exists end_date date;
 alter table public.trips add column if not exists emoji text default '✈️';
 alter table public.trips add column if not exists locked boolean default false;
+alter table public.trips add column if not exists theme_color text default 'indigo';
 
 -- days
 create table if not exists public.days (id uuid default gen_random_uuid() primary key, trip_id uuid references public.trips(id) on delete cascade not null, date date not null, day_number integer, title text, notes text, created_at timestamptz default now());
 
 -- events
 create table if not exists public.events (id uuid default gen_random_uuid() primary key, day_id uuid references public.days(id) on delete cascade not null, trip_id uuid references public.trips(id) on delete cascade not null, time time, end_time time, title text not null, type text default 'activity', location text, maps_url text, notes text, order_index integer default 0, cost decimal(10,2) default 0, currency text default 'TWD', created_at timestamptz default now(), updated_at timestamptz default now());
+alter table public.events add column if not exists cost decimal(10,2) default 0;
+alter table public.events add column if not exists currency text default 'TWD';
+alter table public.events add column if not exists end_time time;
+alter table public.events add column if not exists maps_url text;
 
 -- credentials
 create table if not exists public.credentials (id uuid default gen_random_uuid() primary key, trip_id uuid references public.trips(id) on delete cascade not null, event_id uuid references public.events(id) on delete set null, title text not null, type text default 'other', url text, confirmation_number text, qr_image_url text, notes text, created_at timestamptz default now());
@@ -759,6 +820,17 @@ const S = {
 // UTILS
 // ============================================================
 function randColor(){const c=['#ef4444','#f97316','#eab308','#22c55e','#14b8a6','#3b82f6','#8b5cf6','#ec4899'][Math.floor(Math.random()*8)];localStorage.setItem('tv_color',c);return c}
+const TRIP_THEMES={
+  indigo:{from:'#6366f1',via:'#7c3aed',to:'#14b8a6',label:'Indigo'},
+  ocean:{from:'#0369a1',via:'#0891b2',to:'#06b6d4',label:'Ocean'},
+  sunset:{from:'#dc2626',via:'#ea580c',to:'#f59e0b',label:'Sunset'},
+  forest:{from:'#15803d',via:'#059669',to:'#10b981',label:'Forest'},
+  berry:{from:'#9333ea',via:'#c026d3',to:'#ec4899',label:'Berry'},
+  midnight:{from:'#1e293b',via:'#334155',to:'#475569',label:'Midnight'},
+  sakura:{from:'#ec4899',via:'#f472b6',to:'#fda4af',label:'Sakura'},
+  autumn:{from:'#b45309',via:'#d97706',to:'#f59e0b',label:'Autumn'},
+};
+function themeGradient(name){const t=TRIP_THEMES[name]||TRIP_THEMES.indigo;return`linear-gradient(to right,${t.from},${t.via},${t.to})`}
 function randEmoji(){const e=['😀','😎','🤩','🥳','🌟','🚀','🎉','🦋','🐻','🦊','🐼','🦁'][Math.floor(Math.random()*12)];localStorage.setItem('tv_emoji',e);return e}
 function formatDate(d){if(!d)return'';return new Date(d+'T00:00:00').toLocaleDateString(curLang==='en'?'en-US':curLang==='fr'?'fr-FR':'zh-TW',{month:'long',day:'numeric',weekday:'short'})}
 function formatTime(t){return t?t.substring(0,5):''}
@@ -844,7 +916,7 @@ async function loadTrips(){
   const{data,error}=await sb.from('trips').select('*').order('created_at',{ascending:false});
   $('trips-loading').classList.add('hidden');
   if(error){console.error(error);if(error.code==='42P01'){$('trips-empty').classList.remove('hidden');$('trips-empty').innerHTML=`<div class="text-5xl mb-4">⚙️</div><h3 class="text-xl font-semibold text-gray-700 mb-2">${t('dbSetup')}</h3><button onclick="showSetup()" class="bg-indigo-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-indigo-700"><i class="fas fa-database mr-1"></i>Setup</button>`}else toast(error.message);return}
-  S.trips=data||[];renderTripsGrid();renderWorldMap();
+  S.trips=data||[];renderTripsGrid();renderWorldMap();renderCountdown();
 }
 
 function renderTripsGrid(){
@@ -854,36 +926,53 @@ function renderTripsGrid(){
   grid.innerHTML=S.trips.map(trip=>{
     const ds=trip.start_date&&trip.end_date?`${formatDate(trip.start_date)} → ${formatDate(trip.end_date)}`:trip.start_date?formatDate(trip.start_date):'—';
     return`<div class="bg-white rounded-2xl shadow-sm hover:shadow-md transition cursor-pointer overflow-hidden border border-gray-100 fade-in" onclick="openTrip('${trip.id}')">
-      <div class="bg-gradient-to-br from-indigo-500 to-teal-500 p-6 text-center relative">
+      <div class="p-6 text-center relative" style="background:${themeGradient(trip.theme_color||'indigo')}">
         ${trip.locked?'<span class="absolute top-2 right-2 locked-badge"><i class="fas fa-lock text-[9px]"></i></span>':''}
         <div class="text-5xl mb-2">${trip.emoji||'✈️'}</div><h3 class="text-white font-bold text-lg">${esc(trip.title)}</h3>
         ${trip.destination?`<p class="text-indigo-100 text-sm mt-1">📍 ${esc(trip.destination)}</p>`:''}
       </div>
       <div class="p-4"><p class="text-xs text-gray-500 flex items-center gap-1"><i class="fas fa-calendar-alt"></i> ${ds}</p>
         ${trip.description?`<p class="text-sm text-gray-600 mt-2 line-clamp-2">${esc(trip.description)}</p>`:''}
-        <div class="mt-3 flex justify-end"><button onclick="event.stopPropagation();deleteTripConfirm('${trip.id}','${esc(trip.title).replace(/'/g,"\\'")}')" class="text-xs text-red-400 hover:text-red-600 px-2 py-1 hover:bg-red-50 rounded transition"><i class="fas fa-trash"></i></button></div>
+        <div class="mt-3 flex justify-end gap-1">
+          <button onclick="event.stopPropagation();duplicateTripById('${trip.id}')" class="text-xs text-indigo-400 hover:text-indigo-600 px-2 py-1 hover:bg-indigo-50 rounded transition" title="${t('copyTrip')||'複製旅程'}"><i class="fas fa-copy"></i></button>
+          <button onclick="event.stopPropagation();deleteTripConfirm('${trip.id}','${esc(trip.title).replace(/'/g,"\\'")}')" class="text-xs text-red-400 hover:text-red-600 px-2 py-1 hover:bg-red-50 rounded transition"><i class="fas fa-trash"></i></button>
+        </div>
       </div></div>`}).join('');
 }
 
+let selectedTheme='indigo';
 function openTripModal(trip){
   $('trip-modal-title').textContent=trip?t('editTrip'):t('addTrip');$('trip-modal-id').value=trip?trip.id:'';
   $('trip-emoji').value=trip?(trip.emoji||''):'';$('trip-title').value=trip?trip.title:'';
   $('trip-destination').value=trip?(trip.destination||''):'';$('trip-description').value=trip?(trip.description||''):'';
   $('trip-start').value=trip?(trip.start_date||''):'';$('trip-end').value=trip?(trip.end_date||''):'';
+  selectedTheme=trip?(trip.theme_color||'indigo'):'indigo';renderThemePicker();
   $('trip-modal').classList.remove('hidden');
+}
+function renderThemePicker(){
+  const p=$('trip-theme-picker');p.innerHTML='';
+  Object.entries(TRIP_THEMES).forEach(([key,th])=>{
+    const btn=document.createElement('button');btn.type='button';
+    btn.className=`w-8 h-8 rounded-full border-2 transition ${key===selectedTheme?'border-gray-800 scale-110':'border-transparent hover:scale-105'}`;
+    btn.style.background=`linear-gradient(135deg,${th.from},${th.to})`;btn.title=th.label;
+    btn.onclick=()=>{selectedTheme=key;renderThemePicker()};p.appendChild(btn);
+  });
 }
 function closeTripModal(){$('trip-modal').classList.add('hidden')}
 async function saveTripModal(){
   const title=$('trip-title').value.trim();if(!title){toast('Title required');return}
   const id=$('trip-modal-id').value;
-  const p={title,emoji:$('trip-emoji').value||'✈️',destination:$('trip-destination').value.trim()||null,description:$('trip-description').value.trim()||null,start_date:$('trip-start').value||null,end_date:$('trip-end').value||null};
+  const p={title,emoji:$('trip-emoji').value||'✈️',destination:$('trip-destination').value.trim()||null,description:$('trip-description').value.trim()||null,start_date:$('trip-start').value||null,end_date:$('trip-end').value||null,theme_color:selectedTheme||'indigo'};
   let error;
   if(id){({error}=await sb.from('trips').update(p).eq('id',id));if(!error){const i=S.trips.findIndex(t=>t.id===id);if(i!==-1)S.trips[i]={...S.trips[i],...p};if(S.trip&&S.trip.id===id){S.trip={...S.trip,...p};renderTripHeader()}}}
   else{const{data,error:e}=await sb.from('trips').insert(p).select().single();error=e;if(!error&&data)S.trips.unshift(data)}
   if(error){toast(error.message);return}
   toast(id?'Updated':'Created');closeTripModal();renderTripsGrid();renderWorldMap();
 }
-async function deleteTripConfirm(id,title){if(!confirm(t('confirmDeleteTrip',title)))return;const{error}=await sb.from('trips').delete().eq('id',id);if(error){toast('Error');return}S.trips=S.trips.filter(t=>t.id!==id);renderTripsGrid();renderWorldMap();toast('Deleted')}
+async function deleteTripConfirm(id,title){
+  const trip=S.trips.find(t=>t.id===id);if(trip&&trip.locked){toast(t('tripLocked'));return}
+  if(!confirm(t('confirmDeleteTrip',title)))return;const{error}=await sb.from('trips').delete().eq('id',id);if(error){toast('Error');return}S.trips=S.trips.filter(t=>t.id!==id);renderTripsGrid();renderWorldMap();renderCountdown();toast('Deleted');
+}
 
 // ============================================================
 // OPEN TRIP
@@ -906,6 +995,9 @@ function renderTripHeader(){
   const tp=S.trip;$('trip-title-display').textContent=`${tp.emoji||'✈️'} ${tp.title}`;
   let sub=tp.destination||'';if(tp.start_date&&tp.end_date)sub+=(sub?' · ':'')+`${formatDate(tp.start_date)} → ${formatDate(tp.end_date)}`;
   $('trip-subtitle-display').textContent=sub;
+  // Apply theme
+  const hdr=$('trip-view').querySelector('.bg-gradient-to-r');
+  if(hdr){hdr.style.background=themeGradient(tp.theme_color||'indigo')}
 }
 function editCurrentTrip(){if(guardLock())return;openTripModal(S.trip)}
 
@@ -946,7 +1038,10 @@ function renderDaysSidebar(){
   empty.classList.add('hidden');
   list.innerHTML=S.days.map(d=>`<div class="day-tab ${S.day&&S.day.id===d.id?'active':''} rounded-lg px-3 py-2 cursor-pointer transition group flex items-center gap-2" onclick="selectDay('${d.id}')">
     <div class="flex-1 min-w-0"><div class="text-xs font-semibold">Day ${d.day_number}</div><div class="text-xs truncate">${formatDate(d.date)}</div>${d.title?`<div class="text-xs truncate opacity-75">${esc(d.title)}</div>`:''}</div>
-    ${isLocked()?'':`<button onclick="event.stopPropagation();confirmDeleteDay('${d.id}')" class="w-5 h-5 flex items-center justify-center rounded hover:bg-red-100 text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition shrink-0"><i class="fas fa-trash text-[10px]"></i></button>`}
+    <div class="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition">
+      <button onclick="event.stopPropagation();duplicateDay('${d.id}')" class="w-5 h-5 flex items-center justify-center rounded hover:bg-indigo-100 text-gray-300 hover:text-indigo-500" title="${t('copyDay')}"><i class="fas fa-copy text-[10px]"></i></button>
+      ${isLocked()?'':`<button onclick="event.stopPropagation();confirmDeleteDay('${d.id}')" class="w-5 h-5 flex items-center justify-center rounded hover:bg-red-100 text-red-300 hover:text-red-500"><i class="fas fa-trash text-[10px]"></i></button>`}
+    </div>
   </div>`).join('');
 }
 function showNoDaySelected(){$('no-day-selected').classList.remove('hidden');$('day-header').classList.add('hidden');$('events-container').classList.add('hidden')}
@@ -1001,6 +1096,7 @@ function renderEvents(){
             ${creds.length?`<div class="flex flex-wrap gap-1 mt-1.5">${credBadges}</div>`:''}
           </div>
           ${isLocked()?'':`<div class="flex gap-1 shrink-0">
+            <button onclick="showMoveMenu('${ev.id}',this)" class="w-6 h-6 flex items-center justify-center rounded hover:bg-black/10 text-gray-400" title="${t('moveToDay')}"><i class="fas fa-exchange-alt text-xs"></i></button>
             <button onclick="editEvent('${ev.id}')" class="w-6 h-6 flex items-center justify-center rounded hover:bg-black/10 text-gray-400"><i class="fas fa-pen text-xs"></i></button>
             <button onclick="deleteEvent('${ev.id}')" class="w-6 h-6 flex items-center justify-center rounded hover:bg-red-50 text-red-300 hover:text-red-500"><i class="fas fa-trash text-xs"></i></button>
           </div>`}
@@ -1018,6 +1114,30 @@ function renderEvents(){
 }
 
 function initSortable(){if(S.sortableInstance)S.sortableInstance.destroy();const el=$('events-list');S.sortableInstance=new Sortable(el,{animation:200,handle:'.drag-handle',ghostClass:'sortable-ghost',chosenClass:'sortable-chosen',draggable:'.event-item',onEnd:async function(){const items=el.querySelectorAll('.event-item');const updates=[];items.forEach((item,idx)=>{const id=item.dataset.id;const ev=S.events.find(e=>e.id===id);if(ev){ev.order_index=idx;updates.push({id,order_index:idx})}});for(const u of updates)await sb.from('events').update({order_index:u.order_index}).eq('id',u.id)}})}
+
+function showMoveMenu(eventId,btnEl){
+  // Remove existing menu
+  document.querySelectorAll('.move-menu-popup').forEach(m=>m.remove());
+  const menu=document.createElement('div');menu.className='move-menu-popup';
+  menu.style.cssText='position:absolute;right:0;top:100%;background:white;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:30;min-width:160px;max-height:200px;overflow-y:auto;padding:4px';
+  S.days.filter(d=>!S.day||d.id!==S.day.id).forEach(d=>{
+    const item=document.createElement('button');item.className='w-full text-left px-3 py-1.5 text-xs hover:bg-indigo-50 rounded transition flex items-center gap-2';
+    item.innerHTML=`<i class="fas fa-calendar-day text-indigo-400"></i> Day ${d.day_number} — ${formatDate(d.date)}`;
+    item.onclick=(e)=>{e.stopPropagation();moveEventToDay(eventId,d.id);menu.remove()};
+    menu.appendChild(item);
+  });
+  if(!menu.children.length){const no=document.createElement('div');no.className='px-3 py-2 text-xs text-gray-400';no.textContent=t('noDays')||'No other days';menu.appendChild(no)}
+  const parent=btnEl.closest('.event-item');parent.style.position='relative';parent.appendChild(menu);
+  const close=(e)=>{if(!menu.contains(e.target)){menu.remove();document.removeEventListener('click',close)}};
+  setTimeout(()=>document.addEventListener('click',close),0);
+}
+async function moveEventToDay(eventId,targetDayId){
+  const{error}=await sb.from('events').update({day_id:targetDayId}).eq('id',eventId);
+  if(error){toast(error.message);return}
+  S.events=S.events.filter(e=>e.id!==eventId);renderEvents();
+  const targetDay=S.days.find(d=>d.id===targetDayId);
+  toast(`${t('movedToDay')} Day ${targetDay?targetDay.day_number:'?'}`);
+}
 
 function openAddEvent(){if(guardLock())return;openEventModal()}
 function openEventModal(ev){
@@ -1251,18 +1371,44 @@ function checkNotifications(){
 // ============================================================
 // DUPLICATE TRIP
 // ============================================================
-async function duplicateTrip(){
-  if(!S.trip)return;toast('Duplicating...',5000);
-  const{data:newTrip,error}=await sb.from('trips').insert({title:S.trip.title+' (copy)',emoji:S.trip.emoji,destination:S.trip.destination,description:S.trip.description,start_date:S.trip.start_date,end_date:S.trip.end_date}).select().single();
+let _duplicating=false;
+async function duplicateTripById(tripId){
+  if(_duplicating)return;_duplicating=true;
+  const srcTrip=S.trips.find(t=>t.id===tripId);if(!srcTrip){_duplicating=false;return}
+  toast(t('duplicating'),5000);
+  try{
+    const{data:newTrip,error}=await sb.from('trips').insert({title:srcTrip.title+' (copy)',emoji:srcTrip.emoji,destination:srcTrip.destination,description:srcTrip.description,start_date:srcTrip.start_date,end_date:srcTrip.end_date,theme_color:srcTrip.theme_color}).select().single();
+    if(error){toast(error.message);return}
+    // Fetch days & events from DB
+    const{data:srcDays}=await sb.from('days').select('*').eq('trip_id',tripId).order('day_number',{ascending:true});
+    if(srcDays&&srcDays.length){
+      const dayIds=srcDays.map(d=>d.id);
+      const{data:srcEvts}=await sb.from('events').select('*').in('day_id',dayIds);
+      for(const day of srcDays){
+        const{data:newDay}=await sb.from('days').insert({trip_id:newTrip.id,date:day.date,day_number:day.day_number,title:day.title,notes:day.notes}).select().single();
+        if(newDay){const dayEvents=(srcEvts||[]).filter(e=>e.day_id===day.id);if(dayEvents.length){const evs=dayEvents.map(e=>({day_id:newDay.id,trip_id:newTrip.id,time:e.time,end_time:e.end_time,title:e.title,type:e.type,location:e.location,maps_url:e.maps_url,notes:e.notes,order_index:e.order_index,cost:e.cost,currency:e.currency}));await sb.from('events').insert(evs)}}
+      }
+    }
+    // Copy checklist & expenses
+    const{data:srcCL}=await sb.from('checklist_items').select('*').eq('trip_id',tripId);
+    if(srcCL&&srcCL.length){await sb.from('checklist_items').insert(srcCL.map(c=>({trip_id:newTrip.id,title:c.title,category:c.category,order_index:c.order_index})))}
+    const{data:srcExp}=await sb.from('expenses').select('*').eq('trip_id',tripId);
+    if(srcExp&&srcExp.length){await sb.from('expenses').insert(srcExp.map(e=>({trip_id:newTrip.id,title:e.title,amount:e.amount,currency:e.currency,category:e.category,notes:e.notes})))}
+    S.trips.unshift(newTrip);renderTripsGrid();renderCountdown();toast(t('tripCopied'));
+  }catch(e){toast('Error: '+e.message)}finally{_duplicating=false}
+}
+
+async function duplicateDay(dayId){
+  if(guardLock())return;const day=S.days.find(d=>d.id===dayId);if(!day)return;
+  toast(t('duplicating'),3000);
+  const newDate=new Date(day.date+'T00:00:00');newDate.setDate(newDate.getDate()+1);
+  const{data:newDay,error}=await sb.from('days').insert({trip_id:S.trip.id,date:newDate.toISOString().split('T')[0],day_number:S.days.length+1,title:day.title?(day.title+' (copy)'):null,notes:day.notes}).select().single();
   if(error){toast(error.message);return}
-  // Copy days and events
-  for(const day of S.days){
-    const{data:newDay}=await sb.from('days').insert({trip_id:newTrip.id,date:day.date,day_number:day.day_number,title:day.title,notes:day.notes}).select().single();
-    if(newDay){const dayEvents=S.events.filter(e=>e.day_id===day.id);if(dayEvents.length){const evs=dayEvents.map(e=>({day_id:newDay.id,trip_id:newTrip.id,time:e.time,end_time:e.end_time,title:e.title,type:e.type,location:e.location,maps_url:e.maps_url,notes:e.notes,order_index:e.order_index,cost:e.cost,currency:e.currency}));await sb.from('events').insert(evs)}}
-  }
-  // Copy checklist
-  if(S.checklist.length){const items=S.checklist.map(c=>({trip_id:newTrip.id,title:c.title,category:c.category,order_index:c.order_index}));await sb.from('checklist_items').insert(items)}
-  S.trips.unshift(newTrip);toast(t('tripCopied'));
+  // Copy events from source day
+  const{data:srcEvts}=await sb.from('events').select('*').eq('day_id',dayId);
+  if(srcEvts&&srcEvts.length){const evs=srcEvts.map(e=>({day_id:newDay.id,trip_id:S.trip.id,time:e.time,end_time:e.end_time,title:e.title,type:e.type,location:e.location,maps_url:e.maps_url,notes:e.notes,order_index:e.order_index,cost:e.cost,currency:e.currency}));await sb.from('events').insert(evs)}
+  S.days.push(newDay);S.days.sort((a,b)=>a.date.localeCompare(b.date));S.days.forEach((d,i)=>d.day_number=i+1);
+  renderDaysSidebar();toast(t('dayCopied'));
 }
 
 // ============================================================
@@ -1433,6 +1579,7 @@ function closeMapPanel(){$('map-panel').classList.add('hidden');$('map-iframe').
 function openMobileSidebar(){$('days-sidebar').classList.add('mobile-open');$('mobile-sidebar-overlay').classList.add('active')}
 function closeMobileSidebar(){$('days-sidebar').classList.remove('mobile-open');$('mobile-sidebar-overlay').classList.remove('active')}
 function toggleSidebar(){
+  if(window.innerWidth<=768){openMobileSidebar();return}
   const body=$('trip-body');const btn=$('sidebar-toggle-btn');
   body.classList.toggle('sidebar-collapsed');
   const collapsed=body.classList.contains('sidebar-collapsed');
@@ -1464,6 +1611,164 @@ function renderOnlineUsers(){const c=$('online-users');const users=Object.values
 // QR DRAG DROP
 // ============================================================
 const qrA=$('qr-upload-area');qrA.addEventListener('dragover',e=>{e.preventDefault();qrA.classList.add('border-indigo-500')});qrA.addEventListener('dragleave',()=>qrA.classList.remove('border-indigo-500'));qrA.addEventListener('drop',e=>{e.preventDefault();qrA.classList.remove('border-indigo-500');const f=e.dataTransfer.files[0];if(f)handleQRFile({target:{files:[f]}})});
+
+// ============================================================
+// COUNTDOWN TIMER
+// ============================================================
+function renderCountdown(){
+  const sec=$('countdown-section'),card=$('countdown-card');
+  if(!S.trips.length){sec.classList.add('hidden');return}
+  const today=new Date().toISOString().split('T')[0];
+  // Find nearest future trip or ongoing trip
+  let best=null,bestDiff=Infinity;
+  S.trips.forEach(trip=>{
+    if(!trip.start_date)return;
+    const diff=Math.ceil((new Date(trip.start_date+'T00:00:00')-new Date(today+'T00:00:00'))/(86400000));
+    if(diff>=0&&diff<bestDiff){best=trip;bestDiff=diff}
+    // Check ongoing trips
+    if(trip.end_date&&today>=trip.start_date&&today<=trip.end_date){
+      if(!best||diff<bestDiff){best=trip;bestDiff=-1}
+    }
+  });
+  if(!best){sec.classList.add('hidden');return}
+  sec.classList.remove('hidden');
+  const diff=Math.ceil((new Date(best.start_date+'T00:00:00')-new Date(today+'T00:00:00'))/(86400000));
+  const ongoing=best.end_date&&today>=best.start_date&&today<=best.end_date;
+  const isToday=diff===0&&!ongoing;
+  let countdownHTML;
+  if(ongoing){
+    const dayNum=Math.ceil((new Date(today+'T00:00:00')-new Date(best.start_date+'T00:00:00'))/(86400000))+1;
+    countdownHTML=`<div class="bg-green-100 text-green-700 rounded-xl px-4 py-2 text-center"><div class="text-xs">${t('countdownOngoing')}</div><div class="text-lg font-bold">Day ${dayNum}</div></div>`;
+  }else if(isToday){
+    countdownHTML=`<div class="bg-amber-100 text-amber-700 rounded-xl px-4 py-2 text-center"><div class="text-lg font-bold">🎉 ${t('countdownToday')}</div></div>`;
+  }else{
+    countdownHTML=`<div class="bg-indigo-100 text-indigo-700 rounded-xl px-4 py-2 text-center"><div class="text-2xl font-bold">${diff}</div><div class="text-xs">${t('countdownDays')}</div></div>`;
+  }
+  card.innerHTML=`${countdownHTML}<div class="flex-1 min-w-0"><div class="font-bold text-sm">${best.emoji||'✈️'} ${esc(best.title)}</div><div class="text-xs text-gray-500">📍 ${esc(best.destination||'')} · ${formatDate(best.start_date)}</div></div><i class="fas fa-chevron-right text-gray-300"></i>`;
+  card.onclick=()=>openTrip(best.id);
+}
+
+// ============================================================
+// ANNUAL STATISTICS
+// ============================================================
+let statsYear=new Date().getFullYear();
+function openAnnualStats(){statsYear=new Date().getFullYear();renderAnnualStats();$('annual-stats-modal').classList.remove('hidden')}
+function changeStatsYear(d){statsYear+=d;renderAnnualStats()}
+async function renderAnnualStats(){
+  $('stats-year').textContent=statsYear;
+  const yearTrips=S.trips.filter(tr=>tr.start_date&&tr.start_date.startsWith(statsYear));
+  // Fetch all expenses for these trips
+  let totalExp={},allTypes={};
+  const tripIds=yearTrips.map(tr=>tr.id);
+  let expenses=[];
+  if(tripIds.length){
+    const{data}=await sb.from('expenses').select('*').in('trip_id',tripIds);expenses=data||[];
+    // Also fetch all events to count types
+    const dayIds=[];
+    for(const tr of yearTrips){const{data:ds}=await sb.from('days').select('id').eq('trip_id',tr.id);if(ds)dayIds.push(...ds.map(d=>d.id))}
+    if(dayIds.length){const{data:evts}=await sb.from('events').select('type').in('day_id',dayIds);(evts||[]).forEach(e=>{allTypes[e.type]=(allTypes[e.type]||0)+1})}
+  }
+  expenses.forEach(e=>{const c=e.currency||'TWD';totalExp[c]=(totalExp[c]||0)+Number(e.amount)});
+
+  const destinations=new Set(yearTrips.map(tr=>tr.destination).filter(Boolean));
+  let totalDays=0;
+  yearTrips.forEach(tr=>{if(tr.start_date&&tr.end_date){totalDays+=Math.ceil((new Date(tr.end_date+'T00:00:00')-new Date(tr.start_date+'T00:00:00'))/(86400000))+1}});
+
+  // Month distribution
+  const months=Array(12).fill(0);
+  yearTrips.forEach(tr=>{const m=parseInt(tr.start_date.split('-')[1])-1;months[m]++});
+  const monthNames=curLang==='en'?['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']:curLang==='fr'?['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc']:['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+  // Top types
+  const sortedTypes=Object.entries(allTypes).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  const c=$('stats-content');
+  c.innerHTML=`
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="bg-indigo-50 rounded-xl p-3 text-center"><div class="text-2xl font-bold text-indigo-600">${yearTrips.length}</div><div class="text-xs text-gray-500">${t('totalTrips')}</div></div>
+      <div class="bg-green-50 rounded-xl p-3 text-center"><div class="text-2xl font-bold text-green-600">${destinations.size}</div><div class="text-xs text-gray-500">${t('countries')}</div></div>
+      <div class="bg-blue-50 rounded-xl p-3 text-center"><div class="text-2xl font-bold text-blue-600">${totalDays}</div><div class="text-xs text-gray-500">${t('totalDays')}</div></div>
+      <div class="bg-amber-50 rounded-xl p-3 text-center"><div class="text-2xl font-bold text-amber-600">${Object.entries(totalExp).map(([c,a])=>c+' '+formatMoney(a)).join('<br>')||'—'}</div><div class="text-xs text-gray-500">${t('totalExpenses')}</div></div>
+    </div>
+    ${sortedTypes.length?`<div><h3 class="text-xs font-semibold text-gray-500 mb-2">${t('topTypes')}</h3><div class="flex flex-wrap gap-2">${sortedTypes.map(([tp,cnt])=>`<span class="inline-flex items-center gap-1 bg-gray-100 rounded-full px-3 py-1 text-xs font-medium">${typeIcon(tp)} ${t(tp)||tp} <span class="text-gray-400 ml-1">×${cnt}</span></span>`).join('')}</div></div>`:''}
+    <div><h3 class="text-xs font-semibold text-gray-500 mb-2">${t('tripsByMonth')}</h3>
+      <div class="flex items-end gap-1 h-24">${months.map((n,i)=>`<div class="flex-1 flex flex-col items-center gap-1"><div class="w-full rounded-t" style="height:${n?Math.max(n/Math.max(...months)*80,8):2}px;background:${n?'#6366f1':'#e5e7eb'}"></div><div class="text-[9px] text-gray-400">${monthNames[i]}</div></div>`).join('')}</div>
+    </div>
+    ${yearTrips.length?`<div><h3 class="text-xs font-semibold text-gray-500 mb-2">${t('totalTrips')}</h3><div class="space-y-1">${yearTrips.map(tr=>`<div class="flex items-center gap-2 text-xs bg-gray-50 rounded-lg px-3 py-2"><span>${tr.emoji||'✈️'}</span><span class="font-medium">${esc(tr.title)}</span><span class="text-gray-400 ml-auto">${formatDate(tr.start_date)}</span></div>`).join('')}</div></div>`:''}
+  `;
+}
+
+// ============================================================
+// EMERGENCY INFO
+// ============================================================
+const EMERGENCY_DATA={
+  '日本':{police:'110',ambulance:'119',fire:'119',embassy:'03-2874-7008',tz:'UTC+9',voltage:'100V / A型',currency:'JPY'},
+  '美國':{police:'911',ambulance:'911',fire:'911',embassy:'+1-212-486-0088',tz:'UTC-5~-10',voltage:'120V / A/B型',currency:'USD'},
+  '法國':{police:'17',ambulance:'15',fire:'18',embassy:'+33-1-4439-8830',tz:'UTC+1',voltage:'230V / C/E型',currency:'EUR'},
+  '韓國':{police:'112',ambulance:'119',fire:'119',embassy:'+82-2-399-2780',tz:'UTC+9',voltage:'220V / C/F型',currency:'KRW'},
+  '泰國':{police:'191',ambulance:'1669',fire:'199',embassy:'+66-2-670-0200',tz:'UTC+7',voltage:'220V / A/B/C型',currency:'THB'},
+  '英國':{police:'999',ambulance:'999',fire:'999',embassy:'+44-20-7881-2650',tz:'UTC+0',voltage:'230V / G型',currency:'GBP'},
+  '德國':{police:'110',ambulance:'112',fire:'112',embassy:'+49-30-2036-1270',tz:'UTC+1',voltage:'230V / C/F型',currency:'EUR'},
+  '義大利':{police:'113',ambulance:'118',fire:'115',embassy:'+39-06-9826-2800',tz:'UTC+1',voltage:'230V / C/F/L型',currency:'EUR'},
+  '西班牙':{police:'091',ambulance:'112',fire:'080',embassy:'+34-91-571-4729',tz:'UTC+1',voltage:'230V / C/F型',currency:'EUR'},
+  '澳洲':{police:'000',ambulance:'000',fire:'000',embassy:'+61-2-6120-2000',tz:'UTC+8~11',voltage:'230V / I型',currency:'AUD'},
+  '加拿大':{police:'911',ambulance:'911',fire:'911',embassy:'+1-613-231-5080',tz:'UTC-3.5~-8',voltage:'120V / A/B型',currency:'CAD'},
+  '新加坡':{police:'999',ambulance:'995',fire:'995',embassy:'+65-6500-0100',tz:'UTC+8',voltage:'230V / G型',currency:'SGD'},
+  '香港':{police:'999',ambulance:'999',fire:'999',embassy:'+852-2525-8315',tz:'UTC+8',voltage:'220V / G型',currency:'HKD'},
+  '中國':{police:'110',ambulance:'120',fire:'119',embassy:'—',tz:'UTC+8',voltage:'220V / A/C/I型',currency:'CNY'},
+  '越南':{police:'113',ambulance:'115',fire:'114',embassy:'+84-24-3833-5501',tz:'UTC+7',voltage:'220V / A/C型',currency:'VND'},
+  '馬來西亞':{police:'999',ambulance:'999',fire:'994',embassy:'+60-3-2161-5508',tz:'UTC+8',voltage:'240V / G型',currency:'MYR'},
+  '紐西蘭':{police:'111',ambulance:'111',fire:'111',embassy:'+64-4-473-6474',tz:'UTC+12',voltage:'230V / I型',currency:'NZD'},
+  // English name aliases
+  'Japan':{police:'110',ambulance:'119',fire:'119',embassy:'03-2874-7008',tz:'UTC+9',voltage:'100V / A-type',currency:'JPY'},
+  'USA':{police:'911',ambulance:'911',fire:'911',embassy:'+1-212-486-0088',tz:'UTC-5~-10',voltage:'120V / A/B-type',currency:'USD'},
+  'France':{police:'17',ambulance:'15',fire:'18',embassy:'+33-1-4439-8830',tz:'UTC+1',voltage:'230V / C/E-type',currency:'EUR'},
+  'Korea':{police:'112',ambulance:'119',fire:'119',embassy:'+82-2-399-2780',tz:'UTC+9',voltage:'220V / C/F-type',currency:'KRW'},
+  'Thailand':{police:'191',ambulance:'1669',fire:'199',embassy:'+66-2-670-0200',tz:'UTC+7',voltage:'220V / A/B/C-type',currency:'THB'},
+  'UK':{police:'999',ambulance:'999',fire:'999',embassy:'+44-20-7881-2650',tz:'UTC+0',voltage:'230V / G-type',currency:'GBP'},
+  'Germany':{police:'110',ambulance:'112',fire:'112',embassy:'+49-30-2036-1270',tz:'UTC+1',voltage:'230V / C/F-type',currency:'EUR'},
+  'Italy':{police:'113',ambulance:'118',fire:'115',embassy:'+39-06-9826-2800',tz:'UTC+1',voltage:'230V / C/F/L-type',currency:'EUR'},
+  'Spain':{police:'091',ambulance:'112',fire:'080',embassy:'+34-91-571-4729',tz:'UTC+1',voltage:'230V / C/F-type',currency:'EUR'},
+  'Australia':{police:'000',ambulance:'000',fire:'000',embassy:'+61-2-6120-2000',tz:'UTC+8~11',voltage:'230V / I-type',currency:'AUD'},
+  'Canada':{police:'911',ambulance:'911',fire:'911',embassy:'+1-613-231-5080',tz:'UTC-3.5~-8',voltage:'120V / A/B-type',currency:'CAD'},
+  'Singapore':{police:'999',ambulance:'995',fire:'995',embassy:'+65-6500-0100',tz:'UTC+8',voltage:'230V / G-type',currency:'SGD'},
+  'Hong Kong':{police:'999',ambulance:'999',fire:'999',embassy:'+852-2525-8315',tz:'UTC+8',voltage:'220V / G-type',currency:'HKD'},
+  'China':{police:'110',ambulance:'120',fire:'119',embassy:'—',tz:'UTC+8',voltage:'220V / A/C/I-type',currency:'CNY'},
+};
+function openEmergencyInfo(){
+  if(!S.trip||!S.trip.destination){toast('No destination set');return}
+  const dest=S.trip.destination;
+  // Try to match destination to a known country
+  let info=null;
+  for(const[country,data] of Object.entries(EMERGENCY_DATA)){
+    if(dest.includes(country)){info=data;break}
+  }
+  const c=$('emergency-content');
+  if(!info){
+    c.innerHTML=`<div class="text-center py-4 text-gray-400"><i class="fas fa-question-circle text-3xl mb-2"></i><p class="text-sm">${t('noEmergencyData')||'無此目的地資料，請查詢當地緊急號碼。'}</p><p class="text-xs mt-2">📍 ${esc(dest)}</p></div>`;
+  }else{
+    c.innerHTML=`
+      <div class="bg-red-50 rounded-xl p-4">
+        <h3 class="font-bold text-sm text-red-700 mb-2"><i class="fas fa-phone-alt mr-1"></i> ${t('emergencyPolice')}</h3>
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div><div class="text-xl font-bold text-red-600">${info.police}</div><div class="text-[10px] text-gray-500">🚔 ${t('emergencyPolice')}</div></div>
+          <div><div class="text-xl font-bold text-red-600">${info.ambulance}</div><div class="text-[10px] text-gray-500">🚑 ${t('emergencyAmbulance')}</div></div>
+          <div><div class="text-xl font-bold text-red-600">${info.fire}</div><div class="text-[10px] text-gray-500">🚒 Fire</div></div>
+        </div>
+      </div>
+      <div class="bg-blue-50 rounded-xl p-4">
+        <h3 class="font-bold text-sm text-blue-700 mb-2"><i class="fas fa-building mr-1"></i> ${t('emergencyEmbassy')}</h3>
+        <div class="text-sm font-mono">${info.embassy}</div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-gray-50 rounded-xl p-3"><div class="text-xs text-gray-500 mb-1"><i class="fas fa-clock mr-1"></i>${t('timezone')}</div><div class="font-semibold text-sm">${info.tz}</div></div>
+        <div class="bg-gray-50 rounded-xl p-3"><div class="text-xs text-gray-500 mb-1"><i class="fas fa-plug mr-1"></i>${t('voltage')}</div><div class="font-semibold text-sm">${info.voltage}</div></div>
+      </div>
+      <div class="text-xs text-gray-400 text-center">📍 ${esc(dest)}</div>
+    `;
+  }
+  $('emergency-modal').classList.remove('hidden');
+}
 
 // ============================================================
 // SERVICE WORKER
