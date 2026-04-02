@@ -26,7 +26,7 @@
     .modal{background:white;border-radius:1rem;padding:1.5rem;width:100%;max-width:500px;max-height:90vh;max-height:90dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
     .type-flight{color:#3b82f6}.type-hotel{color:#8b5cf6}.type-meal{color:#f97316}.type-activity{color:#22c55e}.type-transport{color:#64748b}.type-shopping{color:#ec4899}.type-other{color:#14b8a6}
     .bg-type-flight{background:#eff6ff;border-left:3px solid #3b82f6}.bg-type-hotel{background:#f5f3ff;border-left:3px solid #8b5cf6}.bg-type-meal{background:#fff7ed;border-left:3px solid #f97316}.bg-type-activity{background:#f0fdf4;border-left:3px solid #22c55e}.bg-type-transport{background:#f8fafc;border-left:3px solid #64748b}.bg-type-shopping{background:#fdf2f8;border-left:3px solid #ec4899}.bg-type-other{background:#f0fdfa;border-left:3px solid #14b8a6}
-    .day-tab{transition:all .2s}.day-tab.active{background:#6366f1;color:white}.day-tab:not(.active):hover{background:#e0e7ff}
+    .day-tab{transition:all .2s;border:none;background:none;font:inherit;-webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:rgba(99,102,241,.2)}.day-tab.active{background:#6366f1;color:white}.day-tab:not(.active):hover{background:#e0e7ff}
     #map-iframe{width:100%;height:300px;border:0;border-radius:.5rem}
     .glass{backdrop-filter:blur(10px);background:rgba(255,255,255,.15)}
     .sortable-ghost{opacity:.4}.sortable-chosen{box-shadow:0 4px 12px rgba(99,102,241,.3)}
@@ -62,6 +62,8 @@
       .sidebar-toggle{display:none!important}
     }
     @media(min-width:769px){.mobile-bottom-bar{display:none!important}.mobile-sidebar-overlay{display:none!important}.show-mobile-only{display:none!important}}
+    /* iOS Safari fix: ensure flex children don't overflow on iPad */
+    @supports(-webkit-touch-callout:none){#trip-view{height:-webkit-fill-available!important}}
     .sidebar-collapsed #days-sidebar{width:0;min-width:0;overflow:hidden;border:none;padding:0;opacity:0;pointer-events:none;transition:all .25s ease}
     #days-sidebar{transition:all .25s ease}
     .sidebar-toggle{position:absolute;left:0;top:50%;transform:translateY(-50%);z-index:10;width:20px;height:48px;background:#6366f1;color:white;border:none;border-radius:0 6px 6px 0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;opacity:.7;transition:opacity .2s}
@@ -548,7 +550,7 @@
 </div>
 
 <!-- ===== TRIP VIEW ===== -->
-<div id="trip-view" class="hidden h-screen flex flex-col" style="overflow:hidden">
+<div id="trip-view" class="hidden flex flex-col" style="overflow:hidden;height:100vh;height:100dvh">
   <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-teal-600 text-white px-4 py-3 flex items-center gap-2 shrink-0 flex-wrap">
     <button onclick="goHome()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition"><i class="fas fa-arrow-left"></i></button>
     <button onclick="openMobileSidebar()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition show-mobile-only"><i class="fas fa-calendar-alt"></i></button>
@@ -611,7 +613,7 @@
         <div class="text-5xl mb-4">📅</div>
         <h3 class="text-lg font-semibold text-gray-600 mb-2" data-i18n="selectDay">選擇或新增天數</h3>
       </div>
-      <div id="events-container" class="hidden flex-1 overflow-y-auto p-4">
+      <div id="events-container" class="hidden flex-1 overflow-y-auto p-4" style="-webkit-overflow-scrolling:touch">
         <div id="events-loading" class="text-center py-8 text-gray-400 hidden"><i class="fas fa-spinner fa-spin"></i></div>
         <div id="events-empty" class="hidden text-center py-12"><div class="text-4xl mb-3">📌</div><p class="text-gray-400 text-sm" data-i18n="noEvents">還沒有行程</p></div>
         <div id="events-list" class="timeline-container space-y-3"><div class="timeline-line"></div></div>
@@ -998,6 +1000,8 @@ async function openTrip(tripId){
   window.scrollTo(0,0);renderTripHeader();renderDaysSidebar();showNoDaySelected();updateLockUI();
   await Promise.all([loadDays(),loadCredentials(),loadExpenses(),loadChecklist(),loadPhotos()]);
   renderDaysSidebar();loadWeather();subscribeToTrip(tripId);
+  // Auto-select first day
+  if(S.days.length>0)selectDay(S.days[0].id);
 }
 function goHome(){
   S.channels.forEach(c=>sb.removeChannel(c));S.channels=[];S.onlineUsers={};S.view='home';
@@ -1047,13 +1051,13 @@ function renderDaysSidebar(){
   const list=$('days-list'),empty=$('days-empty');
   if(S.days.length===0){list.innerHTML='';empty.classList.remove('hidden');return}
   empty.classList.add('hidden');
-  list.innerHTML=S.days.map(d=>`<div class="day-tab ${S.day&&S.day.id===d.id?'active':''} rounded-lg px-3 py-2 cursor-pointer transition group flex items-center gap-2" onclick="selectDay('${d.id}')">
+  list.innerHTML=S.days.map(d=>`<button type="button" class="day-tab ${S.day&&S.day.id===d.id?'active':''} rounded-lg px-3 py-2 cursor-pointer transition group flex items-center gap-2 w-full text-left" onclick="selectDay('${d.id}')">
     <div class="flex-1 min-w-0"><div class="text-xs font-semibold">Day ${d.day_number}</div><div class="text-xs truncate">${formatDate(d.date)}</div>${d.title?`<div class="text-xs truncate opacity-75">${esc(d.title)}</div>`:''}</div>
     <div class="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition">
-      <button onclick="event.stopPropagation();duplicateDay('${d.id}')" class="w-5 h-5 flex items-center justify-center rounded hover:bg-indigo-100 text-gray-300 hover:text-indigo-500" title="${t('copyDay')}"><i class="fas fa-copy text-[10px]"></i></button>
-      <button onclick="event.stopPropagation();confirmDeleteDay('${d.id}')" class="w-5 h-5 flex items-center justify-center rounded hover:bg-red-100 text-red-300 hover:text-red-500"><i class="fas fa-trash text-[10px]"></i></button>
+      <button type="button" onclick="event.stopPropagation();duplicateDay('${d.id}')" class="w-5 h-5 flex items-center justify-center rounded hover:bg-indigo-100 text-gray-300 hover:text-indigo-500" title="${t('copyDay')}"><i class="fas fa-copy text-[10px]"></i></button>
+      <button type="button" onclick="event.stopPropagation();confirmDeleteDay('${d.id}')" class="w-5 h-5 flex items-center justify-center rounded hover:bg-red-100 text-red-300 hover:text-red-500"><i class="fas fa-trash text-[10px]"></i></button>
     </div>
-  </div>`).join('');
+  </button>`).join('');
 }
 function showNoDaySelected(){$('no-day-selected').classList.remove('hidden');$('day-header').classList.add('hidden');$('events-container').classList.add('hidden')}
 async function selectDay(dayId){
