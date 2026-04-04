@@ -627,14 +627,37 @@ function pvpCreateRoom() {
     conn = c;
     status.textContent = '對手已連線！準備開始...';
     status.className = 'lobby-status connected';
-    conn.on('open', () => {
-      // Send a handshake to confirm connection
+
+    let hostGameStarted = false;
+
+    function hostReady() {
+      // Send handshake repeatedly until guest confirms or game starts
       conn.send({ type:'handshake', msg:'ready' });
-      setTimeout(() => pvpStartGame(true), 500);
+      // Also set a fallback: start after 2s even without guest-ready
+      setTimeout(() => {
+        if(!hostGameStarted) { hostGameStarted = true; pvpStartGame(true); }
+      }, 2000);
+    }
+
+    conn.on('data', data => {
+      if(data.type === 'guest-ready' && !hostGameStarted) {
+        hostGameStarted = true;
+        // Re-send handshake to make sure guest got it
+        conn.send({ type:'handshake', msg:'ready' });
+        setTimeout(() => pvpStartGame(true), 300);
+      } else if(hostGameStarted) {
+        pvpOnData(data);
+      }
     });
-    conn.on('data', pvpOnData);
     conn.on('close', () => { pvpDisconnected(); });
     conn.on('error', e => { status.textContent='連線錯誤：'+e; status.className='lobby-status error'; });
+
+    // Key fix: if connection is already open, fire immediately; otherwise wait
+    if(conn.open) {
+      hostReady();
+    } else {
+      conn.on('open', hostReady);
+    }
   });
 
   peer.on('error', e => {
@@ -711,20 +734,25 @@ function pvpJoinRoom() {
   });
 }
 
+let guestGameStarted = false;
+
 function pvpAttemptConnect(code) {
   if(!peer || peer.destroyed) return;
+  guestGameStarted = false;
   conn = peer.connect(code, { reliable: true, serialization: 'json' });
 
-  conn.on('open', () => {
+  function guestConnected() {
     const status = document.getElementById('lobbyStatus');
-    if(status) { status.textContent = '已連線！等待開始...'; status.className = 'lobby-status connected'; }
-  });
+    if(status) { status.textContent = '已連線！等待對方開始...'; status.className = 'lobby-status connected'; }
+    // Tell host we're ready
+    conn.send({ type:'guest-ready' });
+  }
 
   conn.on('data', data => {
-    if(data.type === 'handshake') {
-      // Connection confirmed, start game
+    if(data.type === 'handshake' && !guestGameStarted) {
+      guestGameStarted = true;
       pvpStartGame(false);
-    } else {
+    } else if(guestGameStarted) {
       pvpOnData(data);
     }
   });
@@ -734,6 +762,13 @@ function pvpAttemptConnect(code) {
     const status = document.getElementById('lobbyStatus');
     if(status) { status.textContent='資料連線錯誤：'+e; status.className='lobby-status error'; }
   });
+
+  // Key fix: check if already open
+  if(conn.open) {
+    guestConnected();
+  } else {
+    conn.on('open', guestConnected);
+  }
 }
 
 function pvpStartGame(isHost) {
