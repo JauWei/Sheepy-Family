@@ -573,22 +573,20 @@ function showPvpLobby() {
     </div>`;
 }
 
-// PeerJS config with reliable ICE servers
+// PeerJS config — STUN only (no expired TURN credentials that stall ICE)
 const PEER_CONFIG = {
+  debug: 2, // show connection logs in console for debugging
   config: {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
       { urls: 'stun:stun2.l.google.com:19302' },
-      { urls: 'stun:stun.relay.metered.ca:80' },
-      { urls: 'turn:global.relay.metered.ca:80', username:'e8dd65b92aee3d806e4f1124', credential:'dWSgbka6/alCNnms' },
-      { urls: 'turn:global.relay.metered.ca:443', username:'e8dd65b92aee3d806e4f1124', credential:'dWSgbka6/alCNnms' }
+      { urls: 'stun:stun3.l.google.com:19302' },
+      { urls: 'stun:stun4.l.google.com:19302' }
     ]
-  },
-  debug: 0
+  }
 };
 
-// Generate a short, human-friendly room code
 function makeRoomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = 'SG-';
@@ -599,6 +597,38 @@ function makeRoomCode() {
 function pvpCleanup() {
   if(conn) { try{conn.close()}catch(e){} conn=null; }
   if(peer) { try{peer.destroy()}catch(e){} peer=null; }
+}
+
+// Shared helper: wire up a DataConnection and start the game once open
+function setupConnection(c, isHost) {
+  conn = c;
+  let started = false;
+
+  function beginGame() {
+    if(started) return;
+    started = true;
+    console.log('[PVP] Data channel open, starting game as', isHost?'host':'guest');
+    pvpStartGame(isHost);
+  }
+
+  c.on('data', data => { pvpOnData(data); });
+  c.on('close', () => { pvpDisconnected(); });
+  c.on('error', e => { console.error('[PVP] conn error:', e); });
+
+  // Start game as soon as data channel is open
+  if(c.open) {
+    beginGame();
+  } else {
+    c.on('open', () => { beginGame(); });
+  }
+
+  // Fallback: if still not started after 5s, force start (channel might be open but event missed)
+  setTimeout(() => {
+    if(!started && conn && !conn.destroyed) {
+      console.warn('[PVP] Fallback: forcing game start');
+      beginGame();
+    }
+  }, 5000);
 }
 
 function pvpCreateRoom() {
@@ -612,61 +642,32 @@ function pvpCreateRoom() {
   peer = new Peer(roomId, PEER_CONFIG);
 
   peer.on('open', id => {
+    console.log('[PVP] Host peer open, id:', id);
     area.innerHTML = `<p style="margin-bottom:8px">把這個房間代碼傳給對手：</p>
       <div class="room-code" id="roomCodeDisplay">${id}</div>
       <p style="font-size:.8em;color:var(--text-medium);margin-top:5px">點擊代碼可複製</p>`;
     document.getElementById('roomCodeDisplay').onclick = function(){
       navigator.clipboard.writeText(id).then(()=>{
-        status.textContent='已複製房間代碼！等待對手加入...';
+        status.textContent='已複製！等待對手加入...';
       });
     };
     status.textContent = '房間已建立！等待對手加入...';
   });
 
   peer.on('connection', c => {
-    conn = c;
-    status.textContent = '對手已連線！準備開始...';
+    console.log('[PVP] Host received connection, open?', c.open);
+    status.textContent = '對手已連線！建立資料通道中...';
     status.className = 'lobby-status connected';
-
-    let hostGameStarted = false;
-
-    function hostReady() {
-      // Send handshake repeatedly until guest confirms or game starts
-      conn.send({ type:'handshake', msg:'ready' });
-      // Also set a fallback: start after 2s even without guest-ready
-      setTimeout(() => {
-        if(!hostGameStarted) { hostGameStarted = true; pvpStartGame(true); }
-      }, 2000);
-    }
-
-    conn.on('data', data => {
-      if(data.type === 'guest-ready' && !hostGameStarted) {
-        hostGameStarted = true;
-        // Re-send handshake to make sure guest got it
-        conn.send({ type:'handshake', msg:'ready' });
-        setTimeout(() => pvpStartGame(true), 300);
-      } else if(hostGameStarted) {
-        pvpOnData(data);
-      }
-    });
-    conn.on('close', () => { pvpDisconnected(); });
-    conn.on('error', e => { status.textContent='連線錯誤：'+e; status.className='lobby-status error'; });
-
-    // Key fix: if connection is already open, fire immediately; otherwise wait
-    if(conn.open) {
-      hostReady();
-    } else {
-      conn.on('open', hostReady);
-    }
+    setupConnection(c, true);
   });
 
   peer.on('error', e => {
-    console.error('PeerJS error:', e);
+    console.error('[PVP] Host peer error:', e);
     if(e.type === 'unavailable-id') {
       status.textContent = '房間代碼衝突，重新建立中...';
       setTimeout(() => pvpCreateRoom(), 500);
     } else {
-      status.textContent = '連線錯誤：' + e.type + '（請確認網路連線正常）';
+      status.textContent = '連線錯誤：' + e.type;
       status.className = 'lobby-status error';
       area.innerHTML += `<div class="btn-row" style="justify-content:center;margin-top:12px">
         <button class="btn btn-check" onclick="pvpCreateRoom()">&#x1F504; 重試</button></div>`;
@@ -674,11 +675,7 @@ function pvpCreateRoom() {
   });
 
   peer.on('disconnected', () => {
-    // Auto reconnect to signaling server
-    if(peer && !peer.destroyed) {
-      status.textContent = '信令伺服器斷線，重新連線中...';
-      peer.reconnect();
-    }
+    if(peer && !peer.destroyed) { peer.reconnect(); }
   });
 }
 
@@ -706,18 +703,18 @@ function pvpJoinRoom() {
 
   peer = new Peer(PEER_CONFIG);
   peer.on('open', () => {
+    console.log('[PVP] Guest peer open, connecting to:', code);
     pvpAttemptConnect(code);
   });
   peer.on('error', e => {
-    console.error('PeerJS error:', e);
+    console.error('[PVP] Guest peer error:', e);
     if(e.type === 'peer-unavailable') {
       pvpJoinRetry++;
       if(pvpJoinRetry <= 3) {
-        status.textContent = `找不到房間 ${code}，第 ${pvpJoinRetry} 次重試中...（請確認對方已建立房間）`;
-        status.className = 'lobby-status';
+        status.textContent = `找不到房間 ${code}，第 ${pvpJoinRetry} 次重試中...`;
         setTimeout(() => pvpAttemptConnect(code), 2000);
       } else {
-        status.textContent = `找不到房間 ${code}。請確認：1) 對方已建立房間 2) 代碼正確 3) 雙方網路正常`;
+        status.textContent = `找不到房間 ${code}。請確認對方已建立房間且代碼正確。`;
         status.className = 'lobby-status error';
         if(joinBtn) joinBtn.disabled = false;
         const area = document.getElementById('lobbyArea');
@@ -734,41 +731,16 @@ function pvpJoinRoom() {
   });
 }
 
-let guestGameStarted = false;
-
 function pvpAttemptConnect(code) {
   if(!peer || peer.destroyed) return;
-  guestGameStarted = false;
-  conn = peer.connect(code, { reliable: true, serialization: 'json' });
+  // Use default serialization (binary) — must match both sides
+  const c = peer.connect(code, { reliable: true });
+  console.log('[PVP] Guest connecting to', code, 'conn open?', c.open);
 
-  function guestConnected() {
-    const status = document.getElementById('lobbyStatus');
-    if(status) { status.textContent = '已連線！等待對方開始...'; status.className = 'lobby-status connected'; }
-    // Tell host we're ready
-    conn.send({ type:'guest-ready' });
-  }
+  const status = document.getElementById('lobbyStatus');
+  if(status) { status.textContent = '已找到房間，建立資料通道中...'; }
 
-  conn.on('data', data => {
-    if(data.type === 'handshake' && !guestGameStarted) {
-      guestGameStarted = true;
-      pvpStartGame(false);
-    } else if(guestGameStarted) {
-      pvpOnData(data);
-    }
-  });
-
-  conn.on('close', () => { pvpDisconnected(); });
-  conn.on('error', e => {
-    const status = document.getElementById('lobbyStatus');
-    if(status) { status.textContent='資料連線錯誤：'+e; status.className='lobby-status error'; }
-  });
-
-  // Key fix: check if already open
-  if(conn.open) {
-    guestConnected();
-  } else {
-    conn.on('open', guestConnected);
-  }
+  setupConnection(c, false);
 }
 
 function pvpStartGame(isHost) {
