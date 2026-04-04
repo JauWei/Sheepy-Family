@@ -166,6 +166,7 @@
 <div class="header">
   <h1>角落生物數學教室</h1>
   <p id="headerSub">和角落小夥伴一起學數學吧！</p>
+  <p style="font-size:.7em;opacity:.5;position:relative;z-index:1">v2.0-mqtt</p>
 </div>
 
 <div id="app"></div>
@@ -575,7 +576,8 @@ function showPvpLobby() {
 // ========================================================
 //  PVP via MQTT (HiveMQ free public broker — no NAT issues)
 // ========================================================
-const MQTT_BROKER = 'wss://broker.hivemq.com:8884/mqtt';
+// EMQX free public broker (well-documented, reliable WSS on port 8084)
+const MQTT_BROKER = 'wss://broker.emqx.io:8084/mqtt';
 let mqttClient = null;
 let mqttRoom = null;  // room code
 let mqttRole = null;  // 'host' or 'guest'
@@ -642,15 +644,20 @@ function pvpCreateRoom() {
     });
   });
 
+  let hostGameStarted = false;
   mqttClient.on('message', (topic, msg) => {
     try {
       const data = JSON.parse(msg.toString());
-      if(data.type === 'join') {
+      console.log('[MQTT] Host received:', data.type);
+      if(data.type === 'join' && !hostGameStarted) {
+        hostGameStarted = true;
         status.textContent = '對手已加入！開始遊戲...';
         status.className = 'lobby-status connected';
-        // Confirm to guest
         mqttSend({ type: 'joined' });
         setTimeout(() => pvpStartGame(true), 500);
+      } else if(data.type === 'join') {
+        // Duplicate join — re-confirm
+        mqttSend({ type: 'joined' });
       } else {
         pvpOnData(data);
       }
@@ -720,6 +727,7 @@ function pvpJoinRoom() {
   mqttClient.on('message', (topic, msg) => {
     try {
       const data = JSON.parse(msg.toString());
+      console.log('[MQTT] Guest received:', data.type);
       if(data.type === 'joined' && !gameStarted) {
         gameStarted = true;
         status.textContent = '對方已確認！開始遊戲...';
