@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Travel Pin Map - 旅行地圖</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<style>
+:root {
+  --primary: #4F46E5;
+  --primary-light: #818CF8;
+  --bg: #F8FAFC;
+  --card-bg: #FFFFFF;
+  --text: #1E293B;
+  --text-light: #64748B;
+  --border: #E2E8F0;
+  --danger: #EF4444;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --radius: 12px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.10);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  height: 100vh;
+}
+
+/* ===== TOP BAR ===== */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; height: 56px;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+}
+.topbar h1 {
+  font-size: 20px; font-weight: 700;
+  background: linear-gradient(135deg, var(--primary), #EC4899);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.topbar-actions { display: flex; gap: 8px; align-items: center; }
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  border: 1px solid var(--border); background: var(--card-bg);
+  color: var(--text); transition: all 0.2s;
+}
+.btn:hover { background: #F1F5F9; }
+.btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.btn-primary:hover { background: #4338CA; }
+.btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+.btn-danger:hover { background: #DC2626; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+
+/* ===== AUTH PANEL ===== */
+.auth-panel {
+  position: fixed; top: 56px; right: 0; z-index: 999;
+  background: var(--card-bg); border-left: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  border-radius: 0 0 0 var(--radius);
+  padding: 20px; width: 320px;
+  box-shadow: var(--shadow);
+  display: none;
+}
+.auth-panel.open { display: block; }
+.auth-panel h3 { margin-bottom: 12px; font-size: 16px; }
+.auth-panel input {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--border);
+  border-radius: 8px; font-size: 14px; margin-bottom: 10px;
+}
+.auth-panel input:focus { outline: none; border-color: var(--primary); }
+.auth-actions { display: flex; gap: 8px; }
+.auth-actions .btn { flex: 1; justify-content: center; }
+.user-info { font-size: 13px; color: var(--text-light); }
+
+/* ===== MAP ===== */
+#map {
+  position: fixed; top: 56px; left: 0; right: 0; bottom: 0;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  position: fixed; top: 56px; left: 0; bottom: 0; z-index: 800;
+  width: 360px; background: var(--card-bg);
+  border-right: 1px solid var(--border);
+  box-shadow: 2px 0 12px rgba(0,0,0,0.05);
+  display: flex; flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+.sidebar.open { transform: translateX(0); }
+.sidebar-header {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.sidebar-header h2 { font-size: 16px; }
+.sidebar-tabs {
+  display: flex; border-bottom: 1px solid var(--border);
+}
+.sidebar-tab {
+  flex: 1; padding: 10px; text-align: center; font-size: 13px;
+  font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent;
+  color: var(--text-light); transition: all 0.2s;
+}
+.sidebar-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.sidebar-list {
+  flex: 1; overflow-y: auto; padding: 12px;
+}
+.pin-list-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 8px; cursor: pointer;
+  transition: background 0.2s; margin-bottom: 4px;
+}
+.pin-list-item:hover { background: #F1F5F9; }
+.pin-list-dot {
+  width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+}
+.pin-list-info { flex: 1; min-width: 0; }
+.pin-list-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pin-list-detail { font-size: 12px; color: var(--text-light); }
+
+/* ===== PIN CARD (detail popup) ===== */
+.pin-card-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4); z-index: 2000;
+  display: none; align-items: center; justify-content: center;
+}
+.pin-card-overlay.open { display: flex; }
+.pin-card {
+  background: var(--card-bg); border-radius: var(--radius);
+  width: 480px; max-height: 85vh; overflow-y: auto;
+  box-shadow: var(--shadow); padding: 0;
+}
+.pin-card-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 24px 0;
+}
+.pin-card-header h2 { font-size: 20px; font-weight: 700; }
+.pin-card-close {
+  width: 32px; height: 32px; border-radius: 8px; border: none;
+  background: #F1F5F9; cursor: pointer; font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+}
+.pin-card-close:hover { background: #E2E8F0; }
+.pin-card-body { padding: 16px 24px 24px; }
+.field-group { margin-bottom: 14px; }
+.field-label {
+  display: block; font-size: 12px; font-weight: 600;
+  color: var(--text-light); margin-bottom: 4px; text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.field-input, .field-textarea, .field-select {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--border);
+  border-radius: 8px; font-size: 14px; font-family: inherit;
+  transition: border-color 0.2s;
+}
+.field-input:focus, .field-textarea:focus, .field-select:focus {
+  outline: none; border-color: var(--primary);
+}
+.field-textarea { resize: vertical; min-height: 60px; }
+
+/* Color/icon picker */
+.color-picker-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.color-option {
+  width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+  border: 3px solid transparent; transition: all 0.2s;
+}
+.color-option:hover, .color-option.active { border-color: var(--text); transform: scale(1.15); }
+
+.icon-picker-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.icon-option {
+  width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
+  border: 2px solid var(--border); display: flex; align-items: center;
+  justify-content: center; font-size: 16px; transition: all 0.2s;
+}
+.icon-option:hover, .icon-option.active { border-color: var(--primary); background: #EEF2FF; }
+
+/* Photo gallery */
+.photo-gallery {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px; margin-top: 8px;
+}
+.photo-thumb {
+  position: relative; aspect-ratio: 1; border-radius: 8px;
+  overflow: hidden; cursor: pointer;
+}
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.photo-thumb .remove-photo {
+  position: absolute; top: 4px; right: 4px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(0,0,0,0.6); color: #fff;
+  border: none; cursor: pointer; font-size: 11px;
+  display: flex; align-items: center; justify-content: center;
+}
+.photo-add-btn {
+  aspect-ratio: 1; border-radius: 8px;
+  border: 2px dashed var(--border); display: flex;
+  align-items: center; justify-content: center;
+  cursor: pointer; font-size: 24px; color: var(--text-light);
+  transition: all 0.2s;
+}
+.photo-add-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+/* Custom fields */
+.custom-field-row {
+  display: flex; gap: 8px; align-items: center; margin-bottom: 8px;
+}
+.custom-field-row input { flex: 1; }
+.remove-field-btn {
+  width: 28px; height: 28px; border-radius: 6px;
+  border: none; background: #FEE2E2; color: var(--danger);
+  cursor: pointer; font-size: 13px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.remove-field-btn:hover { background: #FECACA; }
+
+.pin-card-footer {
+  display: flex; gap: 8px; justify-content: flex-end;
+  padding: 16px 24px; border-top: 1px solid var(--border);
+}
+
+/* ===== EXPORT MODAL ===== */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4); z-index: 3000;
+  display: none; align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--card-bg); border-radius: var(--radius);
+  width: 520px; max-height: 80vh; overflow-y: auto;
+  box-shadow: var(--shadow); padding: 24px;
+}
+.modal h2 { font-size: 18px; margin-bottom: 16px; }
+.export-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+}
+.export-table th, .export-table td {
+  padding: 8px 10px; text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.export-table th { font-weight: 600; color: var(--text-light); font-size: 12px; text-transform: uppercase; }
+.category-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 99px;
+  font-size: 11px; font-weight: 600;
+}
+.category-visited { background: #DCFCE7; color: #166534; }
+.category-want { background: #FEF3C7; color: #92400E; }
+
+/* ===== CONTEXT MENU (right-click on map) ===== */
+.context-menu {
+  position: fixed; z-index: 1500;
+  background: var(--card-bg); border-radius: 8px;
+  box-shadow: var(--shadow); padding: 4px;
+  min-width: 180px; display: none;
+}
+.context-menu.open { display: block; }
+.context-menu-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 6px; cursor: pointer;
+  font-size: 13px; font-weight: 500;
+}
+.context-menu-item:hover { background: #F1F5F9; }
+.context-menu-item i { width: 16px; text-align: center; }
+
+/* ===== TOOLTIP ===== */
+.pin-tooltip {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px !important;
+  padding: 4px 10px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+  color: var(--text) !important;
+}
+.pin-tooltip::before { border-top-color: var(--border) !important; }
+
+/* ===== CROSSHAIR ON MAP ===== */
+.map-adding-pin { cursor: crosshair !important; }
+
+/* ===== ADD PIN MODE BANNER ===== */
+.add-pin-banner {
+  position: fixed; top: 64px; left: 50%; transform: translateX(-50%);
+  z-index: 1100; background: var(--primary); color: #fff;
+  padding: 10px 24px; border-radius: 99px;
+  font-size: 14px; font-weight: 600;
+  box-shadow: 0 4px 16px rgba(79,70,229,0.4);
+  display: none; align-items: center; gap: 10px;
+}
+.add-pin-banner.show { display: flex; }
+.add-pin-banner .cancel-add {
+  background: rgba(255,255,255,0.2); border: none; color: #fff;
+  padding: 4px 12px; border-radius: 99px; cursor: pointer;
+  font-size: 12px; font-weight: 600;
+}
+.add-pin-banner .cancel-add:hover { background: rgba(255,255,255,0.3); }
+
+/* ===== STATS ===== */
+.stats-bar {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  z-index: 900; display: flex; gap: 12px;
+}
+.stat-chip {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 99px; padding: 8px 16px;
+  font-size: 13px; font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  display: flex; align-items: center; gap: 6px;
+}
+.stat-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* ===== IMAGE VIEWER ===== */
+.image-viewer {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85); z-index: 4000;
+  display: none; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.image-viewer.open { display: flex; }
+.image-viewer img { max-width: 90%; max-height: 90%; border-radius: 8px; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  .sidebar { width: 100%; }
+  .pin-card { width: 95%; margin: 0 10px; }
+  .modal { width: 95%; }
+  .topbar h1 { font-size: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <button class="btn btn-sm" onclick="toggleSidebar()" title="圖釘清單">
+      <i class="fas fa-list"></i>
+    </button>
+    <h1><i class="fas fa-globe-americas"></i> Travel Pin Map</h1>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn" onclick="startAddPin()"><i class="fas fa-map-pin"></i> 新增圖釘</button>
+    <button class="btn" onclick="openExport()"><i class="fas fa-file-export"></i> 匯出</button>
+    <button class="btn" id="authBtn" onclick="toggleAuth()"><i class="fas fa-user"></i> 登入</button>
+  </div>
+</div>
+
+<!-- AUTH PANEL -->
+<div class="auth-panel" id="authPanel">
+  <div id="authForm">
+    <h3>登入 / 註冊</h3>
+    <input type="email" id="authEmail" placeholder="Email">
+    <input type="password" id="authPassword" placeholder="密碼">
+    <div class="auth-actions">
+      <button class="btn btn-primary" onclick="signIn()">登入</button>
+      <button class="btn" onclick="signUp()">註冊</button>
+    </div>
+    <p style="margin-top:10px;font-size:12px;color:var(--text-light);">
+      首次使用請先註冊，資料將儲存於雲端。
+    </p>
+  </div>
+  <div id="authInfo" style="display:none;">
+    <div class="user-info" id="userEmail"></div>
+    <button class="btn btn-sm" style="margin-top:10px;" onclick="signOut()">
+      <i class="fas fa-sign-out-alt"></i> 登出
+    </button>
+  </div>
+</div>
+
+<!-- MAP -->
+<div id="map"></div>
+
+<!-- ADD PIN MODE BANNER -->
+<div class="add-pin-banner" id="addPinBanner">
+  <i class="fas fa-crosshairs"></i>
+  點擊地圖放置圖釘
+  <button class="cancel-add" onclick="cancelAddPin()">取消 ESC</button>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h2><i class="fas fa-map-marker-alt"></i> 圖釘清單</h2>
+    <button class="pin-card-close" onclick="toggleSidebar()">&times;</button>
+  </div>
+  <div class="sidebar-tabs">
+    <div class="sidebar-tab active" data-tab="all" onclick="switchTab('all')">全部</div>
+    <div class="sidebar-tab" data-tab="visited" onclick="switchTab('visited')">已去過</div>
+    <div class="sidebar-tab" data-tab="want_to_go" onclick="switchTab('want_to_go')">想去</div>
+  </div>
+  <div class="sidebar-list" id="pinList"></div>
+</div>
+
+<!-- PIN CARD (detail / edit) -->
+<div class="pin-card-overlay" id="pinCardOverlay">
+  <div class="pin-card">
+    <div class="pin-card-header">
+      <h2 id="pinCardTitle">編輯圖釘</h2>
+      <button class="pin-card-close" onclick="closePinCard()">&times;</button>
+    </div>
+    <div class="pin-card-body">
+      <!-- Category -->
+      <div class="field-group">
+        <label class="field-label">分類</label>
+        <select class="field-select" id="pinCategory">
+          <option value="visited">已去過</option>
+          <option value="want_to_go">未來想去</option>
+        </select>
+      </div>
+      <!-- Country -->
+      <div class="field-group">
+        <label class="field-label">國家</label>
+        <input class="field-input" id="pinCountry" placeholder="例：日本">
+      </div>
+      <!-- City -->
+      <div class="field-group">
+        <label class="field-label">城市</label>
+        <input class="field-input" id="pinCity" placeholder="例：東京">
+      </div>
+      <!-- Year -->
+      <div class="field-group">
+        <label class="field-label">年度</label>
+        <input class="field-input" id="pinYear" placeholder="例：2025">
+      </div>
+      <!-- Reason -->
+      <div class="field-group">
+        <label class="field-label">理由 / 備註</label>
+        <textarea class="field-textarea" id="pinReason" placeholder="想去的理由，或旅行心得..."></textarea>
+      </div>
+      <!-- Budget -->
+      <div class="field-group">
+        <label class="field-label">預計花費</label>
+        <input class="field-input" id="pinBudget" placeholder="例：NT$ 50,000">
+      </div>
+      <!-- Color -->
+      <div class="field-group">
+        <label class="field-label">圖釘顏色</label>
+        <div class="color-picker-row" id="colorPicker"></div>
+      </div>
+      <!-- Icon -->
+      <div class="field-group">
+        <label class="field-label">圖釘樣式</label>
+        <div class="icon-picker-row" id="iconPicker"></div>
+      </div>
+      <!-- Photos -->
+      <div class="field-group">
+        <label class="field-label">照片</label>
+        <div class="photo-gallery" id="photoGallery"></div>
+      </div>
+      <!-- Custom fields -->
+      <div class="field-group">
+        <label class="field-label">自訂欄位</label>
+        <div id="customFields"></div>
+        <button class="btn btn-sm" style="margin-top:6px;" onclick="addCustomField()">
+          <i class="fas fa-plus"></i> 新增欄位
+        </button>
+      </div>
+    </div>
+    <div class="pin-card-footer">
+      <button class="btn btn-danger btn-sm" id="pinDeleteBtn" onclick="deletePin()" style="margin-right:auto;">
+        <i class="fas fa-trash"></i> 刪除
+      </button>
+      <button class="btn" onclick="closePinCard()">取消</button>
+      <button class="btn btn-primary" onclick="savePin()"><i class="fas fa-check"></i> 儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="exportOverlay">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2><i class="fas fa-file-export"></i> 匯出旅行清單</h2>
+      <button class="pin-card-close" onclick="closeExport()">&times;</button>
+    </div>
+    <div class="sidebar-tabs" style="margin-bottom:12px;">
+      <div class="sidebar-tab active" data-export="all" onclick="switchExportTab('all')">全部</div>
+      <div class="sidebar-tab" data-export="visited" onclick="switchExportTab('visited')">已去過</div>
+      <div class="sidebar-tab" data-export="want_to_go" onclick="switchExportTab('want_to_go')">想去</div>
+    </div>
+    <div id="exportContent"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;">
+      <button class="btn" onclick="exportCSV()"><i class="fas fa-file-csv"></i> 匯出 CSV</button>
+      <button class="btn" onclick="exportJSON()"><i class="fas fa-code"></i> 匯出 JSON</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONTEXT MENU -->
+<div class="context-menu" id="contextMenu">
+  <div class="context-menu-item" onclick="contextAddVisited()">
+    <i class="fas fa-check-circle" style="color:#22C55E"></i> 已去過
+  </div>
+  <div class="context-menu-item" onclick="contextAddWant()">
+    <i class="fas fa-heart" style="color:#F59E0B"></i> 未來想去
+  </div>
+</div>
+
+<!-- IMAGE VIEWER -->
+<div class="image-viewer" id="imageViewer" onclick="this.classList.remove('open')">
+  <img id="imageViewerImg" src="">
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat-chip">
+    <span class="stat-dot" style="background:#22C55E;"></span>
+    已去過 <span id="statVisited">0</span> 個地方
+  </div>
+  <div class="stat-chip">
+    <span class="stat-dot" style="background:#F59E0B;"></span>
+    想去 <span id="statWant">0</span> 個地方
+  </div>
+</div>
+
+<input type="file" id="photoInput" accept="image/*" multiple style="display:none">
+
+<!-- SCRIPTS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="console.warn('Supabase SDK failed to load, local mode only')"></script>
+<script>
+// =============================================
+// CONFIG - 請填入你的 Supabase 設定
+// =============================================
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+let supabaseClient = null;
+try {
+  if (window.supabase && SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY') {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+} catch(e) {
+  console.warn('Supabase init failed:', e);
+}
+const supabase = supabaseClient;
+
+// =============================================
+// STATE
+// =============================================
+let pins = [];
+let markers = {};
+let currentPin = null;
+let isAddingPin = false;
+let addPinCategory = 'want_to_go';
+let currentUser = null;
+let currentTab = 'all';
+let exportTab = 'all';
+let contextLatLng = null;
+let tempPhotos = []; // for photos before saving
+let localMode = false; // if no supabase
+
+// =============================================
+// PIN COLORS & ICONS
+// =============================================
+const PIN_COLORS = [
+  '#EF4444', '#F59E0B', '#22C55E', '#3B82F6',
+  '#8B5CF6', '#EC4899', '#14B8A6', '#F97316',
+  '#6366F1', '#64748B'
+];
+const PIN_ICONS = [
+  { id: 'default', icon: 'fa-location-dot', label: '標準' },
+  { id: 'star', icon: 'fa-star', label: '星星' },
+  { id: 'heart', icon: 'fa-heart', label: '愛心' },
+  { id: 'flag', icon: 'fa-flag', label: '旗幟' },
+  { id: 'plane', icon: 'fa-plane', label: '飛機' },
+  { id: 'camera', icon: 'fa-camera', label: '相機' },
+  { id: 'utensils', icon: 'fa-utensils', label: '美食' },
+  { id: 'mountain', icon: 'fa-mountain-sun', label: '自然' },
+  { id: 'building', icon: 'fa-building-columns', label: '古蹟' },
+  { id: 'beach', icon: 'fa-umbrella-beach', label: '海灘' },
+];
+
+// =============================================
+// MAP INIT
+// =============================================
+const map = L.map('map', {
+  center: [25, 121],
+  zoom: 3,
+  zoomControl: false,
+  worldCopyJump: true
+});
+
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+// OpenStreetMap with detailed labels (cities, oceans, etc.)
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  maxZoom: 19,
+  crossOrigin: true
+}).addTo(map);
+
+// Force map to recalculate size after layout settles
+setTimeout(() => map.invalidateSize(), 200);
+
+// =============================================
+// MAP EVENTS
+// =============================================
+map.on('click', function(e) {
+  closeContextMenu();
+  if (isAddingPin) {
+    openNewPinCard(e.latlng.lat, e.latlng.lng, addPinCategory);
+    cancelAddPin();
+  }
+});
+
+map.on('contextmenu', function(e) {
+  e.originalEvent.preventDefault();
+  contextLatLng = e.latlng;
+  const cm = document.getElementById('contextMenu');
+  cm.style.left = e.originalEvent.clientX + 'px';
+  cm.style.top = e.originalEvent.clientY + 'px';
+  cm.classList.add('open');
+});
+
+document.addEventListener('click', () => closeContextMenu());
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    cancelAddPin();
+    closePinCard();
+    closeExport();
+    closeContextMenu();
+    document.getElementById('imageViewer').classList.remove('open');
+  }
+});
+
+function closeContextMenu() {
+  document.getElementById('contextMenu').classList.remove('open');
+}
+
+function contextAddVisited() {
+  if (contextLatLng) openNewPinCard(contextLatLng.lat, contextLatLng.lng, 'visited');
+}
+function contextAddWant() {
+  if (contextLatLng) openNewPinCard(contextLatLng.lat, contextLatLng.lng, 'want_to_go');
+}
+
+// =============================================
+// ADD PIN MODE
+// =============================================
+function startAddPin() {
+  isAddingPin = true;
+  addPinCategory = 'want_to_go';
+  document.getElementById('map').classList.add('map-adding-pin');
+  document.getElementById('addPinBanner').classList.add('show');
+}
+
+function cancelAddPin() {
+  isAddingPin = false;
+  document.getElementById('map').classList.remove('map-adding-pin');
+  document.getElementById('addPinBanner').classList.remove('show');
+}
+
+// =============================================
+// MARKER CREATION
+// =============================================
+function createMarkerIcon(color, iconId) {
+  const iconDef = PIN_ICONS.find(i => i.id === iconId) || PIN_ICONS[0];
+  return L.divIcon({
+    className: 'custom-pin',
+    html: `<div style="
+      width:36px;height:36px;border-radius:50% 50% 50% 0;
+      background:${color};transform:rotate(-45deg);
+      display:flex;align-items:center;justify-content:center;
+      box-shadow:0 2px 8px rgba(0,0,0,0.3);border:2px solid #fff;
+    "><i class="fas ${iconDef.icon}" style="
+      color:#fff;font-size:14px;transform:rotate(45deg);
+    "></i></div>`,
+    iconSize: [36, 36],
+    iconAnchor: [18, 36],
+    tooltipAnchor: [0, -36]
+  });
+}
+
+function addMarker(pin) {
+  const marker = L.marker([pin.latitude, pin.longitude], {
+    icon: createMarkerIcon(pin.pin_color, pin.pin_icon),
+    draggable: false
+  }).addTo(map);
+
+  const label = pin.country_name || pin.city_name || '未命名';
+  marker.bindTooltip(label, {
+    permanent: true,
+    direction: 'top',
+    className: 'pin-tooltip',
+    offset: [0, -4]
+  });
+
+  marker.on('click', () => openEditPinCard(pin));
+
+  markers[pin.id] = marker;
+}
+
+function removeMarker(pinId) {
+  if (markers[pinId]) {
+    map.removeLayer(markers[pinId]);
+    delete markers[pinId];
+  }
+}
+
+function refreshMarkers() {
+  Object.keys(markers).forEach(id => {
+    map.removeLayer(markers[id]);
+  });
+  markers = {};
+  pins.forEach(pin => addMarker(pin));
+  updateStats();
+  renderPinList();
+}
+
+// =============================================
+// PIN CARD
+// =============================================
+function openNewPinCard(lat, lng, category) {
+  currentPin = {
+    id: null,
+    latitude: lat,
+    longitude: lng,
+    country_name: '',
+    city_name: '',
+    category: category || 'want_to_go',
+    pin_color: category === 'visited' ? '#22C55E' : '#F59E0B',
+    pin_icon: 'default',
+    year: '',
+    reason: '',
+    budget: '',
+    notes: '',
+    photos: [],
+    custom_fields: []
+  };
+  tempPhotos = [];
+  document.getElementById('pinDeleteBtn').style.display = 'none';
+  document.getElementById('pinCardTitle').textContent = '新增圖釘';
+  fillPinCard();
+  document.getElementById('pinCardOverlay').classList.add('open');
+
+  // reverse geocode to auto-fill country
+  reverseGeocode(lat, lng);
+}
+
+function openEditPinCard(pin) {
+  currentPin = { ...pin };
+  tempPhotos = pin.photos ? [...pin.photos] : [];
+  document.getElementById('pinDeleteBtn').style.display = '';
+  document.getElementById('pinCardTitle').textContent = '編輯圖釘';
+  fillPinCard();
+  document.getElementById('pinCardOverlay').classList.add('open');
+}
+
+function closePinCard() {
+  document.getElementById('pinCardOverlay').classList.remove('open');
+  currentPin = null;
+  tempPhotos = [];
+}
+
+function fillPinCard() {
+  document.getElementById('pinCategory').value = currentPin.category;
+  document.getElementById('pinCountry').value = currentPin.country_name || '';
+  document.getElementById('pinCity').value = currentPin.city_name || '';
+  document.getElementById('pinYear').value = currentPin.year || '';
+  document.getElementById('pinReason').value = currentPin.reason || '';
+  document.getElementById('pinBudget').value = currentPin.budget || '';
+
+  // Color picker
+  const colorRow = document.getElementById('colorPicker');
+  colorRow.innerHTML = PIN_COLORS.map(c =>
+    `<div class="color-option ${currentPin.pin_color === c ? 'active' : ''}"
+      style="background:${c}" onclick="selectColor('${c}')"></div>`
+  ).join('');
+
+  // Icon picker
+  const iconRow = document.getElementById('iconPicker');
+  iconRow.innerHTML = PIN_ICONS.map(i =>
+    `<div class="icon-option ${currentPin.pin_icon === i.id ? 'active' : ''}"
+      onclick="selectIcon('${i.id}')" title="${i.label}">
+      <i class="fas ${i.icon}"></i>
+    </div>`
+  ).join('');
+
+  renderPhotos();
+  renderCustomFields();
+}
+
+function selectColor(color) {
+  currentPin.pin_color = color;
+  document.querySelectorAll('.color-option').forEach(el => {
+    el.classList.toggle('active', el.style.background === color || rgbToHex(el.style.backgroundColor) === color.toUpperCase());
+  });
+  // Re-render to be safe
+  const colorRow = document.getElementById('colorPicker');
+  colorRow.innerHTML = PIN_COLORS.map(c =>
+    `<div class="color-option ${currentPin.pin_color === c ? 'active' : ''}"
+      style="background:${c}" onclick="selectColor('${c}')"></div>`
+  ).join('');
+}
+
+function rgbToHex(rgb) {
+  if (rgb.startsWith('#')) return rgb.toUpperCase();
+  const m = rgb.match(/\d+/g);
+  if (!m) return rgb;
+  return '#' + m.slice(0,3).map(x => parseInt(x).toString(16).padStart(2,'0')).join('').toUpperCase();
+}
+
+function selectIcon(iconId) {
+  currentPin.pin_icon = iconId;
+  const iconRow = document.getElementById('iconPicker');
+  iconRow.innerHTML = PIN_ICONS.map(i =>
+    `<div class="icon-option ${currentPin.pin_icon === i.id ? 'active' : ''}"
+      onclick="selectIcon('${i.id}')" title="${i.label}">
+      <i class="fas ${i.icon}"></i>
+    </div>`
+  ).join('');
+}
+
+// ===== Photos =====
+function renderPhotos() {
+  const gallery = document.getElementById('photoGallery');
+  gallery.innerHTML = '';
+
+  tempPhotos.forEach((photo, idx) => {
+    const url = typeof photo === 'string' ? photo : photo.photo_url || photo.url;
+    gallery.innerHTML += `
+      <div class="photo-thumb">
+        <img src="${url}" onclick="viewImage('${url}')">
+        <button class="remove-photo" onclick="removePhoto(${idx})">&times;</button>
+      </div>
+    `;
+  });
+
+  gallery.innerHTML += `<div class="photo-add-btn" onclick="document.getElementById('photoInput').click()">+</div>`;
+}
+
+function removePhoto(idx) {
+  tempPhotos.splice(idx, 1);
+  renderPhotos();
+}
+
+function viewImage(url) {
+  document.getElementById('imageViewerImg').src = url;
+  document.getElementById('imageViewer').classList.add('open');
+}
+
+document.getElementById('photoInput').addEventListener('change', function(e) {
+  Array.from(e.target.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      tempPhotos.push({ photo_url: ev.target.result, file: file, isNew: true });
+      renderPhotos();
+    };
+    reader.readAsDataURL(file);
+  });
+  e.target.value = '';
+});
+
+// ===== Custom Fields =====
+function renderCustomFields() {
+  const container = document.getElementById('customFields');
+  const fields = currentPin.custom_fields || [];
+  container.innerHTML = fields.map((f, idx) => `
+    <div class="custom-field-row">
+      <input class="field-input" placeholder="欄位名稱" value="${escapeHtml(f.field_name || '')}"
+        onchange="updateCustomField(${idx}, 'field_name', this.value)" style="max-width:120px;">
+      <input class="field-input" placeholder="內容" value="${escapeHtml(f.field_value || '')}"
+        onchange="updateCustomField(${idx}, 'field_value', this.value)">
+      <button class="remove-field-btn" onclick="removeCustomField(${idx})"><i class="fas fa-times"></i></button>
+    </div>
+  `).join('');
+}
+
+function addCustomField() {
+  if (!currentPin.custom_fields) currentPin.custom_fields = [];
+  currentPin.custom_fields.push({ field_name: '', field_value: '', sort_order: currentPin.custom_fields.length });
+  renderCustomFields();
+}
+
+function removeCustomField(idx) {
+  currentPin.custom_fields.splice(idx, 1);
+  renderCustomFields();
+}
+
+function updateCustomField(idx, key, value) {
+  currentPin.custom_fields[idx][key] = value;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// =============================================
+// SAVE / DELETE PIN
+// =============================================
+async function savePin() {
+  // Gather values from form
+  currentPin.category = document.getElementById('pinCategory').value;
+  currentPin.country_name = document.getElementById('pinCountry').value;
+  currentPin.city_name = document.getElementById('pinCity').value;
+  currentPin.year = document.getElementById('pinYear').value;
+  currentPin.reason = document.getElementById('pinReason').value;
+  currentPin.budget = document.getElementById('pinBudget').value;
+
+  if (localMode || !supabase || !currentUser) {
+    // LOCAL MODE
+    if (!currentPin.id) {
+      currentPin.id = 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+    }
+    currentPin.photos = tempPhotos.map(p => typeof p === 'string' ? p : (p.photo_url || p.url));
+
+    const idx = pins.findIndex(p => p.id === currentPin.id);
+    if (idx >= 0) {
+      pins[idx] = { ...currentPin };
+    } else {
+      pins.push({ ...currentPin });
+    }
+    saveToLocal();
+    refreshMarkers();
+    closePinCard();
+    return;
+  }
+
+  // SUPABASE MODE
+  try {
+    let pinData = {
+      user_id: currentUser.id,
+      latitude: currentPin.latitude,
+      longitude: currentPin.longitude,
+      country_name: currentPin.country_name,
+      city_name: currentPin.city_name,
+      category: currentPin.category,
+      pin_color: currentPin.pin_color,
+      pin_icon: currentPin.pin_icon,
+      year: currentPin.year,
+      reason: currentPin.reason,
+      budget: currentPin.budget,
+      notes: currentPin.notes || ''
+    };
+
+    let pinId = currentPin.id;
+
+    if (!pinId || String(pinId).startsWith('local_')) {
+      // Insert
+      const { data, error } = await supabase.from('pins').insert(pinData).select().single();
+      if (error) throw error;
+      pinId = data.id;
+    } else {
+      // Update
+      const { error } = await supabase.from('pins').update(pinData).eq('id', pinId);
+      if (error) throw error;
+    }
+
+    // Upload new photos
+    for (const photo of tempPhotos) {
+      if (photo.isNew && photo.file) {
+        const path = `${currentUser.id}/${pinId}/${Date.now()}_${photo.file.name}`;
+        const { error: uploadErr } = await supabase.storage.from('pin-photos').upload(path, photo.file);
+        if (!uploadErr) {
+          const { data: urlData } = supabase.storage.from('pin-photos').getPublicUrl(path);
+          await supabase.from('pin_photos').insert({
+            pin_id: pinId,
+            photo_url: urlData.publicUrl,
+            storage_path: path
+          });
+        }
+      }
+    }
+
+    // Save custom fields (delete all then re-insert)
+    await supabase.from('pin_custom_fields').delete().eq('pin_id', pinId);
+    if (currentPin.custom_fields && currentPin.custom_fields.length > 0) {
+      const fields = currentPin.custom_fields.map((f, i) => ({
+        pin_id: pinId,
+        field_name: f.field_name,
+        field_value: f.field_value,
+        sort_order: i
+      }));
+      await supabase.from('pin_custom_fields').insert(fields);
+    }
+
+    await loadPins();
+    closePinCard();
+  } catch (err) {
+    alert('儲存失敗: ' + err.message);
+  }
+}
+
+async function deletePin() {
+  if (!currentPin || !currentPin.id) return;
+  if (!confirm('確定要刪除這個圖釘嗎？')) return;
+
+  if (localMode || !supabase || !currentUser) {
+    pins = pins.filter(p => p.id !== currentPin.id);
+    removeMarker(currentPin.id);
+    saveToLocal();
+    updateStats();
+    renderPinList();
+    closePinCard();
+    return;
+  }
+
+  try {
+    // Delete photos from storage
+    const { data: photos } = await supabase.from('pin_photos').select('storage_path').eq('pin_id', currentPin.id);
+    if (photos) {
+      for (const p of photos) {
+        if (p.storage_path) await supabase.storage.from('pin-photos').remove([p.storage_path]);
+      }
+    }
+    await supabase.from('pins').delete().eq('id', currentPin.id);
+    await loadPins();
+    closePinCard();
+  } catch (err) {
+    alert('刪除失敗: ' + err.message);
+  }
+}
+
+// =============================================
+// LOAD PINS
+// =============================================
+async function loadPins() {
+  if (localMode || !supabase || !currentUser) {
+    const saved = localStorage.getItem('travel_map_pins');
+    if (saved) {
+      try { pins = JSON.parse(saved); } catch(e) { pins = []; }
+    }
+    refreshMarkers();
+    return;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('pins')
+      .select('*, pin_photos(*), pin_custom_fields(*)')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    pins = (data || []).map(p => ({
+      ...p,
+      photos: (p.pin_photos || []).map(ph => ph.photo_url),
+      custom_fields: (p.pin_custom_fields || []).sort((a,b) => a.sort_order - b.sort_order)
+    }));
+
+    refreshMarkers();
+  } catch (err) {
+    console.error('Load pins error:', err);
+    // Fallback to local
+    localMode = true;
+    loadPins();
+  }
+}
+
+function saveToLocal() {
+  localStorage.setItem('travel_map_pins', JSON.stringify(pins));
+}
+
+// =============================================
+// REVERSE GEOCODE
+// =============================================
+async function reverseGeocode(lat, lng) {
+  try {
+    const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=zh-TW`);
+    const data = await resp.json();
+    if (data.address) {
+      const country = data.address.country || '';
+      const city = data.address.city || data.address.town || data.address.village || data.address.state || '';
+      if (currentPin) {
+        currentPin.country_name = country;
+        currentPin.city_name = city;
+        document.getElementById('pinCountry').value = country;
+        document.getElementById('pinCity').value = city;
+      }
+    }
+  } catch(e) {
+    console.log('Geocode failed:', e);
+  }
+}
+
+// =============================================
+// SIDEBAR
+// =============================================
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.sidebar-tab[data-tab]').forEach(el => {
+    el.classList.toggle('active', el.dataset.tab === tab);
+  });
+  renderPinList();
+}
+
+function renderPinList() {
+  const list = document.getElementById('pinList');
+  const filtered = currentTab === 'all' ? pins : pins.filter(p => p.category === currentTab);
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--text-light);">
+      <i class="fas fa-map-marker-alt" style="font-size:32px;margin-bottom:12px;display:block;"></i>
+      還沒有圖釘，點擊地圖或右鍵新增！
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(pin => `
+    <div class="pin-list-item" onclick="flyToPin('${pin.id}')">
+      <div class="pin-list-dot" style="background:${pin.pin_color}"></div>
+      <div class="pin-list-info">
+        <div class="pin-list-name">${escapeHtml(pin.country_name || '未命名')}</div>
+        <div class="pin-list-detail">
+          ${pin.city_name ? escapeHtml(pin.city_name) + ' · ' : ''}
+          ${pin.category === 'visited' ? '已去過' : '想去'}
+          ${pin.year ? ' · ' + escapeHtml(pin.year) : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function flyToPin(pinId) {
+  const pin = pins.find(p => p.id === pinId || String(p.id) === pinId);
+  if (pin) {
+    map.flyTo([pin.latitude, pin.longitude], 8, { duration: 0.8 });
+    setTimeout(() => openEditPinCard(pin), 300);
+  }
+}
+
+// =============================================
+// STATS
+// =============================================
+function updateStats() {
+  document.getElementById('statVisited').textContent = pins.filter(p => p.category === 'visited').length;
+  document.getElementById('statWant').textContent = pins.filter(p => p.category === 'want_to_go').length;
+}
+
+// =============================================
+// EXPORT
+// =============================================
+function openExport() {
+  exportTab = 'all';
+  document.querySelectorAll('.sidebar-tab[data-export]').forEach(el => {
+    el.classList.toggle('active', el.dataset.export === 'all');
+  });
+  renderExportTable();
+  document.getElementById('exportOverlay').classList.add('open');
+}
+
+function closeExport() {
+  document.getElementById('exportOverlay').classList.remove('open');
+}
+
+function switchExportTab(tab) {
+  exportTab = tab;
+  document.querySelectorAll('.sidebar-tab[data-export]').forEach(el => {
+    el.classList.toggle('active', el.dataset.export === tab);
+  });
+  renderExportTable();
+}
+
+function getExportPins() {
+  return exportTab === 'all' ? pins : pins.filter(p => p.category === exportTab);
+}
+
+function renderExportTable() {
+  const list = getExportPins();
+  if (list.length === 0) {
+    document.getElementById('exportContent').innerHTML = '<p style="text-align:center;color:var(--text-light);padding:20px;">沒有資料</p>';
+    return;
+  }
+  document.getElementById('exportContent').innerHTML = `
+    <table class="export-table">
+      <thead><tr>
+        <th>國家</th><th>城市</th><th>分類</th><th>年度</th><th>花費</th>
+      </tr></thead>
+      <tbody>${list.map(p => `
+        <tr>
+          <td>${escapeHtml(p.country_name || '-')}</td>
+          <td>${escapeHtml(p.city_name || '-')}</td>
+          <td><span class="category-badge ${p.category === 'visited' ? 'category-visited' : 'category-want'}">
+            ${p.category === 'visited' ? '已去過' : '想去'}
+          </span></td>
+          <td>${escapeHtml(p.year || '-')}</td>
+          <td>${escapeHtml(p.budget || '-')}</td>
+        </tr>
+      `).join('')}</tbody>
+    </table>
+  `;
+}
+
+function exportCSV() {
+  const list = getExportPins();
+  const headers = ['國家', '城市', '分類', '年度', '理由', '花費', '緯度', '經度'];
+  // Include custom fields
+  const allCustomKeys = new Set();
+  list.forEach(p => (p.custom_fields || []).forEach(f => { if(f.field_name) allCustomKeys.add(f.field_name); }));
+  const customKeys = [...allCustomKeys];
+  const fullHeaders = [...headers, ...customKeys];
+
+  const rows = list.map(p => {
+    const base = [
+      p.country_name || '', p.city_name || '',
+      p.category === 'visited' ? '已去過' : '想去',
+      p.year || '', p.reason || '', p.budget || '',
+      p.latitude, p.longitude
+    ];
+    const custom = customKeys.map(k => {
+      const f = (p.custom_fields || []).find(cf => cf.field_name === k);
+      return f ? f.field_value : '';
+    });
+    return [...base, ...custom];
+  });
+
+  const bom = '\uFEFF';
+  const csv = bom + [fullHeaders, ...rows].map(r =>
+    r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')
+  ).join('\n');
+
+  downloadFile(csv, 'travel-pins.csv', 'text/csv;charset=utf-8');
+}
+
+function exportJSON() {
+  const list = getExportPins();
+  const data = list.map(p => ({
+    country: p.country_name,
+    city: p.city_name,
+    category: p.category === 'visited' ? '已去過' : '想去',
+    year: p.year,
+    reason: p.reason,
+    budget: p.budget,
+    latitude: p.latitude,
+    longitude: p.longitude,
+    custom_fields: (p.custom_fields || []).reduce((acc, f) => {
+      if (f.field_name) acc[f.field_name] = f.field_value;
+      return acc;
+    }, {})
+  }));
+  downloadFile(JSON.stringify(data, null, 2), 'travel-pins.json', 'application/json');
+}
+
+function downloadFile(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// =============================================
+// AUTH
+// =============================================
+function toggleAuth() {
+  document.getElementById('authPanel').classList.toggle('open');
+}
+
+async function signIn() {
+  if (!supabase) { alert('請先設定 Supabase URL 和 Key'); return; }
+  const email = document.getElementById('authEmail').value;
+  const password = document.getElementById('authPassword').value;
+  if (!email || !password) return;
+
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) { alert('登入失敗: ' + error.message); return; }
+  currentUser = data.user;
+  localMode = false;
+  onAuthChange();
+}
+
+async function signUp() {
+  if (!supabase) { alert('請先設定 Supabase URL 和 Key'); return; }
+  const email = document.getElementById('authEmail').value;
+  const password = document.getElementById('authPassword').value;
+  if (!email || !password) return;
+
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) { alert('註冊失敗: ' + error.message); return; }
+  alert('註冊成功！請確認你的 Email 後再登入。');
+}
+
+async function signOut() {
+  if (supabase) await supabase.auth.signOut();
+  currentUser = null;
+  onAuthChange();
+}
+
+function onAuthChange() {
+  const authBtn = document.getElementById('authBtn');
+  const authForm = document.getElementById('authForm');
+  const authInfo = document.getElementById('authInfo');
+
+  if (currentUser) {
+    authBtn.innerHTML = `<i class="fas fa-user-check"></i> ${currentUser.email.split('@')[0]}`;
+    authForm.style.display = 'none';
+    authInfo.style.display = 'block';
+    document.getElementById('userEmail').textContent = currentUser.email;
+  } else {
+    authBtn.innerHTML = '<i class="fas fa-user"></i> 登入';
+    authForm.style.display = 'block';
+    authInfo.style.display = 'none';
+  }
+
+  document.getElementById('authPanel').classList.remove('open');
+  loadPins();
+}
+
+// =============================================
+// INIT
+// =============================================
+async function init() {
+  // Check if Supabase is configured
+  if (!supabase || SUPABASE_URL === 'YOUR_SUPABASE_URL') {
+    console.log('Supabase not configured, running in local mode');
+    localMode = true;
+    loadPins();
+    return;
+  }
+
+  // Check session
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      currentUser = session.user;
+      onAuthChange();
+    } else {
+      localMode = true;
+      loadPins();
+    }
+
+    // Listen for auth changes
+    supabase.auth.onAuthStateChange((event, session) => {
+      currentUser = session?.user || null;
+      if (!currentUser) localMode = true;
+      onAuthChange();
+    });
+  } catch(e) {
+    localMode = true;
+    loadPins();
+  }
+}
+
+init();
+</script>
+</body>
+</html>
