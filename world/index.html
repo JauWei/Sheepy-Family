@@ -22,12 +22,6 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-se
 .btn:active{transform:scale(.96)}.btn-pri{background:var(--pri);color:#fff;border-color:var(--pri)}.btn-danger{background:var(--danger);color:#fff;border-color:var(--danger)}.btn-sm{padding:5px 10px;font-size:12px}
 .btn .bl{display:inline}
 
-.auth-panel{position:fixed;top:var(--top);right:0;z-index:999;background:var(--card);border:1px solid var(--border);border-radius:0 0 0 var(--r);padding:20px;width:300px;max-width:90vw;box-shadow:var(--shadow);display:none}
-.auth-panel.open{display:block}
-.auth-panel h3{margin-bottom:12px;font-size:16px}
-.auth-panel input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:16px;margin-bottom:10px;-webkit-appearance:none}
-.auth-panel input:focus{outline:none;border-color:var(--pri)}
-.auth-actions{display:flex;gap:8px}.auth-actions .btn{flex:1;justify-content:center}
 
 .search-panel{position:fixed;top:var(--top);left:50%;transform:translateX(-50%);z-index:999;background:var(--card);border:1px solid var(--border);border-radius:0 0 var(--r) var(--r);padding:12px;width:400px;max-width:92vw;box-shadow:var(--shadow);display:none}
 .search-panel.open{display:block}
@@ -156,6 +150,7 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-se
 .fab-add{display:none;position:fixed;bottom:80px;right:16px;z-index:950;width:56px;height:56px;border-radius:50%;background:var(--pri);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(79,70,229,.4);align-items:center;justify-content:center}
 .fab-add:active{transform:scale(.92)}
 
+
 @media(max-width:1024px){.sidebar{width:320px}}
 @media(max-width:640px){
 :root{--top:48px}
@@ -169,7 +164,6 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-se
 .modal{max-width:100%;border-radius:var(--r) var(--r) 0 0;padding-bottom:calc(20px + var(--safeb))}
 .stats-bar{bottom:12px;gap:6px}.stat-chip{padding:6px 10px;font-size:12px}
 .add-pin-banner{font-size:13px;padding:8px 16px}
-.auth-panel{width:100%;max-width:100%;border-radius:0 0 var(--r) var(--r);border-left:none}
 .search-panel{width:100%;max-width:100%;border-radius:0 0 var(--r) var(--r)}
 .dash-stats{grid-template-columns:repeat(2,1fr)}
 .info-cards{grid-template-columns:1fr}
@@ -191,21 +185,7 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-se
     <button class="btn" onclick="openTimeline()"><i class="fas fa-clock-rotate-left"></i><span class="bl"> 時間軸</span></button>
     <button class="btn btn-add-desktop" onclick="startAddPin()"><i class="fas fa-map-pin"></i><span class="bl"> 新增</span></button>
     <button class="btn" onclick="openExport()"><i class="fas fa-file-export"></i><span class="bl"> 匯出</span></button>
-    <button class="btn" id="authBtn" onclick="toggleAuth()"><i class="fas fa-user"></i><span class="bl"> 登入</span></button>
-  </div>
-</div>
-
-<div class="auth-panel" id="authPanel">
-  <div id="authForm">
-    <h3>登入 / 註冊</h3>
-    <input type="email" id="authEmail" placeholder="Email" autocomplete="email">
-    <input type="password" id="authPassword" placeholder="密碼" autocomplete="current-password">
-    <div class="auth-actions"><button class="btn btn-pri" onclick="signIn()">登入</button><button class="btn" onclick="signUp()">註冊</button></div>
-    <p style="margin-top:10px;font-size:12px;color:var(--text2)">首次使用請先註冊</p>
-  </div>
-  <div id="authInfo" style="display:none">
-    <div style="font-size:13px;color:var(--text2)" id="userEmail"></div>
-    <button class="btn btn-sm" style="margin-top:10px" onclick="signOut()"><i class="fas fa-sign-out-alt"></i> 登出</button>
+    <button class="btn" id="syncStatus" style="pointer-events:none;opacity:.7"><i class="fas fa-cloud"></i><span class="bl"> 同步中</span></button>
   </div>
 </div>
 
@@ -347,7 +327,7 @@ var SUPABASE_ANON_KEY='sb_publishable_9EhoQmfLD_irvTVa4o1kuQ_UFWdbvfh';
 var supabase=null;
 
 var pins=[],markers={},currentPin=null,isAddingPin=false,addPinCategory='want_to_go';
-var currentUser=null,currentTab='all',exportTab='all',contextLatLng=null;
+var currentTab='all',exportTab='all',contextLatLng=null;
 var tempPhotos=[],localMode=false,countryLayer=null,clusterGroup=null,cityCirclesLayer=null;
 var filterContinent='',filterYear='',searchTimer=null;
 var isTouchDevice=('ontouchstart' in window)||navigator.maxTouchPoints>0;
@@ -517,7 +497,7 @@ function addMarker(pin){
   marker.on('dragend',function(e){
     var ll=e.target.getLatLng(),p=pins.find(function(pp){return pp.id===pin.id});
     if(p){p.latitude=ll.lat;p.longitude=ll.lng;
-      if(localMode||!supabase||!currentUser)saveToLocal();
+      if(localMode||!supabase)saveToLocal();
       else supabase.from('pins').update({latitude:ll.lat,longitude:ll.lng}).eq('id',p.id);
       reverseGeocode(ll.lat,ll.lng,p).then(function(){marker.setTooltipContent(p.country_name||p.city_name||'未命名');updateCountryColors()});
     }
@@ -598,30 +578,21 @@ async function savePin(){
   currentPin.city_name=document.getElementById('pinCity').value;currentPin.year=document.getElementById('pinYear').value;
   currentPin.reason=document.getElementById('pinReason').value;currentPin.budget=document.getElementById('pinBudget').value;
   currentPin.color_scope=document.getElementById('pinColorScope').value;currentPin.city_radius=parseInt(document.getElementById('pinCityRadius').value)||15;
-  if(localMode||!supabase||!currentUser){
+  if(localMode||!supabase){
     if(!currentPin.id)currentPin.id='local_'+Date.now()+'_'+Math.random().toString(36).substr(2,6);
-    // Resize photos to save localStorage space
     var rawPhotos=tempPhotos.map(function(p){return typeof p==='string'?p:(p.photo_url||p.url)});
-    try{
-      var resized=[];
-      for(var i=0;i<rawPhotos.length;i++){
-        var u=rawPhotos[i];
-        if(u&&u.indexOf('data:')===0){u=await resizeImage(u,600,600,0.5)}
-        resized.push(u);
-      }
-      currentPin.photos=resized;
-    }catch(re){currentPin.photos=rawPhotos}
+    try{var resized=[];for(var i=0;i<rawPhotos.length;i++){var u=rawPhotos[i];if(u&&u.indexOf('data:')===0){u=await resizeImage(u,600,600,0.5)}resized.push(u)}currentPin.photos=resized}catch(re){currentPin.photos=rawPhotos}
     var idx=pins.findIndex(function(p){return p.id===currentPin.id});
     if(idx>=0)pins[idx]=JSON.parse(JSON.stringify(currentPin));else pins.push(JSON.parse(JSON.stringify(currentPin)));
     try{saveToLocal()}catch(se){alert('儲存失敗：照片太大或空間不足，請減少照片數量。');return}
     refreshMarkers();closePinCard();return;
   }
   try{
-    var d={user_id:currentUser.id,latitude:currentPin.latitude,longitude:currentPin.longitude,country_name:currentPin.country_name,city_name:currentPin.city_name,category:currentPin.category,pin_color:currentPin.pin_color,pin_icon:currentPin.pin_icon,year:currentPin.year,reason:currentPin.reason,budget:currentPin.budget,notes:currentPin.notes||'',country_code:currentPin.country_code||'',color_scope:currentPin.color_scope||'country',city_radius:currentPin.city_radius||15};
+    var d={latitude:currentPin.latitude,longitude:currentPin.longitude,country_name:currentPin.country_name,city_name:currentPin.city_name,category:currentPin.category,pin_color:currentPin.pin_color,pin_icon:currentPin.pin_icon,year:currentPin.year,reason:currentPin.reason,budget:currentPin.budget,notes:currentPin.notes||'',country_code:currentPin.country_code||'',color_scope:currentPin.color_scope||'country',city_radius:currentPin.city_radius||15};
     var pinId=currentPin.id;
     if(!pinId||String(pinId).startsWith('local_')){var r=await supabase.from('pins').insert(d).select().single();if(r.error)throw r.error;pinId=r.data.id}
     else{var r2=await supabase.from('pins').update(d).eq('id',pinId);if(r2.error)throw r2.error}
-    for(var i=0;i<tempPhotos.length;i++){var ph=tempPhotos[i];if(ph.isNew&&ph.file){var path=currentUser.id+'/'+pinId+'/'+Date.now()+'_'+ph.file.name;var up=await supabase.storage.from('pin-photos').upload(path,ph.file);if(!up.error){var u=supabase.storage.from('pin-photos').getPublicUrl(path);await supabase.from('pin_photos').insert({pin_id:pinId,photo_url:u.data.publicUrl,storage_path:path})}}}
+    for(var i=0;i<tempPhotos.length;i++){var ph=tempPhotos[i];if(ph.isNew&&ph.file){var path='shared/'+pinId+'/'+Date.now()+'_'+ph.file.name;var up=await supabase.storage.from('pin-photos').upload(path,ph.file);if(!up.error){var u=supabase.storage.from('pin-photos').getPublicUrl(path);await supabase.from('pin_photos').insert({pin_id:pinId,photo_url:u.data.publicUrl,storage_path:path})}}}
     await supabase.from('pin_custom_fields').delete().eq('pin_id',pinId);
     if(currentPin.custom_fields&&currentPin.custom_fields.length>0){await supabase.from('pin_custom_fields').insert(currentPin.custom_fields.map(function(f,i){return{pin_id:pinId,field_name:f.field_name,field_value:f.field_value,sort_order:i}}))}
     await loadPins();closePinCard();
@@ -630,7 +601,7 @@ async function savePin(){
 
 async function deletePin(){
   if(!currentPin||!currentPin.id)return;if(!confirm('確定要刪除？'))return;
-  if(localMode||!supabase||!currentUser){pins=pins.filter(function(p){return p.id!==currentPin.id});removeMarker(currentPin.id);saveToLocal();updateStats();renderPinList();updateCountryColors();closePinCard();return}
+  if(localMode||!supabase){pins=pins.filter(function(p){return p.id!==currentPin.id});removeMarker(currentPin.id);saveToLocal();updateStats();renderPinList();updateCountryColors();closePinCard();return}
   try{var ph=await supabase.from('pin_photos').select('storage_path').eq('pin_id',currentPin.id);if(ph.data)for(var i=0;i<ph.data.length;i++){if(ph.data[i].storage_path)await supabase.storage.from('pin-photos').remove([ph.data[i].storage_path])}
     await supabase.from('pins').delete().eq('id',currentPin.id);await loadPins();closePinCard();
   }catch(err){alert('刪除失敗: '+err.message)}
@@ -638,11 +609,11 @@ async function deletePin(){
 
 /* LOAD PINS */
 async function loadPins(){
-  if(localMode||!supabase||!currentUser){var s=localStorage.getItem('travel_map_pins');if(s)try{pins=JSON.parse(s)}catch(e){pins=[]}refreshMarkers();return}
-  try{var r=await supabase.from('pins').select('*, pin_photos(*), pin_custom_fields(*)').eq('user_id',currentUser.id).order('created_at',{ascending:false});
+  if(localMode||!supabase){var s=localStorage.getItem('travel_map_pins');if(s)try{pins=JSON.parse(s)}catch(e){pins=[]}refreshMarkers();updateSyncUI(false);return}
+  try{var r=await supabase.from('pins').select('*, pin_photos(*), pin_custom_fields(*)').order('created_at',{ascending:false});
     if(r.error)throw r.error;
     pins=(r.data||[]).map(function(p){return Object.assign({},p,{photos:(p.pin_photos||[]).map(function(ph){return ph.photo_url}),custom_fields:(p.pin_custom_fields||[]).sort(function(a,b){return a.sort_order-b.sort_order})})});
-    refreshMarkers();
+    refreshMarkers();updateSyncUI(true);
   }catch(err){console.error('Load error:',err);localMode=true;loadPins()}
 }
 function saveToLocal(){try{localStorage.setItem('travel_map_pins',JSON.stringify(pins))}catch(e){throw new Error('localStorage 空間不足')}}
@@ -739,18 +710,38 @@ function exportCSV(){var list=getExportPins(),hd=['國家','城市','分類','�
 function exportJSON(){var list=getExportPins();downloadFile(JSON.stringify(list.map(function(p){var cf={};(p.custom_fields||[]).forEach(function(f){if(f.field_name)cf[f.field_name]=f.field_value});return{country:p.country_name,city:p.city_name,category:p.category==='visited'?'已去過':'想去',year:p.year,reason:p.reason,budget:p.budget,lat:p.latitude,lng:p.longitude,custom_fields:cf}}),null,2),'globetrotting.json','application/json')}
 function downloadFile(c,f,m){var b=new Blob([c],{type:m}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=f;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href)}
 
-/* AUTH */
-function toggleAuth(){document.getElementById('authPanel').classList.toggle('open')}
-async function signIn(){if(!supabase){alert('Supabase 未連線');return}var e=document.getElementById('authEmail').value,p=document.getElementById('authPassword').value;if(!e||!p)return;var r=await supabase.auth.signInWithPassword({email:e,password:p});if(r.error){alert('登入失敗: '+r.error.message);return}currentUser=r.data.user;localMode=false;onAuthChange()}
-async function signUp(){if(!supabase){alert('Supabase 未連線');return}var e=document.getElementById('authEmail').value,p=document.getElementById('authPassword').value;if(!e||!p)return;var r=await supabase.auth.signUp({email:e,password:p});if(r.error){alert('註冊失敗: '+r.error.message);return}alert('註冊成功！請確認 Email 後登入。')}
-async function signOut(){if(supabase)await supabase.auth.signOut();currentUser=null;onAuthChange()}
-function onAuthChange(){var ab=document.getElementById('authBtn');if(currentUser){ab.innerHTML='<i class="fas fa-user-check"></i><span class="bl"> '+currentUser.email.split('@')[0]+'</span>';document.getElementById('authForm').style.display='none';document.getElementById('authInfo').style.display='block';document.getElementById('userEmail').textContent=currentUser.email}else{ab.innerHTML='<i class="fas fa-user"></i><span class="bl"> 登入</span>';document.getElementById('authForm').style.display='block';document.getElementById('authInfo').style.display='none'}document.getElementById('authPanel').classList.remove('open');loadPins()}
+/* SYNC STATUS UI */
+function updateSyncUI(online){var el=document.getElementById('syncStatus');if(!el)return;if(online){el.innerHTML='<i class="fas fa-cloud-check" style="color:var(--ok)"></i><span class="bl"> 已同步</span>';el.style.opacity='.7'}else{el.innerHTML='<i class="fas fa-hdd"></i><span class="bl"> 本機模式</span>';el.style.opacity='.5'}}
 
 /* INIT */
 function initSupabase(){try{if(window.supabase&&SUPABASE_URL.indexOf('YOUR_')<0){supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);console.log('Supabase OK')}}catch(e){console.warn('Supabase init failed:',e);supabase=null}}
-async function init(){initSupabase();if(!supabase){localMode=true;loadPins();return}try{var s=await supabase.auth.getSession();if(s.data.session){currentUser=s.data.session.user;onAuthChange()}else{localMode=true;loadPins()}supabase.auth.onAuthStateChange(function(ev,ses){currentUser=ses?ses.user:null;if(!currentUser)localMode=true;onAuthChange()})}catch(e){localMode=true;loadPins()}}
+async function init(){
+  initSupabase();
+  if(!supabase){localMode=true;loadPins();return}
+  // Direct public access — no auth needed, all devices share the same data
+  localMode=false;
+  await loadPins();
+  // Auto-refresh every 15s to sync with other devices
+  setInterval(function(){if(!document.getElementById('pinCardOverlay').classList.contains('open'))loadPins()},15000);
+  // Also upload any existing local pins to Supabase (one-time migration)
+  migrateLocalPins();
+}
+async function migrateLocalPins(){
+  var s=localStorage.getItem('travel_map_pins');if(!s||!supabase)return;
+  try{var localPins=JSON.parse(s);if(!localPins.length)return;
+    var uploaded=0;
+    for(var i=0;i<localPins.length;i++){var p=localPins[i];
+      // Skip if already in Supabase (check by lat/lng/country)
+      var exists=pins.some(function(sp){return Math.abs(sp.latitude-p.latitude)<0.0001&&Math.abs(sp.longitude-p.longitude)<0.0001&&sp.country_name===p.country_name});
+      if(exists)continue;
+      var d={latitude:p.latitude,longitude:p.longitude,country_name:p.country_name||'',city_name:p.city_name||'',category:p.category||'want_to_go',pin_color:p.pin_color||'#FF4B4B',pin_icon:p.pin_icon||'default',year:p.year||'',reason:p.reason||'',budget:p.budget||'',notes:p.notes||'',country_code:p.country_code||'',color_scope:p.color_scope||'country',city_radius:p.city_radius||15};
+      var r=await supabase.from('pins').insert(d).select().single();if(!r.error)uploaded++;
+    }
+    if(uploaded>0){localStorage.removeItem('travel_map_pins');await loadPins()}
+  }catch(e){console.warn('Migration failed:',e)}
+}
 (function(){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';s.async=true;s.onload=function(){init()};s.onerror=function(){localMode=true;loadPins()};document.head.appendChild(s)})();
-setTimeout(function(){if(!pins.length&&!currentUser){localMode=true;loadPins()}},3000);
+setTimeout(function(){if(!pins.length&&!supabase){localMode=true;loadPins()}},3000);
 </script>
 </body>
 </html>
