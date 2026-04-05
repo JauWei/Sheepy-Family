@@ -4,517 +4,238 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>Travel Pin Map - 旅行地圖</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<title>Globetrotting - 旅行地圖</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 <style>
-:root {
-  --primary: #4F46E5;
-  --primary-light: #818CF8;
-  --bg: #F8FAFC;
-  --card-bg: #FFFFFF;
-  --text: #1E293B;
-  --text-light: #64748B;
-  --border: #E2E8F0;
-  --danger: #EF4444;
-  --success: #22C55E;
-  --warning: #F59E0B;
-  --radius: 12px;
-  --shadow: 0 4px 24px rgba(0,0,0,0.10);
-  --topbar-h: 52px;
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-}
+:root{--pri:#4F46E5;--pri2:#818CF8;--bg:#F8FAFC;--card:#FFF;--text:#1E293B;--text2:#64748B;--border:#E2E8F0;--danger:#EF4444;--ok:#22C55E;--warn:#F59E0B;--r:12px;--shadow:0 4px 24px rgba(0,0,0,.1);--top:52px;--safet:env(safe-area-inset-top,0px);--safeb:env(safe-area-inset-bottom,0px)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);height:100%;overflow:hidden;position:fixed;width:100%}
 
-* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+.topbar{position:fixed;top:0;left:0;right:0;z-index:1000;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 12px;height:var(--top);padding-top:var(--safet);box-shadow:0 1px 8px rgba(0,0,0,.06)}
+.topbar-left{display:flex;align-items:center;gap:8px;min-width:0}
+.topbar h1{font-size:18px;font-weight:700;background:linear-gradient(135deg,var(--pri),#EC4899);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+.topbar-actions{display:flex;gap:5px;align-items:center;flex-shrink:0}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text);transition:all .15s;white-space:nowrap}
+.btn:active{transform:scale(.96)}.btn-pri{background:var(--pri);color:#fff;border-color:var(--pri)}.btn-danger{background:var(--danger);color:#fff;border-color:var(--danger)}.btn-sm{padding:5px 10px;font-size:12px}
+.btn .bl{display:inline}
 
-html, body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  height: 100%;
-  overflow: hidden;
-  /* iOS Safari 100vh fix */
-  position: fixed;
-  width: 100%;
-}
+.auth-panel{position:fixed;top:var(--top);right:0;z-index:999;background:var(--card);border:1px solid var(--border);border-radius:0 0 0 var(--r);padding:20px;width:300px;max-width:90vw;box-shadow:var(--shadow);display:none}
+.auth-panel.open{display:block}
+.auth-panel h3{margin-bottom:12px;font-size:16px}
+.auth-panel input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:16px;margin-bottom:10px;-webkit-appearance:none}
+.auth-panel input:focus{outline:none;border-color:var(--pri)}
+.auth-actions{display:flex;gap:8px}.auth-actions .btn{flex:1;justify-content:center}
 
-/* ===== TOP BAR ===== */
-.topbar {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-  background: var(--card-bg);
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 12px; height: var(--topbar-h);
-  padding-top: var(--safe-top);
-  box-shadow: 0 1px 8px rgba(0,0,0,0.06);
-}
-.topbar-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.topbar h1 {
-  font-size: 18px; font-weight: 700;
-  background: linear-gradient(135deg, var(--primary), #EC4899);
-  -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent;
-  white-space: nowrap;
-}
-.topbar-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+.search-panel{position:fixed;top:var(--top);left:50%;transform:translateX(-50%);z-index:999;background:var(--card);border:1px solid var(--border);border-radius:0 0 var(--r) var(--r);padding:12px;width:400px;max-width:92vw;box-shadow:var(--shadow);display:none}
+.search-panel.open{display:block}
+.search-panel input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:16px;-webkit-appearance:none}
+.search-panel input:focus{outline:none;border-color:var(--pri)}
+.search-results{max-height:240px;overflow-y:auto;margin-top:8px}
+.search-item{display:flex;align-items:center;gap:8px;padding:10px;border-radius:8px;cursor:pointer;font-size:14px}
+.search-item:active,.search-item:hover{background:#F1F5F9}
+.search-item i{color:var(--text2);width:18px;text-align:center}
 
-.btn {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 7px 14px; border-radius: 8px;
-  font-size: 13px; font-weight: 600; cursor: pointer;
-  border: 1px solid var(--border); background: var(--card-bg);
-  color: var(--text); transition: all 0.2s;
-  white-space: nowrap;
-}
-.btn:hover { background: #F1F5F9; }
-.btn:active { transform: scale(0.96); }
-.btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
-.btn-primary:hover { background: #4338CA; }
-.btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
-.btn-danger:hover { background: #DC2626; }
-.btn-sm { padding: 5px 10px; font-size: 12px; }
-.btn .btn-label { display: inline; }
+#map{position:fixed;top:var(--top);left:0;right:0;bottom:0;z-index:1;touch-action:manipulation}
+.leaflet-container{touch-action:manipulation;-webkit-touch-callout:none}
+.leaflet-control-layers{border-radius:8px!important;box-shadow:var(--shadow)!important;border:1px solid var(--border)!important}
 
-/* ===== AUTH PANEL ===== */
-.auth-panel {
-  position: fixed; top: var(--topbar-h); right: 0; z-index: 999;
-  background: var(--card-bg); border-left: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  border-radius: 0 0 0 var(--radius);
-  padding: 20px; width: 300px; max-width: 90vw;
-  box-shadow: var(--shadow);
-  display: none;
-}
-.auth-panel.open { display: block; }
-.auth-panel h3 { margin-bottom: 12px; font-size: 16px; }
-.auth-panel input {
-  width: 100%; padding: 10px 12px; border: 1px solid var(--border);
-  border-radius: 8px; font-size: 16px; margin-bottom: 10px;
-  /* prevent iOS zoom on focus */
-  -webkit-appearance: none;
-}
-.auth-panel input:focus { outline: none; border-color: var(--primary); }
-.auth-actions { display: flex; gap: 8px; }
-.auth-actions .btn { flex: 1; justify-content: center; }
-.user-info { font-size: 13px; color: var(--text-light); }
+.marker-cluster-small{background:rgba(79,70,229,.35)}.marker-cluster-small div{background:rgba(79,70,229,.7)}
+.marker-cluster-medium{background:rgba(79,70,229,.45)}.marker-cluster-medium div{background:rgba(79,70,229,.8)}
+.marker-cluster-large{background:rgba(79,70,229,.55)}.marker-cluster-large div{background:rgba(79,70,229,.9)}
+.marker-cluster div{color:#fff;font-weight:700;font-size:13px}
 
-/* ===== MAP ===== */
-#map {
-  position: fixed;
-  top: var(--topbar-h);
-  left: 0; right: 0; bottom: 0;
-  z-index: 1;
-  /* iOS touch fix */
-  touch-action: manipulation;
-}
-/* Fix Leaflet touch on iOS */
-.leaflet-container {
-  touch-action: manipulation;
-  -webkit-touch-callout: none;
-}
-.leaflet-tile-pane { touch-action: manipulation; }
+.sidebar{position:fixed;top:var(--top);left:0;bottom:0;z-index:800;width:340px;background:var(--card);border-right:1px solid var(--border);box-shadow:2px 0 12px rgba(0,0,0,.05);display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .3s ease}
+.sidebar.open{transform:translateX(0)}
+.sidebar-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.sidebar-header h2{font-size:16px}
+.sidebar-filters{display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid var(--border)}
+.sidebar-filters select{flex:1;padding:7px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--card);-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' fill='none' stroke='%2364748B' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:24px}
+.sidebar-tabs{display:flex;border-bottom:1px solid var(--border)}
+.sidebar-tab{flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2);transition:all .15s}
+.sidebar-tab.active{color:var(--pri);border-bottom-color:var(--pri)}
+.sidebar-list{flex:1;overflow-y:auto;padding:8px;-webkit-overflow-scrolling:touch}
+.sidebar-bottom{padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:6px}
+.sidebar-bottom .btn{flex:1;justify-content:center;font-size:12px}
+.pin-list-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:background .15s;margin-bottom:2px}
+.pin-list-item:hover,.pin-list-item:active{background:#F1F5F9}
+.pin-list-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.pin-list-info{flex:1;min-width:0}
+.pin-list-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pin-list-detail{font-size:12px;color:var(--text2)}
 
-/* ===== SIDEBAR ===== */
-.sidebar {
-  position: fixed; top: var(--topbar-h); left: 0; bottom: 0; z-index: 800;
-  width: 340px; background: var(--card-bg);
-  border-right: 1px solid var(--border);
-  box-shadow: 2px 0 12px rgba(0,0,0,0.05);
-  display: flex; flex-direction: column;
-  transform: translateX(-100%);
-  transition: transform 0.3s ease;
-}
-.sidebar.open { transform: translateX(0); }
-.sidebar-header {
-  padding: 14px 16px; border-bottom: 1px solid var(--border);
-  display: flex; justify-content: space-between; align-items: center;
-}
-.sidebar-header h2 { font-size: 16px; }
-.sidebar-tabs {
-  display: flex; border-bottom: 1px solid var(--border);
-}
-.sidebar-tab {
-  flex: 1; padding: 10px; text-align: center; font-size: 13px;
-  font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent;
-  color: var(--text-light); transition: all 0.2s;
-}
-.sidebar-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
-.sidebar-list {
-  flex: 1; overflow-y: auto; padding: 10px;
-  -webkit-overflow-scrolling: touch;
-}
-.pin-list-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px; border-radius: 8px; cursor: pointer;
-  transition: background 0.2s; margin-bottom: 4px;
-}
-.pin-list-item:hover, .pin-list-item:active { background: #F1F5F9; }
-.pin-list-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-.pin-list-info { flex: 1; min-width: 0; }
-.pin-list-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pin-list-detail { font-size: 12px; color: var(--text-light); }
+.pin-card-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:2000;display:none;align-items:center;justify-content:center;padding:16px}
+.pin-card-overlay.open{display:flex}
+.pin-card{background:var(--card);border-radius:var(--r);width:100%;max-width:480px;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:var(--shadow)}
+.pin-card-header{position:sticky;top:0;background:var(--card);display:flex;justify-content:space-between;align-items:center;padding:16px 20px 12px;z-index:1;border-bottom:1px solid var(--border)}
+.pin-card-header h2{font-size:18px;font-weight:700}
+.close-btn{width:36px;height:36px;border-radius:8px;border:none;background:#F1F5F9;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.close-btn:active{background:#E2E8F0}
+.pin-card-body{padding:14px 20px 20px}
+.field-group{margin-bottom:14px}
+.field-label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.field-input,.field-textarea,.field-select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:16px;font-family:inherit;-webkit-appearance:none}
+.field-input:focus,.field-textarea:focus,.field-select:focus{outline:none;border-color:var(--pri)}
+.field-textarea{resize:vertical;min-height:60px}
+.color-picker-row{display:flex;gap:8px;flex-wrap:wrap}
+.color-option{width:30px;height:30px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all .15s}
+.color-option.active{border-color:var(--text);transform:scale(1.15)}
+.icon-picker-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.icon-option{width:34px;height:34px;border-radius:8px;cursor:pointer;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:15px}
+.icon-option.active{border-color:var(--pri);background:#EEF2FF}
+.photo-gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.photo-thumb{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;cursor:pointer}
+.photo-thumb img{width:100%;height:100%;object-fit:cover}
+.photo-thumb .remove-photo{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;border:none;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center}
+.photo-add-btn{aspect-ratio:1;border-radius:8px;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:24px;color:var(--text2)}
+.custom-field-row{display:flex;gap:6px;align-items:center;margin-bottom:8px}
+.custom-field-row input{flex:1;min-width:0}
+.remove-field-btn{width:32px;height:32px;border-radius:6px;border:none;background:#FEE2E2;color:var(--danger);cursor:pointer;font-size:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.pin-card-footer{position:sticky;bottom:0;background:var(--card);display:flex;gap:8px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border)}
 
-/* ===== PIN CARD (detail popup) ===== */
-.pin-card-overlay {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.4); z-index: 2000;
-  display: none; align-items: center; justify-content: center;
-  padding: 16px;
-}
-.pin-card-overlay.open { display: flex; }
-.pin-card {
-  background: var(--card-bg); border-radius: var(--radius);
-  width: 100%; max-width: 480px; max-height: 85vh;
-  max-height: calc(100% - 32px);
-  overflow-y: auto; -webkit-overflow-scrolling: touch;
-  box-shadow: var(--shadow); padding: 0;
-}
-.pin-card-header {
-  position: sticky; top: 0; background: var(--card-bg);
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 16px 20px 12px; z-index: 1;
-  border-bottom: 1px solid var(--border);
-}
-.pin-card-header h2 { font-size: 18px; font-weight: 700; }
-.close-btn {
-  width: 36px; height: 36px; border-radius: 8px; border: none;
-  background: #F1F5F9; cursor: pointer; font-size: 18px;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.close-btn:hover, .close-btn:active { background: #E2E8F0; }
-.pin-card-body { padding: 14px 20px 20px; }
-.field-group { margin-bottom: 14px; }
-.field-label {
-  display: block; font-size: 12px; font-weight: 600;
-  color: var(--text-light); margin-bottom: 4px; text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.field-input, .field-textarea, .field-select {
-  width: 100%; padding: 10px 12px; border: 1px solid var(--border);
-  border-radius: 8px; font-size: 16px; font-family: inherit;
-  transition: border-color 0.2s;
-  -webkit-appearance: none;
-}
-.field-input:focus, .field-textarea:focus, .field-select:focus {
-  outline: none; border-color: var(--primary);
-}
-.field-textarea { resize: vertical; min-height: 60px; }
+.info-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.info-card{background:#F8FAFC;border:1px solid var(--border);border-radius:8px;padding:10px 12px;text-align:center}
+.info-card-icon{font-size:20px;margin-bottom:4px}
+.info-card-val{font-size:16px;font-weight:700}
+.info-card-label{font-size:11px;color:var(--text2);margin-top:2px}
+.visa-link{display:inline-flex;align-items:center;gap:4px;color:var(--pri);font-size:13px;text-decoration:none;font-weight:600;margin-top:6px}
 
-/* Color/icon picker */
-.color-picker-row { display: flex; gap: 8px; flex-wrap: wrap; }
-.color-option {
-  width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
-  border: 3px solid transparent; transition: all 0.15s;
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:3000;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border-radius:var(--r);width:100%;max-width:560px;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:var(--shadow);padding:20px}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.modal-header h2{font-size:18px}
+.export-table{width:100%;border-collapse:collapse;font-size:13px}
+.export-table th,.export-table td{padding:8px 8px;text-align:left;border-bottom:1px solid var(--border)}
+.export-table th{font-weight:600;color:var(--text2);font-size:12px;text-transform:uppercase}
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600}
+.badge-ok{background:#DCFCE7;color:#166534}.badge-warn{background:#FEF3C7;color:#92400E}
+
+.dash-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.dash-stat{background:#F8FAFC;border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.dash-stat-val{font-size:28px;font-weight:800;color:var(--pri)}
+.dash-stat-label{font-size:12px;color:var(--text2);margin-top:2px}
+.dash-section{margin-bottom:20px}
+.dash-section h3{font-size:14px;font-weight:700;margin-bottom:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.chart-bar{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.chart-label{width:70px;font-size:12px;text-align:right;color:var(--text2);flex-shrink:0}
+.chart-track{flex:1;height:22px;background:#F1F5F9;border-radius:6px;overflow:hidden}
+.chart-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding:0 8px;color:#fff;font-size:11px;font-weight:700;min-width:20px;transition:width .5s ease}
+
+.tl-year{font-size:16px;font-weight:800;margin:16px 0 8px;color:var(--pri);padding-left:24px}
+.tl-item{display:flex;gap:12px;margin-bottom:8px;margin-left:12px;padding-left:16px;border-left:2px solid var(--border);padding-bottom:4px;cursor:pointer}
+.tl-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:4px;margin-left:-23px;border:2px solid var(--card)}
+.tl-card{flex:1;background:#F8FAFC;padding:10px 14px;border-radius:8px}
+.tl-card:active{background:#EEF2FF}
+.tl-country{font-weight:600;font-size:14px}
+.tl-detail{font-size:12px;color:var(--text2);margin-top:2px}
+
+.context-menu{position:fixed;z-index:1500;background:var(--card);border-radius:10px;box-shadow:var(--shadow);padding:4px;min-width:180px;display:none}
+.context-menu.open{display:block}
+.context-menu-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500}
+.context-menu-item:active{background:#F1F5F9}
+
+.pin-tooltip{background:var(--card)!important;border:1px solid var(--border)!important;border-radius:6px!important;padding:4px 10px!important;font-size:13px!important;font-weight:600!important;box-shadow:0 2px 8px rgba(0,0,0,.1)!important;color:var(--text)!important}
+.pin-tooltip::before{border-top-color:var(--border)!important}
+.map-adding-pin{cursor:crosshair!important}
+
+.add-pin-banner{position:fixed;top:calc(var(--top) + 8px);left:50%;transform:translateX(-50%);z-index:1100;background:var(--pri);color:#fff;padding:10px 20px;border-radius:99px;font-size:14px;font-weight:600;box-shadow:0 4px 16px rgba(79,70,229,.4);display:none;align-items:center;gap:10px;white-space:nowrap}
+.add-pin-banner.show{display:flex}
+.cancel-add{background:rgba(255,255,255,.2);border:none;color:#fff;padding:4px 12px;border-radius:99px;cursor:pointer;font-size:12px;font-weight:600}
+
+.stats-bar{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:900;display:flex;gap:10px;padding-bottom:var(--safeb)}
+.stat-chip{background:var(--card);border:1px solid var(--border);border-radius:99px;padding:7px 14px;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;gap:6px}
+.stat-dot{width:8px;height:8px;border-radius:50%}
+
+.image-viewer{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:4000;display:none;align-items:center;justify-content:center;cursor:pointer}
+.image-viewer.open{display:flex}
+.image-viewer img{max-width:92%;max-height:92%;border-radius:8px}
+
+.fab-add{display:none;position:fixed;bottom:80px;right:16px;z-index:950;width:56px;height:56px;border-radius:50%;background:var(--pri);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(79,70,229,.4);align-items:center;justify-content:center}
+.fab-add:active{transform:scale(.92)}
+
+@media(max-width:1024px){.sidebar{width:320px}}
+@media(max-width:640px){
+:root{--top:48px}
+.topbar{padding:0 8px}.topbar h1{font-size:14px}.topbar h1 .fa-earth-americas{display:none}
+.btn .bl{display:none}.btn{padding:8px 10px;gap:0;min-width:36px;justify-content:center}
+.fab-add{display:flex}.btn-add-desktop{display:none!important}
+.sidebar{width:100%}
+.pin-card-overlay{padding:0;align-items:flex-end}
+.pin-card{max-width:100%;max-height:92vh;border-radius:var(--r) var(--r) 0 0}
+.modal-overlay{padding:0;align-items:flex-end}
+.modal{max-width:100%;border-radius:var(--r) var(--r) 0 0;padding-bottom:calc(20px + var(--safeb))}
+.stats-bar{bottom:12px;gap:6px}.stat-chip{padding:6px 10px;font-size:12px}
+.add-pin-banner{font-size:13px;padding:8px 16px}
+.auth-panel{width:100%;max-width:100%;border-radius:0 0 var(--r) var(--r);border-left:none}
+.search-panel{width:100%;max-width:100%;border-radius:0 0 var(--r) var(--r)}
+.dash-stats{grid-template-columns:repeat(2,1fr)}
+.info-cards{grid-template-columns:1fr}
+.pin-card-footer{padding-bottom:calc(14px + var(--safeb))}
 }
-.color-option.active { border-color: var(--text); transform: scale(1.15); }
-
-.icon-picker-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
-.icon-option {
-  width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
-  border: 2px solid var(--border); display: flex; align-items: center;
-  justify-content: center; font-size: 16px; transition: all 0.15s;
-}
-.icon-option.active { border-color: var(--primary); background: #EEF2FF; }
-
-/* Photo gallery */
-.photo-gallery {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 8px; margin-top: 8px;
-}
-.photo-thumb {
-  position: relative; aspect-ratio: 1; border-radius: 8px;
-  overflow: hidden; cursor: pointer;
-}
-.photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.photo-thumb .remove-photo {
-  position: absolute; top: 4px; right: 4px;
-  width: 24px; height: 24px; border-radius: 50%;
-  background: rgba(0,0,0,0.6); color: #fff;
-  border: none; cursor: pointer; font-size: 12px;
-  display: flex; align-items: center; justify-content: center;
-}
-.photo-add-btn {
-  aspect-ratio: 1; border-radius: 8px;
-  border: 2px dashed var(--border); display: flex;
-  align-items: center; justify-content: center;
-  cursor: pointer; font-size: 24px; color: var(--text-light);
-  transition: all 0.2s;
-}
-.photo-add-btn:active { border-color: var(--primary); color: var(--primary); }
-
-/* Custom fields */
-.custom-field-row {
-  display: flex; gap: 6px; align-items: center; margin-bottom: 8px;
-}
-.custom-field-row input { flex: 1; min-width: 0; }
-.remove-field-btn {
-  width: 32px; height: 32px; border-radius: 6px;
-  border: none; background: #FEE2E2; color: var(--danger);
-  cursor: pointer; font-size: 13px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-}
-.remove-field-btn:active { background: #FECACA; }
-
-.pin-card-footer {
-  position: sticky; bottom: 0; background: var(--card-bg);
-  display: flex; gap: 8px; justify-content: flex-end;
-  padding: 14px 20px; border-top: 1px solid var(--border);
-}
-
-/* ===== EXPORT MODAL ===== */
-.modal-overlay {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.4); z-index: 3000;
-  display: none; align-items: center; justify-content: center;
-  padding: 16px;
-}
-.modal-overlay.open { display: flex; }
-.modal {
-  background: var(--card-bg); border-radius: var(--radius);
-  width: 100%; max-width: 520px; max-height: 80vh;
-  overflow-y: auto; -webkit-overflow-scrolling: touch;
-  box-shadow: var(--shadow); padding: 20px;
-}
-.modal h2 { font-size: 18px; margin-bottom: 16px; }
-.export-table {
-  width: 100%; border-collapse: collapse; font-size: 13px;
-}
-.export-table th, .export-table td {
-  padding: 8px 10px; text-align: left;
-  border-bottom: 1px solid var(--border);
-}
-.export-table th { font-weight: 600; color: var(--text-light); font-size: 12px; text-transform: uppercase; }
-.category-badge {
-  display: inline-block; padding: 2px 8px; border-radius: 99px;
-  font-size: 11px; font-weight: 600;
-}
-.category-visited { background: #DCFCE7; color: #166534; }
-.category-want { background: #FEF3C7; color: #92400E; }
-
-/* ===== CONTEXT MENU (right-click / long-press) ===== */
-.context-menu {
-  position: fixed; z-index: 1500;
-  background: var(--card-bg); border-radius: 10px;
-  box-shadow: var(--shadow); padding: 4px;
-  min-width: 180px; display: none;
-}
-.context-menu.open { display: block; }
-.context-menu-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 12px 14px; border-radius: 8px; cursor: pointer;
-  font-size: 14px; font-weight: 500;
-}
-.context-menu-item:hover, .context-menu-item:active { background: #F1F5F9; }
-.context-menu-item i { width: 18px; text-align: center; }
-
-/* ===== TOOLTIP ===== */
-.pin-tooltip {
-  background: var(--card-bg) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 6px !important;
-  padding: 4px 10px !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
-  color: var(--text) !important;
-}
-.pin-tooltip::before { border-top-color: var(--border) !important; }
-
-/* ===== CROSSHAIR ON MAP ===== */
-.map-adding-pin { cursor: crosshair !important; }
-
-/* ===== ADD PIN MODE BANNER ===== */
-.add-pin-banner {
-  position: fixed; top: calc(var(--topbar-h) + 8px); left: 50%; transform: translateX(-50%);
-  z-index: 1100; background: var(--primary); color: #fff;
-  padding: 10px 20px; border-radius: 99px;
-  font-size: 14px; font-weight: 600;
-  box-shadow: 0 4px 16px rgba(79,70,229,0.4);
-  display: none; align-items: center; gap: 10px;
-  white-space: nowrap;
-}
-.add-pin-banner.show { display: flex; }
-.add-pin-banner .cancel-add {
-  background: rgba(255,255,255,0.2); border: none; color: #fff;
-  padding: 4px 12px; border-radius: 99px; cursor: pointer;
-  font-size: 12px; font-weight: 600;
-}
-.add-pin-banner .cancel-add:active { background: rgba(255,255,255,0.3); }
-
-/* ===== STATS ===== */
-.stats-bar {
-  position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
-  z-index: 900; display: flex; gap: 10px;
-  padding-bottom: var(--safe-bottom);
-}
-.stat-chip {
-  background: var(--card-bg); border: 1px solid var(--border);
-  border-radius: 99px; padding: 7px 14px;
-  font-size: 13px; font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  display: flex; align-items: center; gap: 6px;
-}
-.stat-dot { width: 8px; height: 8px; border-radius: 50%; }
-
-/* ===== IMAGE VIEWER ===== */
-.image-viewer {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.85); z-index: 4000;
-  display: none; align-items: center; justify-content: center;
-  cursor: pointer;
-}
-.image-viewer.open { display: flex; }
-.image-viewer img { max-width: 92%; max-height: 92%; border-radius: 8px; }
-
-/* ===== MOBILE FAB (floating action button) ===== */
-.fab-add {
-  display: none;
-  position: fixed; bottom: 80px; right: 16px; z-index: 950;
-  width: 56px; height: 56px; border-radius: 50%;
-  background: var(--primary); color: #fff; border: none;
-  font-size: 22px; cursor: pointer;
-  box-shadow: 0 4px 16px rgba(79,70,229,0.4);
-  align-items: center; justify-content: center;
-  padding-bottom: var(--safe-bottom);
-}
-.fab-add:active { transform: scale(0.92); }
-
-/* ================================================
-   RESPONSIVE - TABLET (iPad)
-   ================================================ */
-@media (max-width: 1024px) {
-  .sidebar { width: 320px; }
-}
-
-/* ================================================
-   RESPONSIVE - MOBILE
-   ================================================ */
-@media (max-width: 640px) {
-  :root { --topbar-h: 48px; }
-
-  .topbar { padding: 0 10px; }
-  .topbar h1 { font-size: 15px; }
-  .topbar h1 .fa-globe-americas { display: none; }
-
-  /* Hide button labels on mobile, show only icons */
-  .btn .btn-label { display: none; }
-  .btn { padding: 8px 10px; gap: 0; min-width: 36px; justify-content: center; }
-
-  /* Show FAB on mobile */
-  .fab-add { display: flex; }
-
-  /* Hide desktop add button on mobile */
-  .topbar-actions .btn-add-desktop { display: none; }
-
-  .sidebar { width: 100%; }
-  .sidebar-list { padding-bottom: 80px; }
-
-  .pin-card-overlay { padding: 0; align-items: flex-end; }
-  .pin-card {
-    max-width: 100%; max-height: 92vh;
-    border-radius: var(--radius) var(--radius) 0 0;
-  }
-
-  .modal-overlay { padding: 0; align-items: flex-end; }
-  .modal {
-    max-width: 100%; max-height: 85vh;
-    border-radius: var(--radius) var(--radius) 0 0;
-    padding-bottom: calc(20px + var(--safe-bottom));
-  }
-
-  .stats-bar { bottom: 12px; gap: 6px; }
-  .stat-chip { padding: 6px 10px; font-size: 12px; }
-
-  .add-pin-banner { font-size: 13px; padding: 8px 16px; }
-
-  .context-menu { min-width: 160px; }
-
-  .pin-card-footer {
-    padding-bottom: calc(14px + var(--safe-bottom));
-  }
-
-  .export-table { font-size: 12px; }
-  .export-table th, .export-table td { padding: 6px 6px; }
-
-  /* Color/icon picker smaller on mobile */
-  .color-option { width: 28px; height: 28px; }
-  .icon-option { width: 32px; height: 32px; font-size: 14px; }
-
-  .auth-panel { width: 100%; max-width: 100%; border-radius: 0 0 var(--radius) var(--radius); border-left: none; }
-}
-
-/* ================================================
-   RESPONSIVE - SMALL PHONE
-   ================================================ */
-@media (max-width: 380px) {
-  .topbar h1 { font-size: 13px; }
-  .stat-chip { padding: 5px 8px; font-size: 11px; }
-  .pin-card-body { padding: 12px 16px 16px; }
-}
+@media(max-width:380px){.topbar h1{font-size:13px}.stat-chip{padding:5px 8px;font-size:11px}}
 </style>
 </head>
 <body>
 
-<!-- TOP BAR -->
 <div class="topbar">
   <div class="topbar-left">
-    <button class="btn btn-sm" onclick="toggleSidebar()" title="圖釘清單">
-      <i class="fas fa-list"></i>
-    </button>
-    <h1><i class="fas fa-globe-americas"></i> Travel Pin Map</h1>
+    <button class="btn btn-sm" onclick="toggleSidebar()" title="清單"><i class="fas fa-bars"></i></button>
+    <h1><i class="fas fa-earth-americas"></i> Globetrotting</h1>
   </div>
   <div class="topbar-actions">
-    <button class="btn btn-add-desktop" onclick="startAddPin()"><i class="fas fa-map-pin"></i><span class="btn-label"> 新增圖釘</span></button>
-    <button class="btn" onclick="openExport()"><i class="fas fa-file-export"></i><span class="btn-label"> 匯出</span></button>
-    <button class="btn" id="authBtn" onclick="toggleAuth()"><i class="fas fa-user"></i><span class="btn-label"> 登入</span></button>
+    <button class="btn" onclick="toggleSearch()"><i class="fas fa-search"></i><span class="bl"> 搜尋</span></button>
+    <button class="btn" onclick="openDashboard()"><i class="fas fa-chart-pie"></i><span class="bl"> 統計</span></button>
+    <button class="btn" onclick="openTimeline()"><i class="fas fa-clock-rotate-left"></i><span class="bl"> 時間軸</span></button>
+    <button class="btn btn-add-desktop" onclick="startAddPin()"><i class="fas fa-map-pin"></i><span class="bl"> 新增</span></button>
+    <button class="btn" onclick="openExport()"><i class="fas fa-file-export"></i><span class="bl"> 匯出</span></button>
+    <button class="btn" id="authBtn" onclick="toggleAuth()"><i class="fas fa-user"></i><span class="bl"> 登入</span></button>
   </div>
 </div>
 
-<!-- AUTH PANEL -->
 <div class="auth-panel" id="authPanel">
   <div id="authForm">
     <h3>登入 / 註冊</h3>
     <input type="email" id="authEmail" placeholder="Email" autocomplete="email">
     <input type="password" id="authPassword" placeholder="密碼" autocomplete="current-password">
-    <div class="auth-actions">
-      <button class="btn btn-primary" onclick="signIn()"><span class="btn-label">登入</span></button>
-      <button class="btn" onclick="signUp()"><span class="btn-label">註冊</span></button>
-    </div>
-    <p style="margin-top:10px;font-size:12px;color:var(--text-light);">
-      首次使用請先註冊，資料將儲存於雲端。
-    </p>
+    <div class="auth-actions"><button class="btn btn-pri" onclick="signIn()">登入</button><button class="btn" onclick="signUp()">註冊</button></div>
+    <p style="margin-top:10px;font-size:12px;color:var(--text2)">首次使用請先註冊</p>
   </div>
-  <div id="authInfo" style="display:none;">
-    <div class="user-info" id="userEmail"></div>
-    <button class="btn btn-sm" style="margin-top:10px;" onclick="signOut()">
-      <i class="fas fa-sign-out-alt"></i><span class="btn-label"> 登出</span>
-    </button>
+  <div id="authInfo" style="display:none">
+    <div style="font-size:13px;color:var(--text2)" id="userEmail"></div>
+    <button class="btn btn-sm" style="margin-top:10px" onclick="signOut()"><i class="fas fa-sign-out-alt"></i> 登出</button>
   </div>
 </div>
 
-<!-- MAP -->
+<div class="search-panel" id="searchPanel">
+  <input type="text" id="searchInput" placeholder="搜尋國家、城市..." oninput="doSearch(this.value)" autocomplete="off">
+  <div class="search-results" id="searchResults"></div>
+</div>
+
 <div id="map"></div>
 
-<!-- ADD PIN MODE BANNER -->
 <div class="add-pin-banner" id="addPinBanner">
-  <i class="fas fa-crosshairs"></i>
-  <span class="banner-text">點擊地圖放置圖釘</span>
+  <i class="fas fa-crosshairs"></i> 點擊地圖放置圖釘
   <button class="cancel-add" onclick="cancelAddPin()">取消</button>
 </div>
 
-<!-- MOBILE FAB -->
-<button class="fab-add" id="fabAdd" onclick="startAddPin()" title="新增圖釘">
-  <i class="fas fa-plus"></i>
-</button>
+<button class="fab-add" id="fabAdd" onclick="startAddPin()"><i class="fas fa-plus"></i></button>
 
-<!-- SIDEBAR -->
 <div class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <h2><i class="fas fa-map-marker-alt"></i> 圖釘清單</h2>
     <button class="close-btn" onclick="toggleSidebar()">&times;</button>
+  </div>
+  <div class="sidebar-filters">
+    <select id="filterContinent" onchange="applyFilters()">
+      <option value="">所有洲</option>
+      <option value="亞洲">亞洲</option><option value="歐洲">歐洲</option>
+      <option value="北美洲">北美洲</option><option value="南美洲">南美洲</option>
+      <option value="非洲">非洲</option><option value="大洋洲">大洋洲</option>
+    </select>
+    <select id="filterYear" onchange="applyFilters()"></select>
   </div>
   <div class="sidebar-tabs">
     <div class="sidebar-tab active" data-tab="all" onclick="switchTab('all')">全部</div>
@@ -522,9 +243,12 @@ html, body {
     <div class="sidebar-tab" data-tab="want_to_go" onclick="switchTab('want_to_go')">想去</div>
   </div>
   <div class="sidebar-list" id="pinList"></div>
+  <div class="sidebar-bottom">
+    <button class="btn btn-sm" onclick="openDashboard()"><i class="fas fa-chart-pie"></i> 統計</button>
+    <button class="btn btn-sm" onclick="openTimeline()"><i class="fas fa-clock-rotate-left"></i> 時間軸</button>
+  </div>
 </div>
 
-<!-- PIN CARD (detail / edit) -->
 <div class="pin-card-overlay" id="pinCardOverlay">
   <div class="pin-card">
     <div class="pin-card-header">
@@ -532,939 +256,407 @@ html, body {
       <button class="close-btn" onclick="closePinCard()">&times;</button>
     </div>
     <div class="pin-card-body">
-      <!-- Category -->
-      <div class="field-group">
-        <label class="field-label">分類</label>
-        <select class="field-select" id="pinCategory">
-          <option value="visited">已去過</option>
-          <option value="want_to_go">未來想去</option>
-        </select>
+      <div class="field-group"><label class="field-label">分類</label>
+        <select class="field-select" id="pinCategory"><option value="visited">已去過</option><option value="want_to_go">未來想去</option></select>
       </div>
-      <!-- Country -->
-      <div class="field-group">
-        <label class="field-label">國家</label>
-        <input class="field-input" id="pinCountry" placeholder="例：日本">
+      <div class="field-group"><label class="field-label">國家</label><input class="field-input" id="pinCountry" placeholder="例：日本"></div>
+      <div class="field-group"><label class="field-label">城市</label><input class="field-input" id="pinCity" placeholder="例：東京"></div>
+      <div class="field-group"><label class="field-label">年度</label><input class="field-input" id="pinYear" placeholder="例：2025" inputmode="numeric"></div>
+      <div class="field-group"><label class="field-label">理由 / 備註</label><textarea class="field-textarea" id="pinReason" placeholder="想去的理由，或旅行心得..."></textarea></div>
+      <div class="field-group"><label class="field-label">預計花費</label><input class="field-input" id="pinBudget" placeholder="例：NT$ 50,000"></div>
+      <div class="field-group"><label class="field-label">圖釘顏色</label><div class="color-picker-row" id="colorPicker"></div></div>
+      <div class="field-group"><label class="field-label">圖釘樣式</label><div class="icon-picker-row" id="iconPicker"></div></div>
+      <div class="field-group"><label class="field-label">照片</label><div class="photo-gallery" id="photoGallery"></div></div>
+      <div class="field-group"><label class="field-label">自訂欄位</label><div id="customFields"></div>
+        <button class="btn btn-sm" style="margin-top:6px" onclick="addCustomField()"><i class="fas fa-plus"></i><span class="bl"> 新增欄位</span></button>
       </div>
-      <!-- City -->
-      <div class="field-group">
-        <label class="field-label">城市</label>
-        <input class="field-input" id="pinCity" placeholder="例：東京">
-      </div>
-      <!-- Year -->
-      <div class="field-group">
-        <label class="field-label">年度</label>
-        <input class="field-input" id="pinYear" placeholder="例：2025" inputmode="numeric">
-      </div>
-      <!-- Reason -->
-      <div class="field-group">
-        <label class="field-label">理由 / 備註</label>
-        <textarea class="field-textarea" id="pinReason" placeholder="想去的理由，或旅行心得..."></textarea>
-      </div>
-      <!-- Budget -->
-      <div class="field-group">
-        <label class="field-label">預計花費</label>
-        <input class="field-input" id="pinBudget" placeholder="例：NT$ 50,000">
-      </div>
-      <!-- Color -->
-      <div class="field-group">
-        <label class="field-label">圖釘顏色</label>
-        <div class="color-picker-row" id="colorPicker"></div>
-      </div>
-      <!-- Icon -->
-      <div class="field-group">
-        <label class="field-label">圖釘樣式</label>
-        <div class="icon-picker-row" id="iconPicker"></div>
-      </div>
-      <!-- Photos -->
-      <div class="field-group">
-        <label class="field-label">照片</label>
-        <div class="photo-gallery" id="photoGallery"></div>
-      </div>
-      <!-- Custom fields -->
-      <div class="field-group">
-        <label class="field-label">自訂欄位</label>
-        <div id="customFields"></div>
-        <button class="btn btn-sm" style="margin-top:6px;" onclick="addCustomField()">
-          <i class="fas fa-plus"></i><span class="btn-label"> 新增欄位</span>
-        </button>
+      <div class="field-group" id="weatherVisaSection" style="display:none">
+        <label class="field-label">當地資訊</label>
+        <div class="info-cards" id="infoCards"></div>
+        <a class="visa-link" id="visaLink" href="#" target="_blank"><i class="fas fa-passport"></i> 查詢簽證資訊</a>
       </div>
     </div>
     <div class="pin-card-footer">
-      <button class="btn btn-danger btn-sm" id="pinDeleteBtn" onclick="deletePin()" style="margin-right:auto;">
-        <i class="fas fa-trash"></i><span class="btn-label"> 刪除</span>
-      </button>
+      <button class="btn btn-danger btn-sm" id="pinDeleteBtn" onclick="deletePin()" style="margin-right:auto"><i class="fas fa-trash"></i><span class="bl"> 刪除</span></button>
       <button class="btn" onclick="closePinCard()">取消</button>
-      <button class="btn btn-primary" onclick="savePin()"><i class="fas fa-check"></i> 儲存</button>
+      <button class="btn btn-pri" onclick="savePin()"><i class="fas fa-check"></i> 儲存</button>
     </div>
   </div>
 </div>
 
-<!-- EXPORT MODAL -->
 <div class="modal-overlay" id="exportOverlay">
   <div class="modal">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <h2><i class="fas fa-file-export"></i> 匯出旅行清單</h2>
-      <button class="close-btn" onclick="closeExport()">&times;</button>
-    </div>
-    <div class="sidebar-tabs" style="margin-bottom:12px;">
+    <div class="modal-header"><h2><i class="fas fa-file-export"></i> 匯出</h2><button class="close-btn" onclick="closeExport()">&times;</button></div>
+    <div class="sidebar-tabs" style="margin-bottom:12px">
       <div class="sidebar-tab active" data-export="all" onclick="switchExportTab('all')">全部</div>
       <div class="sidebar-tab" data-export="visited" onclick="switchExportTab('visited')">已去過</div>
       <div class="sidebar-tab" data-export="want_to_go" onclick="switchExportTab('want_to_go')">想去</div>
     </div>
     <div id="exportContent"></div>
-    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;">
-      <button class="btn" onclick="exportCSV()"><i class="fas fa-file-csv"></i><span class="btn-label"> CSV</span></button>
-      <button class="btn" onclick="exportJSON()"><i class="fas fa-code"></i><span class="btn-label"> JSON</span></button>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+      <button class="btn" onclick="exportCSV()"><i class="fas fa-file-csv"></i><span class="bl"> CSV</span></button>
+      <button class="btn" onclick="exportJSON()"><i class="fas fa-code"></i><span class="bl"> JSON</span></button>
     </div>
   </div>
 </div>
 
-<!-- CONTEXT MENU -->
+<div class="modal-overlay" id="dashOverlay">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header"><h2><i class="fas fa-chart-pie"></i> 旅行統計</h2><button class="close-btn" onclick="closeDashboard()">&times;</button></div>
+    <div id="dashContent"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="tlOverlay">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header"><h2><i class="fas fa-clock-rotate-left"></i> 旅行時間軸</h2><button class="close-btn" onclick="closeTimeline()">&times;</button></div>
+    <div id="tlContent"></div>
+  </div>
+</div>
+
 <div class="context-menu" id="contextMenu">
-  <div class="context-menu-item" onclick="contextAddVisited()">
-    <i class="fas fa-check-circle" style="color:#22C55E"></i> 已去過
-  </div>
-  <div class="context-menu-item" onclick="contextAddWant()">
-    <i class="fas fa-heart" style="color:#F59E0B"></i> 未來想去
-  </div>
+  <div class="context-menu-item" onclick="contextAddVisited()"><i class="fas fa-check-circle" style="color:var(--ok)"></i> 已去過</div>
+  <div class="context-menu-item" onclick="contextAddWant()"><i class="fas fa-heart" style="color:var(--warn)"></i> 未來想去</div>
 </div>
 
-<!-- IMAGE VIEWER -->
-<div class="image-viewer" id="imageViewer" onclick="this.classList.remove('open')">
-  <img id="imageViewerImg" src="">
-</div>
+<div class="image-viewer" id="imageViewer" onclick="this.classList.remove('open')"><img id="imageViewerImg" src=""></div>
 
-<!-- STATS BAR -->
 <div class="stats-bar">
-  <div class="stat-chip">
-    <span class="stat-dot" style="background:#22C55E;"></span>
-    已去過 <span id="statVisited">0</span>
-  </div>
-  <div class="stat-chip">
-    <span class="stat-dot" style="background:#F59E0B;"></span>
-    想去 <span id="statWant">0</span>
-  </div>
+  <div class="stat-chip"><span class="stat-dot" style="background:var(--ok)"></span>已去 <span id="statVisited">0</span></div>
+  <div class="stat-chip"><span class="stat-dot" style="background:var(--warn)"></span>想去 <span id="statWant">0</span></div>
 </div>
 
 <input type="file" id="photoInput" accept="image/*" multiple style="display:none">
 
-<!-- SCRIPTS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
 <script>
-// =============================================
-// CONFIG
-// =============================================
-const SUPABASE_URL = 'https://sbwtpqylqgjnvekslxyz.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_9EhoQmfLD_irvTVa4o1kuQ_UFWdbvfh';
-let supabase = null;
+var SUPABASE_URL='https://sbwtpqylqgjnvekslxyz.supabase.co';
+var SUPABASE_ANON_KEY='sb_publishable_9EhoQmfLD_irvTVa4o1kuQ_UFWdbvfh';
+var supabase=null;
 
-// =============================================
-// STATE
-// =============================================
-let pins = [];
-let markers = {};
-let currentPin = null;
-let isAddingPin = false;
-let addPinCategory = 'want_to_go';
-let currentUser = null;
-let currentTab = 'all';
-let exportTab = 'all';
-let contextLatLng = null;
-let tempPhotos = [];
-let localMode = false;
-const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+var pins=[],markers={},currentPin=null,isAddingPin=false,addPinCategory='want_to_go';
+var currentUser=null,currentTab='all',exportTab='all',contextLatLng=null;
+var tempPhotos=[],localMode=false,countryLayer=null,clusterGroup=null;
+var filterContinent='',filterYear='',searchTimer=null;
+var isTouchDevice=('ontouchstart' in window)||navigator.maxTouchPoints>0;
 
-// =============================================
-// PIN COLORS & ICONS
-// =============================================
-const PIN_COLORS = [
-  '#EF4444', '#F59E0B', '#22C55E', '#3B82F6',
-  '#8B5CF6', '#EC4899', '#14B8A6', '#F97316',
-  '#6366F1', '#64748B'
+var PIN_COLORS=['#EF4444','#F59E0B','#22C55E','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#F97316','#6366F1','#64748B'];
+var PIN_ICONS=[
+  {id:'default',icon:'fa-location-dot',label:'標準'},{id:'star',icon:'fa-star',label:'星星'},
+  {id:'heart',icon:'fa-heart',label:'愛心'},{id:'flag',icon:'fa-flag',label:'旗幟'},
+  {id:'plane',icon:'fa-plane',label:'飛機'},{id:'camera',icon:'fa-camera',label:'相機'},
+  {id:'utensils',icon:'fa-utensils',label:'美食'},{id:'mountain',icon:'fa-mountain-sun',label:'自然'},
+  {id:'building',icon:'fa-building-columns',label:'古蹟'},{id:'beach',icon:'fa-umbrella-beach',label:'海灘'}
 ];
-const PIN_ICONS = [
-  { id: 'default', icon: 'fa-location-dot', label: '標準' },
-  { id: 'star', icon: 'fa-star', label: '星星' },
-  { id: 'heart', icon: 'fa-heart', label: '愛心' },
-  { id: 'flag', icon: 'fa-flag', label: '旗幟' },
-  { id: 'plane', icon: 'fa-plane', label: '飛機' },
-  { id: 'camera', icon: 'fa-camera', label: '相機' },
-  { id: 'utensils', icon: 'fa-utensils', label: '美食' },
-  { id: 'mountain', icon: 'fa-mountain-sun', label: '自然' },
-  { id: 'building', icon: 'fa-building-columns', label: '古蹟' },
-  { id: 'beach', icon: 'fa-umbrella-beach', label: '海灘' },
-];
+var CONT_CODES={
+  '亞洲':'af am az bh bd bt bn kh cn cy ge in id ir iq il jp jo kz kw kg la lb my mv mn mm np kp om pk ps ph qa sa sg kr lk sy tw tj th tl tr tm ae uz vn ye hk mo',
+  '歐洲':'al ad at by be ba bg hr cz dk ee fi fr de gr hu is ie it xk lv li lt lu mt md mc me nl mk no pl pt ro ru sm rs sk si es se ch ua gb va',
+  '非洲':'dz ao bj bw bf bi cv cm cf td km cg cd ci dj eg gq er sz et ga gm gh gn gw ke ls lr ly mg mw ml mr mu ma mz na ne ng rw st sn sc sl so za ss sd tz tg tn ug zm zw',
+  '北美洲':'ag bs bb bz ca cr cu dm do sv gd gt ht hn jm mx ni pa kn lc vc tt us pr',
+  '南美洲':'ar bo br cl co ec gy py pe sr uy ve',
+  '大洋洲':'au fj ki mh fm nr nz pw pg ws sb to tv vu'
+};
+var WX_DESC={0:'晴天',1:'大致晴',2:'多雲',3:'陰天',45:'霧',48:'霜霧',51:'小雨',53:'雨',55:'大雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',80:'陣雨',81:'中陣雨',82:'大陣雨',95:'雷暴',96:'雷暴冰雹',99:'強雷暴'};
+var WX_ICON={0:'fa-sun',1:'fa-cloud-sun',2:'fa-cloud-sun',3:'fa-cloud',45:'fa-smog',48:'fa-smog',51:'fa-cloud-rain',53:'fa-cloud-rain',55:'fa-cloud-showers-heavy',61:'fa-cloud-rain',63:'fa-cloud-rain',65:'fa-cloud-showers-heavy',71:'fa-snowflake',73:'fa-snowflake',75:'fa-snowflake',80:'fa-cloud-rain',81:'fa-cloud-showers-heavy',82:'fa-cloud-showers-heavy',95:'fa-bolt',96:'fa-bolt',99:'fa-bolt'};
 
-// =============================================
-// MAP INIT
-// =============================================
-const map = L.map('map', {
-  center: [25, 121],
-  zoom: 3,
-  zoomControl: false,
-  worldCopyJump: true,
-  // iPad/iOS touch fixes
-  tap: true,
-  tapTolerance: 15,
-  touchZoom: true,
-  dragging: true,
-  bounceAtZoomLimits: false
-});
+function getContinent(cc){if(!cc)return'未知';cc=cc.toLowerCase();for(var k in CONT_CODES){if(CONT_CODES[k].split(' ').indexOf(cc)>=0)return k}return'其他'}
+function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function parseBudget(s){if(!s)return 0;return parseFloat(s.replace(/[^0-9.]/g,''))||0}
 
-L.control.zoom({ position: 'bottomright' }).addTo(map);
+/* MAP */
+var osmLayer=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap',maxZoom:19});
+var satLayer=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'&copy; Esri',maxZoom:18});
+var topoLayer=L.tileLayer('https://tile.opentopomap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenTopoMap',maxZoom:17});
+var darkLayer=L.tileLayer('https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{attribution:'&copy; CartoDB',maxZoom:19});
 
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-  maxZoom: 19
-}).addTo(map);
+var map=L.map('map',{center:[25,121],zoom:3,zoomControl:false,worldCopyJump:true,tap:true,tapTolerance:15,layers:[osmLayer]});
+L.control.zoom({position:'bottomright'}).addTo(map);
+L.control.layers({'標準地圖':osmLayer,'衛星圖':satLayer,'地形圖':topoLayer,'暗色主題':darkLayer},{},{position:'topright',collapsed:true}).addTo(map);
 
-// Force map to recalculate size (critical for iOS)
-setTimeout(function() { map.invalidateSize(); }, 300);
-setTimeout(function() { map.invalidateSize(); }, 1000);
-window.addEventListener('resize', function() { map.invalidateSize(); });
-window.addEventListener('orientationchange', function() {
-  setTimeout(function() { map.invalidateSize(); }, 500);
-});
+clusterGroup=L.markerClusterGroup({maxClusterRadius:50,showCoverageOnHover:false,spiderfyOnMaxZoom:true,zoomToBoundsOnClick:true});
+map.addLayer(clusterGroup);
 
-// =============================================
-// MAP EVENTS
-// =============================================
-map.on('click', function(e) {
-  closeContextMenu();
-  if (isAddingPin) {
-    openNewPinCard(e.latlng.lat, e.latlng.lng, addPinCategory);
-    cancelAddPin();
-  }
-});
+setTimeout(function(){map.invalidateSize()},300);
+setTimeout(function(){map.invalidateSize()},1000);
+window.addEventListener('resize',function(){map.invalidateSize()});
+window.addEventListener('orientationchange',function(){setTimeout(function(){map.invalidateSize()},500)});
 
-// Desktop: right-click context menu
-map.on('contextmenu', function(e) {
-  e.originalEvent.preventDefault();
-  showContextMenu(e.latlng, e.originalEvent.clientX, e.originalEvent.clientY);
-});
-
-// Touch devices: long-press to add pin (replaces right-click)
-(function() {
-  if (!isTouchDevice) return;
-  let longPressTimer = null;
-  let startTouch = null;
-  const mapEl = document.getElementById('map');
-
-  mapEl.addEventListener('touchstart', function(e) {
-    if (e.touches.length !== 1) return;
-    startTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    longPressTimer = setTimeout(function() {
-      // Convert screen coords to map latlng
-      const pt = map.containerPointToLatLng(L.point(
-        startTouch.x - mapEl.getBoundingClientRect().left,
-        startTouch.y - mapEl.getBoundingClientRect().top
-      ));
-      showContextMenu(pt, startTouch.x, startTouch.y);
-    }, 600);
-  }, { passive: true });
-
-  mapEl.addEventListener('touchmove', function(e) {
-    if (!startTouch) return;
-    const dx = e.touches[0].clientX - startTouch.x;
-    const dy = e.touches[0].clientY - startTouch.y;
-    if (Math.sqrt(dx*dx + dy*dy) > 10) {
-      clearTimeout(longPressTimer);
-      startTouch = null;
-    }
-  }, { passive: true });
-
-  mapEl.addEventListener('touchend', function() {
-    clearTimeout(longPressTimer);
-    startTouch = null;
-  }, { passive: true });
-
-  mapEl.addEventListener('touchcancel', function() {
-    clearTimeout(longPressTimer);
-    startTouch = null;
-  }, { passive: true });
+/* COUNTRY COLORING */
+(function(){
+  fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
+    .then(function(r){return r.json()})
+    .then(function(data){
+      countryLayer=L.geoJSON(data,{style:function(){return{fillColor:'#22C55E',fillOpacity:0,weight:.5,color:'#CBD5E1',opacity:.3}},interactive:false});
+      countryLayer.addTo(map);countryLayer.bringToBack();updateCountryColors();
+    }).catch(function(e){console.warn('GeoJSON failed:',e)});
 })();
 
-function showContextMenu(latlng, clientX, clientY) {
-  contextLatLng = latlng;
-  const cm = document.getElementById('contextMenu');
-  // Keep menu within viewport
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  let x = clientX;
-  let y = clientY;
-  if (x + 180 > vw) x = vw - 190;
-  if (y + 100 > vh) y = vh - 110;
-  if (x < 8) x = 8;
-  if (y < 8) y = 8;
-  cm.style.left = x + 'px';
-  cm.style.top = y + 'px';
-  cm.classList.add('open');
-}
-
-document.addEventListener('click', function() { closeContextMenu(); });
-document.addEventListener('touchstart', function(e) {
-  if (!e.target.closest('.context-menu')) closeContextMenu();
-}, { passive: true });
-
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
-    cancelAddPin();
-    closePinCard();
-    closeExport();
-    closeContextMenu();
-    document.getElementById('imageViewer').classList.remove('open');
-  }
-});
-
-function closeContextMenu() {
-  document.getElementById('contextMenu').classList.remove('open');
-}
-
-function contextAddVisited() {
-  if (contextLatLng) openNewPinCard(contextLatLng.lat, contextLatLng.lng, 'visited');
-  closeContextMenu();
-}
-function contextAddWant() {
-  if (contextLatLng) openNewPinCard(contextLatLng.lat, contextLatLng.lng, 'want_to_go');
-  closeContextMenu();
-}
-
-// =============================================
-// ADD PIN MODE
-// =============================================
-function startAddPin() {
-  isAddingPin = true;
-  addPinCategory = 'want_to_go';
-  document.getElementById('map').classList.add('map-adding-pin');
-  document.getElementById('addPinBanner').classList.add('show');
-  // Hide FAB while adding
-  document.getElementById('fabAdd').style.display = 'none';
-}
-
-function cancelAddPin() {
-  isAddingPin = false;
-  document.getElementById('map').classList.remove('map-adding-pin');
-  document.getElementById('addPinBanner').classList.remove('show');
-  // Restore FAB on mobile
-  if (isTouchDevice || window.innerWidth <= 640) {
-    document.getElementById('fabAdd').style.display = 'flex';
-  }
-}
-
-// =============================================
-// MARKER CREATION
-// =============================================
-function createMarkerIcon(color, iconId) {
-  var iconDef = PIN_ICONS.find(function(i) { return i.id === iconId; }) || PIN_ICONS[0];
-  return L.divIcon({
-    className: 'custom-pin',
-    html: '<div style="' +
-      'width:36px;height:36px;border-radius:50% 50% 50% 0;' +
-      'background:' + color + ';transform:rotate(-45deg);' +
-      'display:flex;align-items:center;justify-content:center;' +
-      'box-shadow:0 2px 8px rgba(0,0,0,0.3);border:2px solid #fff;' +
-    '"><i class="fas ' + iconDef.icon + '" style="' +
-      'color:#fff;font-size:14px;transform:rotate(45deg);' +
-    '"></i></div>',
-    iconSize: [36, 36],
-    iconAnchor: [18, 36],
-    tooltipAnchor: [0, -36]
+function updateCountryColors(){
+  if(!countryLayer)return;
+  var visited=pins.filter(function(p){return p.category==='visited'});
+  countryLayer.eachLayer(function(layer){
+    var bounds=layer.getBounds();
+    var hit=visited.some(function(p){return bounds.contains(L.latLng(p.latitude,p.longitude))});
+    layer.setStyle({fillOpacity:hit?.2:0,fillColor:'#22C55E',weight:hit?1.5:.5,color:hit?'#16A34A':'#CBD5E1',opacity:hit?.8:.3});
   });
 }
 
-function addMarker(pin) {
-  var marker = L.marker([pin.latitude, pin.longitude], {
-    icon: createMarkerIcon(pin.pin_color, pin.pin_icon),
-    draggable: false
-  }).addTo(map);
+/* MAP EVENTS */
+map.on('click',function(e){closeContextMenu();if(isAddingPin){openNewPinCard(e.latlng.lat,e.latlng.lng,addPinCategory);cancelAddPin()}});
+map.on('contextmenu',function(e){e.originalEvent.preventDefault();showContextMenu(e.latlng,e.originalEvent.clientX,e.originalEvent.clientY)});
 
-  var label = pin.country_name || pin.city_name || '未命名';
-  marker.bindTooltip(label, {
-    permanent: true,
-    direction: 'top',
-    className: 'pin-tooltip',
-    offset: [0, -4]
-  });
-
-  marker.on('click', function() { openEditPinCard(pin); });
-
-  markers[pin.id] = marker;
-}
-
-function removeMarker(pinId) {
-  if (markers[pinId]) {
-    map.removeLayer(markers[pinId]);
-    delete markers[pinId];
-  }
-}
-
-function refreshMarkers() {
-  Object.keys(markers).forEach(function(id) {
-    map.removeLayer(markers[id]);
-  });
-  markers = {};
-  pins.forEach(function(pin) { addMarker(pin); });
-  updateStats();
-  renderPinList();
-}
-
-// =============================================
-// PIN CARD
-// =============================================
-function openNewPinCard(lat, lng, category) {
-  currentPin = {
-    id: null,
-    latitude: lat,
-    longitude: lng,
-    country_name: '',
-    city_name: '',
-    category: category || 'want_to_go',
-    pin_color: category === 'visited' ? '#22C55E' : '#F59E0B',
-    pin_icon: 'default',
-    year: '',
-    reason: '',
-    budget: '',
-    notes: '',
-    photos: [],
-    custom_fields: []
-  };
-  tempPhotos = [];
-  document.getElementById('pinDeleteBtn').style.display = 'none';
-  document.getElementById('pinCardTitle').textContent = '新增圖釘';
-  fillPinCard();
-  document.getElementById('pinCardOverlay').classList.add('open');
-  reverseGeocode(lat, lng);
-}
-
-function openEditPinCard(pin) {
-  currentPin = JSON.parse(JSON.stringify(pin));
-  tempPhotos = pin.photos ? pin.photos.slice() : [];
-  document.getElementById('pinDeleteBtn').style.display = '';
-  document.getElementById('pinCardTitle').textContent = '編輯圖釘';
-  fillPinCard();
-  document.getElementById('pinCardOverlay').classList.add('open');
-}
-
-function closePinCard() {
-  document.getElementById('pinCardOverlay').classList.remove('open');
-  currentPin = null;
-  tempPhotos = [];
-}
-
-function fillPinCard() {
-  document.getElementById('pinCategory').value = currentPin.category;
-  document.getElementById('pinCountry').value = currentPin.country_name || '';
-  document.getElementById('pinCity').value = currentPin.city_name || '';
-  document.getElementById('pinYear').value = currentPin.year || '';
-  document.getElementById('pinReason').value = currentPin.reason || '';
-  document.getElementById('pinBudget').value = currentPin.budget || '';
-
-  var colorRow = document.getElementById('colorPicker');
-  colorRow.innerHTML = PIN_COLORS.map(function(c) {
-    return '<div class="color-option ' + (currentPin.pin_color === c ? 'active' : '') + '" style="background:' + c + '" onclick="selectColor(\'' + c + '\')"></div>';
-  }).join('');
-
-  var iconRow = document.getElementById('iconPicker');
-  iconRow.innerHTML = PIN_ICONS.map(function(i) {
-    return '<div class="icon-option ' + (currentPin.pin_icon === i.id ? 'active' : '') + '" onclick="selectIcon(\'' + i.id + '\')" title="' + i.label + '"><i class="fas ' + i.icon + '"></i></div>';
-  }).join('');
-
-  renderPhotos();
-  renderCustomFields();
-}
-
-function selectColor(color) {
-  currentPin.pin_color = color;
-  var colorRow = document.getElementById('colorPicker');
-  colorRow.innerHTML = PIN_COLORS.map(function(c) {
-    return '<div class="color-option ' + (currentPin.pin_color === c ? 'active' : '') + '" style="background:' + c + '" onclick="selectColor(\'' + c + '\')"></div>';
-  }).join('');
-}
-
-function selectIcon(iconId) {
-  currentPin.pin_icon = iconId;
-  var iconRow = document.getElementById('iconPicker');
-  iconRow.innerHTML = PIN_ICONS.map(function(i) {
-    return '<div class="icon-option ' + (currentPin.pin_icon === i.id ? 'active' : '') + '" onclick="selectIcon(\'' + i.id + '\')" title="' + i.label + '"><i class="fas ' + i.icon + '"></i></div>';
-  }).join('');
-}
-
-// ===== Photos =====
-function renderPhotos() {
-  var gallery = document.getElementById('photoGallery');
-  var html = '';
-  tempPhotos.forEach(function(photo, idx) {
-    var url = typeof photo === 'string' ? photo : (photo.photo_url || photo.url);
-    html += '<div class="photo-thumb"><img src="' + url + '" onclick="viewImage(this.src)"><button class="remove-photo" onclick="removePhoto(' + idx + ')">&times;</button></div>';
-  });
-  html += '<div class="photo-add-btn" onclick="document.getElementById(\'photoInput\').click()">+</div>';
-  gallery.innerHTML = html;
-}
-
-function removePhoto(idx) {
-  tempPhotos.splice(idx, 1);
-  renderPhotos();
-}
-
-function viewImage(url) {
-  document.getElementById('imageViewerImg').src = url;
-  document.getElementById('imageViewer').classList.add('open');
-}
-
-document.getElementById('photoInput').addEventListener('change', function(e) {
-  Array.from(e.target.files).forEach(function(file) {
-    var reader = new FileReader();
-    reader.onload = function(ev) {
-      tempPhotos.push({ photo_url: ev.target.result, file: file, isNew: true });
-      renderPhotos();
-    };
-    reader.readAsDataURL(file);
-  });
-  e.target.value = '';
-});
-
-// ===== Custom Fields =====
-function renderCustomFields() {
-  var container = document.getElementById('customFields');
-  var fields = currentPin.custom_fields || [];
-  container.innerHTML = fields.map(function(f, idx) {
-    return '<div class="custom-field-row">' +
-      '<input class="field-input" placeholder="欄位名稱" value="' + escapeHtml(f.field_name || '') + '" onchange="updateCustomField(' + idx + ',\'field_name\',this.value)" style="max-width:120px;">' +
-      '<input class="field-input" placeholder="內容" value="' + escapeHtml(f.field_value || '') + '" onchange="updateCustomField(' + idx + ',\'field_value\',this.value)">' +
-      '<button class="remove-field-btn" onclick="removeCustomField(' + idx + ')"><i class="fas fa-times"></i></button></div>';
-  }).join('');
-}
-
-function addCustomField() {
-  if (!currentPin.custom_fields) currentPin.custom_fields = [];
-  currentPin.custom_fields.push({ field_name: '', field_value: '', sort_order: currentPin.custom_fields.length });
-  renderCustomFields();
-}
-
-function removeCustomField(idx) {
-  currentPin.custom_fields.splice(idx, 1);
-  renderCustomFields();
-}
-
-function updateCustomField(idx, key, value) {
-  currentPin.custom_fields[idx][key] = value;
-}
-
-function escapeHtml(str) {
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// =============================================
-// SAVE / DELETE PIN
-// =============================================
-async function savePin() {
-  currentPin.category = document.getElementById('pinCategory').value;
-  currentPin.country_name = document.getElementById('pinCountry').value;
-  currentPin.city_name = document.getElementById('pinCity').value;
-  currentPin.year = document.getElementById('pinYear').value;
-  currentPin.reason = document.getElementById('pinReason').value;
-  currentPin.budget = document.getElementById('pinBudget').value;
-
-  if (localMode || !supabase || !currentUser) {
-    if (!currentPin.id) {
-      currentPin.id = 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-    }
-    currentPin.photos = tempPhotos.map(function(p) { return typeof p === 'string' ? p : (p.photo_url || p.url); });
-    var idx = pins.findIndex(function(p) { return p.id === currentPin.id; });
-    if (idx >= 0) {
-      pins[idx] = JSON.parse(JSON.stringify(currentPin));
-    } else {
-      pins.push(JSON.parse(JSON.stringify(currentPin)));
-    }
-    saveToLocal();
-    refreshMarkers();
-    closePinCard();
-    return;
-  }
-
-  try {
-    var pinData = {
-      user_id: currentUser.id,
-      latitude: currentPin.latitude,
-      longitude: currentPin.longitude,
-      country_name: currentPin.country_name,
-      city_name: currentPin.city_name,
-      category: currentPin.category,
-      pin_color: currentPin.pin_color,
-      pin_icon: currentPin.pin_icon,
-      year: currentPin.year,
-      reason: currentPin.reason,
-      budget: currentPin.budget,
-      notes: currentPin.notes || ''
-    };
-    var pinId = currentPin.id;
-    if (!pinId || String(pinId).startsWith('local_')) {
-      var res = await supabase.from('pins').insert(pinData).select().single();
-      if (res.error) throw res.error;
-      pinId = res.data.id;
-    } else {
-      var res2 = await supabase.from('pins').update(pinData).eq('id', pinId);
-      if (res2.error) throw res2.error;
-    }
-    for (var i = 0; i < tempPhotos.length; i++) {
-      var photo = tempPhotos[i];
-      if (photo.isNew && photo.file) {
-        var path = currentUser.id + '/' + pinId + '/' + Date.now() + '_' + photo.file.name;
-        var upRes = await supabase.storage.from('pin-photos').upload(path, photo.file);
-        if (!upRes.error) {
-          var urlData = supabase.storage.from('pin-photos').getPublicUrl(path);
-          await supabase.from('pin_photos').insert({ pin_id: pinId, photo_url: urlData.data.publicUrl, storage_path: path });
-        }
-      }
-    }
-    await supabase.from('pin_custom_fields').delete().eq('pin_id', pinId);
-    if (currentPin.custom_fields && currentPin.custom_fields.length > 0) {
-      var fields = currentPin.custom_fields.map(function(f, i) {
-        return { pin_id: pinId, field_name: f.field_name, field_value: f.field_value, sort_order: i };
-      });
-      await supabase.from('pin_custom_fields').insert(fields);
-    }
-    await loadPins();
-    closePinCard();
-  } catch (err) {
-    alert('儲存失敗: ' + err.message);
-  }
-}
-
-async function deletePin() {
-  if (!currentPin || !currentPin.id) return;
-  if (!confirm('確定要刪除這個圖釘嗎？')) return;
-  if (localMode || !supabase || !currentUser) {
-    pins = pins.filter(function(p) { return p.id !== currentPin.id; });
-    removeMarker(currentPin.id);
-    saveToLocal();
-    updateStats();
-    renderPinList();
-    closePinCard();
-    return;
-  }
-  try {
-    var photos = await supabase.from('pin_photos').select('storage_path').eq('pin_id', currentPin.id);
-    if (photos.data) {
-      for (var i = 0; i < photos.data.length; i++) {
-        if (photos.data[i].storage_path) await supabase.storage.from('pin-photos').remove([photos.data[i].storage_path]);
-      }
-    }
-    await supabase.from('pins').delete().eq('id', currentPin.id);
-    await loadPins();
-    closePinCard();
-  } catch (err) {
-    alert('刪除失敗: ' + err.message);
-  }
-}
-
-// =============================================
-// LOAD PINS
-// =============================================
-async function loadPins() {
-  if (localMode || !supabase || !currentUser) {
-    var saved = localStorage.getItem('travel_map_pins');
-    if (saved) {
-      try { pins = JSON.parse(saved); } catch(e) { pins = []; }
-    }
-    refreshMarkers();
-    return;
-  }
-  try {
-    var res = await supabase
-      .from('pins')
-      .select('*, pin_photos(*), pin_custom_fields(*)')
-      .eq('user_id', currentUser.id)
-      .order('created_at', { ascending: false });
-    if (res.error) throw res.error;
-    pins = (res.data || []).map(function(p) {
-      return Object.assign({}, p, {
-        photos: (p.pin_photos || []).map(function(ph) { return ph.photo_url; }),
-        custom_fields: (p.pin_custom_fields || []).sort(function(a, b) { return a.sort_order - b.sort_order; })
-      });
-    });
-    refreshMarkers();
-  } catch (err) {
-    console.error('Load pins error:', err);
-    localMode = true;
-    loadPins();
-  }
-}
-
-function saveToLocal() {
-  localStorage.setItem('travel_map_pins', JSON.stringify(pins));
-}
-
-// =============================================
-// REVERSE GEOCODE
-// =============================================
-async function reverseGeocode(lat, lng) {
-  try {
-    var resp = await fetch('https://nominatim.openstreetmap.org/reverse?lat=' + lat + '&lon=' + lng + '&format=json&accept-language=zh-TW');
-    var data = await resp.json();
-    if (data.address) {
-      var country = data.address.country || '';
-      var city = data.address.city || data.address.town || data.address.village || data.address.state || '';
-      if (currentPin) {
-        currentPin.country_name = country;
-        currentPin.city_name = city;
-        document.getElementById('pinCountry').value = country;
-        document.getElementById('pinCity').value = city;
-      }
-    }
-  } catch(e) {
-    console.log('Geocode failed:', e);
-  }
-}
-
-// =============================================
-// SIDEBAR
-// =============================================
-function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
-}
-
-function switchTab(tab) {
-  currentTab = tab;
-  document.querySelectorAll('.sidebar-tab[data-tab]').forEach(function(el) {
-    el.classList.toggle('active', el.dataset.tab === tab);
-  });
-  renderPinList();
-}
-
-function renderPinList() {
-  var list = document.getElementById('pinList');
-  var filtered = currentTab === 'all' ? pins : pins.filter(function(p) { return p.category === currentTab; });
-  if (filtered.length === 0) {
-    list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-light);"><i class="fas fa-map-marker-alt" style="font-size:32px;margin-bottom:12px;display:block;"></i>' +
-      (isTouchDevice ? '長按地圖或點擊 + 新增圖釘！' : '點擊地圖或右鍵新增圖釘！') + '</div>';
-    return;
-  }
-  list.innerHTML = filtered.map(function(pin) {
-    return '<div class="pin-list-item" onclick="flyToPin(\'' + pin.id + '\')">' +
-      '<div class="pin-list-dot" style="background:' + pin.pin_color + '"></div>' +
-      '<div class="pin-list-info"><div class="pin-list-name">' + escapeHtml(pin.country_name || '未命名') + '</div>' +
-      '<div class="pin-list-detail">' +
-      (pin.city_name ? escapeHtml(pin.city_name) + ' · ' : '') +
-      (pin.category === 'visited' ? '已去過' : '想去') +
-      (pin.year ? ' · ' + escapeHtml(pin.year) : '') +
-      '</div></div></div>';
-  }).join('');
-}
-
-function flyToPin(pinId) {
-  var pin = pins.find(function(p) { return p.id === pinId || String(p.id) === pinId; });
-  if (pin) {
-    // Close sidebar on mobile
-    if (window.innerWidth <= 640) document.getElementById('sidebar').classList.remove('open');
-    map.flyTo([pin.latitude, pin.longitude], 8, { duration: 0.8 });
-    setTimeout(function() { openEditPinCard(pin); }, 300);
-  }
-}
-
-// =============================================
-// STATS
-// =============================================
-function updateStats() {
-  document.getElementById('statVisited').textContent = pins.filter(function(p) { return p.category === 'visited'; }).length;
-  document.getElementById('statWant').textContent = pins.filter(function(p) { return p.category === 'want_to_go'; }).length;
-}
-
-// =============================================
-// EXPORT
-// =============================================
-function openExport() {
-  exportTab = 'all';
-  document.querySelectorAll('.sidebar-tab[data-export]').forEach(function(el) {
-    el.classList.toggle('active', el.dataset.export === 'all');
-  });
-  renderExportTable();
-  document.getElementById('exportOverlay').classList.add('open');
-}
-function closeExport() { document.getElementById('exportOverlay').classList.remove('open'); }
-
-function switchExportTab(tab) {
-  exportTab = tab;
-  document.querySelectorAll('.sidebar-tab[data-export]').forEach(function(el) {
-    el.classList.toggle('active', el.dataset.export === tab);
-  });
-  renderExportTable();
-}
-
-function getExportPins() {
-  return exportTab === 'all' ? pins : pins.filter(function(p) { return p.category === exportTab; });
-}
-
-function renderExportTable() {
-  var list = getExportPins();
-  if (list.length === 0) {
-    document.getElementById('exportContent').innerHTML = '<p style="text-align:center;color:var(--text-light);padding:20px;">沒有資料</p>';
-    return;
-  }
-  document.getElementById('exportContent').innerHTML =
-    '<table class="export-table"><thead><tr><th>國家</th><th>城市</th><th>分類</th><th>年度</th><th>花費</th></tr></thead><tbody>' +
-    list.map(function(p) {
-      return '<tr><td>' + escapeHtml(p.country_name || '-') + '</td><td>' + escapeHtml(p.city_name || '-') + '</td>' +
-        '<td><span class="category-badge ' + (p.category === 'visited' ? 'category-visited' : 'category-want') + '">' +
-        (p.category === 'visited' ? '已去過' : '想去') + '</span></td>' +
-        '<td>' + escapeHtml(p.year || '-') + '</td><td>' + escapeHtml(p.budget || '-') + '</td></tr>';
-    }).join('') + '</tbody></table>';
-}
-
-function exportCSV() {
-  var list = getExportPins();
-  var headers = ['國家', '城市', '分類', '年度', '理由', '花費', '緯度', '經度'];
-  var allCustomKeys = [];
-  list.forEach(function(p) { (p.custom_fields || []).forEach(function(f) { if (f.field_name && allCustomKeys.indexOf(f.field_name) === -1) allCustomKeys.push(f.field_name); }); });
-  var fullHeaders = headers.concat(allCustomKeys);
-  var rows = list.map(function(p) {
-    var base = [p.country_name || '', p.city_name || '', p.category === 'visited' ? '已去過' : '想去', p.year || '', p.reason || '', p.budget || '', p.latitude, p.longitude];
-    var custom = allCustomKeys.map(function(k) { var f = (p.custom_fields || []).find(function(cf) { return cf.field_name === k; }); return f ? f.field_value : ''; });
-    return base.concat(custom);
-  });
-  var bom = '\uFEFF';
-  var csv = bom + [fullHeaders].concat(rows).map(function(r) { return r.map(function(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
-  downloadFile(csv, 'travel-pins.csv', 'text/csv;charset=utf-8');
-}
-
-function exportJSON() {
-  var list = getExportPins();
-  var data = list.map(function(p) {
-    var cf = {};
-    (p.custom_fields || []).forEach(function(f) { if (f.field_name) cf[f.field_name] = f.field_value; });
-    return { country: p.country_name, city: p.city_name, category: p.category === 'visited' ? '已去過' : '想去', year: p.year, reason: p.reason, budget: p.budget, latitude: p.latitude, longitude: p.longitude, custom_fields: cf };
-  });
-  downloadFile(JSON.stringify(data, null, 2), 'travel-pins.json', 'application/json');
-}
-
-function downloadFile(content, filename, mime) {
-  var blob = new Blob([content], { type: mime });
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(a.href);
-}
-
-// =============================================
-// AUTH
-// =============================================
-function toggleAuth() {
-  document.getElementById('authPanel').classList.toggle('open');
-}
-
-async function signIn() {
-  if (!supabase) { alert('請先設定 Supabase URL 和 Key'); return; }
-  var email = document.getElementById('authEmail').value;
-  var password = document.getElementById('authPassword').value;
-  if (!email || !password) return;
-  var res = await supabase.auth.signInWithPassword({ email: email, password: password });
-  if (res.error) { alert('登入失敗: ' + res.error.message); return; }
-  currentUser = res.data.user;
-  localMode = false;
-  onAuthChange();
-}
-
-async function signUp() {
-  if (!supabase) { alert('請先設定 Supabase URL 和 Key'); return; }
-  var email = document.getElementById('authEmail').value;
-  var password = document.getElementById('authPassword').value;
-  if (!email || !password) return;
-  var res = await supabase.auth.signUp({ email: email, password: password });
-  if (res.error) { alert('註冊失敗: ' + res.error.message); return; }
-  alert('註冊成功！請確認你的 Email 後再登入。');
-}
-
-async function signOut() {
-  if (supabase) await supabase.auth.signOut();
-  currentUser = null;
-  onAuthChange();
-}
-
-function onAuthChange() {
-  var authBtn = document.getElementById('authBtn');
-  var authForm = document.getElementById('authForm');
-  var authInfo = document.getElementById('authInfo');
-  if (currentUser) {
-    authBtn.innerHTML = '<i class="fas fa-user-check"></i><span class="btn-label"> ' + currentUser.email.split('@')[0] + '</span>';
-    authForm.style.display = 'none';
-    authInfo.style.display = 'block';
-    document.getElementById('userEmail').textContent = currentUser.email;
-  } else {
-    authBtn.innerHTML = '<i class="fas fa-user"></i><span class="btn-label"> 登入</span>';
-    authForm.style.display = 'block';
-    authInfo.style.display = 'none';
-  }
-  document.getElementById('authPanel').classList.remove('open');
-  loadPins();
-}
-
-// =============================================
-// INIT
-// =============================================
-function initSupabase() {
-  try {
-    if (window.supabase && SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY') {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      console.log('Supabase connected');
-    }
-  } catch(e) {
-    console.warn('Supabase init failed:', e);
-    supabase = null;
-  }
-}
-
-async function init() {
-  initSupabase();
-  if (!supabase) {
-    console.log('Local mode');
-    localMode = true;
-    loadPins();
-    return;
-  }
-  try {
-    var session = await supabase.auth.getSession();
-    if (session.data.session) {
-      currentUser = session.data.session.user;
-      onAuthChange();
-    } else {
-      localMode = true;
-      loadPins();
-    }
-    supabase.auth.onAuthStateChange(function(event, session) {
-      currentUser = session ? session.user : null;
-      if (!currentUser) localMode = true;
-      onAuthChange();
-    });
-  } catch(e) {
-    localMode = true;
-    loadPins();
-  }
-}
-
-// Load Supabase SDK async - never blocks map
-(function() {
-  var s = document.createElement('script');
-  s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-  s.async = true;
-  s.onload = function() { init(); };
-  s.onerror = function() {
-    console.warn('Supabase SDK failed to load');
-    localMode = true;
-    loadPins();
-  };
-  document.head.appendChild(s);
+(function(){
+  if(!isTouchDevice)return;
+  var timer=null,start=null,mapEl=document.getElementById('map');
+  mapEl.addEventListener('touchstart',function(e){if(e.touches.length!==1)return;start={x:e.touches[0].clientX,y:e.touches[0].clientY};timer=setTimeout(function(){var rect=mapEl.getBoundingClientRect();var pt=map.containerPointToLatLng(L.point(start.x-rect.left,start.y-rect.top));showContextMenu(pt,start.x,start.y)},600)},{passive:true});
+  mapEl.addEventListener('touchmove',function(e){if(start){var dx=e.touches[0].clientX-start.x,dy=e.touches[0].clientY-start.y;if(Math.sqrt(dx*dx+dy*dy)>10){clearTimeout(timer);start=null}}},{passive:true});
+  mapEl.addEventListener('touchend',function(){clearTimeout(timer);start=null},{passive:true});
+  mapEl.addEventListener('touchcancel',function(){clearTimeout(timer);start=null},{passive:true});
 })();
 
-// Fallback: if Supabase SDK takes too long, start local mode
-setTimeout(function() {
-  if (pins.length === 0 && !currentUser) {
-    localMode = true;
-    loadPins();
+function showContextMenu(ll,cx,cy){contextLatLng=ll;var cm=document.getElementById('contextMenu');var vw=window.innerWidth,vh=window.innerHeight,x=cx,y=cy;if(x+180>vw)x=vw-190;if(y+100>vh)y=vh-110;if(x<8)x=8;if(y<8)y=8;cm.style.left=x+'px';cm.style.top=y+'px';cm.classList.add('open')}
+function closeContextMenu(){document.getElementById('contextMenu').classList.remove('open')}
+function contextAddVisited(){if(contextLatLng)openNewPinCard(contextLatLng.lat,contextLatLng.lng,'visited');closeContextMenu()}
+function contextAddWant(){if(contextLatLng)openNewPinCard(contextLatLng.lat,contextLatLng.lng,'want_to_go');closeContextMenu()}
+
+document.addEventListener('click',function(e){if(!e.target.closest('.context-menu'))closeContextMenu()});
+document.addEventListener('touchstart',function(e){if(!e.target.closest('.context-menu'))closeContextMenu()},{passive:true});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){cancelAddPin();closePinCard();closeExport();closeDashboard();closeTimeline();closeContextMenu();document.getElementById('imageViewer').classList.remove('open');document.getElementById('searchPanel').classList.remove('open')}});
+
+function startAddPin(){isAddingPin=true;addPinCategory='want_to_go';document.getElementById('map').classList.add('map-adding-pin');document.getElementById('addPinBanner').classList.add('show');document.getElementById('fabAdd').style.display='none'}
+function cancelAddPin(){isAddingPin=false;document.getElementById('map').classList.remove('map-adding-pin');document.getElementById('addPinBanner').classList.remove('show');if(isTouchDevice||window.innerWidth<=640)document.getElementById('fabAdd').style.display='flex'}
+
+/* MARKERS */
+function createMarkerIcon(color,iconId){
+  var ic=PIN_ICONS.find(function(i){return i.id===iconId})||PIN_ICONS[0];
+  return L.divIcon({className:'custom-pin',html:'<div style="width:36px;height:36px;border-radius:50% 50% 50% 0;background:'+color+';transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);border:2px solid #fff"><i class="fas '+ic.icon+'" style="color:#fff;font-size:14px;transform:rotate(45deg)"></i></div>',iconSize:[36,36],iconAnchor:[18,36],tooltipAnchor:[0,-36]});
+}
+
+function addMarker(pin){
+  var marker=L.marker([pin.latitude,pin.longitude],{icon:createMarkerIcon(pin.pin_color,pin.pin_icon),draggable:true});
+  marker.bindTooltip(pin.country_name||pin.city_name||'未命名',{permanent:true,direction:'top',className:'pin-tooltip',offset:[0,-4]});
+  marker.on('click',function(){openEditPinCard(pin)});
+  marker.on('dragend',function(e){
+    var ll=e.target.getLatLng(),p=pins.find(function(pp){return pp.id===pin.id});
+    if(p){p.latitude=ll.lat;p.longitude=ll.lng;
+      if(localMode||!supabase||!currentUser)saveToLocal();
+      else supabase.from('pins').update({latitude:ll.lat,longitude:ll.lng}).eq('id',p.id);
+      reverseGeocode(ll.lat,ll.lng,p).then(function(){marker.setTooltipContent(p.country_name||p.city_name||'未命名');updateCountryColors()});
+    }
+  });
+  clusterGroup.addLayer(marker);markers[pin.id]=marker;
+}
+function removeMarker(id){if(markers[id]){clusterGroup.removeLayer(markers[id]);delete markers[id]}}
+function refreshMarkers(){clusterGroup.clearLayers();markers={};pins.forEach(function(p){addMarker(p)});updateStats();renderPinList();updateCountryColors();updateYearFilter()}
+
+/* PIN CARD */
+function openNewPinCard(lat,lng,cat){
+  currentPin={id:null,latitude:lat,longitude:lng,country_name:'',city_name:'',country_code:'',category:cat||'want_to_go',pin_color:cat==='visited'?'#22C55E':'#F59E0B',pin_icon:'default',year:'',reason:'',budget:'',notes:'',photos:[],custom_fields:[]};
+  tempPhotos=[];document.getElementById('pinDeleteBtn').style.display='none';document.getElementById('pinCardTitle').textContent='新增圖釘';
+  fillPinCard();document.getElementById('pinCardOverlay').classList.add('open');
+  reverseGeocode(lat,lng,currentPin);loadWeatherVisa(lat,lng,null);
+}
+function openEditPinCard(pin){
+  currentPin=JSON.parse(JSON.stringify(pin));tempPhotos=pin.photos?pin.photos.slice():[];
+  document.getElementById('pinDeleteBtn').style.display='';document.getElementById('pinCardTitle').textContent='編輯圖釘';
+  fillPinCard();document.getElementById('pinCardOverlay').classList.add('open');
+  loadWeatherVisa(pin.latitude,pin.longitude,pin.country_name);
+}
+function closePinCard(){document.getElementById('pinCardOverlay').classList.remove('open');currentPin=null;tempPhotos=[]}
+
+function fillPinCard(){
+  document.getElementById('pinCategory').value=currentPin.category;
+  document.getElementById('pinCountry').value=currentPin.country_name||'';
+  document.getElementById('pinCity').value=currentPin.city_name||'';
+  document.getElementById('pinYear').value=currentPin.year||'';
+  document.getElementById('pinReason').value=currentPin.reason||'';
+  document.getElementById('pinBudget').value=currentPin.budget||'';
+  document.getElementById('colorPicker').innerHTML=PIN_COLORS.map(function(c){return'<div class="color-option'+(currentPin.pin_color===c?' active':'')+'" style="background:'+c+'" onclick="selectColor(\''+c+'\')"></div>'}).join('');
+  document.getElementById('iconPicker').innerHTML=PIN_ICONS.map(function(i){return'<div class="icon-option'+(currentPin.pin_icon===i.id?' active':'')+'" onclick="selectIcon(\''+i.id+'\')" title="'+i.label+'"><i class="fas '+i.icon+'"></i></div>'}).join('');
+  renderPhotos();renderCustomFields();
+}
+function selectColor(c){currentPin.pin_color=c;document.getElementById('colorPicker').innerHTML=PIN_COLORS.map(function(cc){return'<div class="color-option'+(currentPin.pin_color===cc?' active':'')+'" style="background:'+cc+'" onclick="selectColor(\''+cc+'\')"></div>'}).join('')}
+function selectIcon(id){currentPin.pin_icon=id;document.getElementById('iconPicker').innerHTML=PIN_ICONS.map(function(i){return'<div class="icon-option'+(currentPin.pin_icon===i.id?' active':'')+'" onclick="selectIcon(\''+i.id+'\')" title="'+i.label+'"><i class="fas '+i.icon+'"></i></div>'}).join('')}
+
+function renderPhotos(){
+  var g=document.getElementById('photoGallery'),h='';
+  tempPhotos.forEach(function(p,i){var u=typeof p==='string'?p:(p.photo_url||p.url);h+='<div class="photo-thumb"><img src="'+u+'" onclick="viewImage(this.src)"><button class="remove-photo" onclick="removePhoto('+i+')">&times;</button></div>'});
+  g.innerHTML=h+'<div class="photo-add-btn" onclick="document.getElementById(\'photoInput\').click()">+</div>';
+}
+function removePhoto(i){tempPhotos.splice(i,1);renderPhotos()}
+function viewImage(u){document.getElementById('imageViewerImg').src=u;document.getElementById('imageViewer').classList.add('open')}
+document.getElementById('photoInput').addEventListener('change',function(e){Array.from(e.target.files).forEach(function(f){var r=new FileReader();r.onload=function(ev){tempPhotos.push({photo_url:ev.target.result,file:f,isNew:true});renderPhotos()};r.readAsDataURL(f)});e.target.value=''});
+
+function renderCustomFields(){
+  var c=document.getElementById('customFields'),fs=currentPin.custom_fields||[];
+  c.innerHTML=fs.map(function(f,i){return'<div class="custom-field-row"><input class="field-input" placeholder="欄位名稱" value="'+escapeHtml(f.field_name)+'" onchange="updateCF('+i+',\'field_name\',this.value)" style="max-width:110px"><input class="field-input" placeholder="內容" value="'+escapeHtml(f.field_value)+'" onchange="updateCF('+i+',\'field_value\',this.value)"><button class="remove-field-btn" onclick="removeCF('+i+')"><i class="fas fa-times"></i></button></div>'}).join('');
+}
+function addCustomField(){if(!currentPin.custom_fields)currentPin.custom_fields=[];currentPin.custom_fields.push({field_name:'',field_value:'',sort_order:currentPin.custom_fields.length});renderCustomFields()}
+function removeCF(i){currentPin.custom_fields.splice(i,1);renderCustomFields()}
+function updateCF(i,k,v){currentPin.custom_fields[i][k]=v}
+
+/* WEATHER & VISA */
+function loadWeatherVisa(lat,lng,country){
+  var sec=document.getElementById('weatherVisaSection'),cards=document.getElementById('infoCards');
+  sec.style.display='block';
+  cards.innerHTML='<div style="text-align:center;padding:8px;color:var(--text2);font-size:13px"><i class="fas fa-spinner fa-spin"></i> 載入天氣...</div>';
+  fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lng+'&current_weather=true')
+    .then(function(r){return r.json()}).then(function(d){
+      if(d.current_weather){var w=d.current_weather,desc=WX_DESC[w.weathercode]||'--',icon=WX_ICON[w.weathercode]||'fa-cloud';
+        cards.innerHTML='<div class="info-card"><div class="info-card-icon"><i class="fas '+icon+'"></i></div><div class="info-card-val">'+w.temperature+'°C</div><div class="info-card-label">'+desc+'</div></div><div class="info-card"><div class="info-card-icon"><i class="fas fa-wind"></i></div><div class="info-card-val">'+w.windspeed+'</div><div class="info-card-label">km/h 風速</div></div>'}
+    }).catch(function(){cards.innerHTML='<div style="font-size:12px;color:var(--text2)">天氣暫時無法取得</div>'});
+  var vl=document.getElementById('visaLink'),cn=country||'';
+  if(cn){vl.href='https://www.google.com/search?q='+encodeURIComponent('台灣護照 '+cn+' 簽證 入境');vl.style.display=''}else{vl.style.display='none'}
+}
+
+/* SAVE / DELETE */
+async function savePin(){
+  currentPin.category=document.getElementById('pinCategory').value;currentPin.country_name=document.getElementById('pinCountry').value;
+  currentPin.city_name=document.getElementById('pinCity').value;currentPin.year=document.getElementById('pinYear').value;
+  currentPin.reason=document.getElementById('pinReason').value;currentPin.budget=document.getElementById('pinBudget').value;
+  if(localMode||!supabase||!currentUser){
+    if(!currentPin.id)currentPin.id='local_'+Date.now()+'_'+Math.random().toString(36).substr(2,6);
+    currentPin.photos=tempPhotos.map(function(p){return typeof p==='string'?p:(p.photo_url||p.url)});
+    var idx=pins.findIndex(function(p){return p.id===currentPin.id});
+    if(idx>=0)pins[idx]=JSON.parse(JSON.stringify(currentPin));else pins.push(JSON.parse(JSON.stringify(currentPin)));
+    saveToLocal();refreshMarkers();closePinCard();return;
   }
-}, 3000);
+  try{
+    var d={user_id:currentUser.id,latitude:currentPin.latitude,longitude:currentPin.longitude,country_name:currentPin.country_name,city_name:currentPin.city_name,category:currentPin.category,pin_color:currentPin.pin_color,pin_icon:currentPin.pin_icon,year:currentPin.year,reason:currentPin.reason,budget:currentPin.budget,notes:currentPin.notes||'',country_code:currentPin.country_code||''};
+    var pinId=currentPin.id;
+    if(!pinId||String(pinId).startsWith('local_')){var r=await supabase.from('pins').insert(d).select().single();if(r.error)throw r.error;pinId=r.data.id}
+    else{var r2=await supabase.from('pins').update(d).eq('id',pinId);if(r2.error)throw r2.error}
+    for(var i=0;i<tempPhotos.length;i++){var ph=tempPhotos[i];if(ph.isNew&&ph.file){var path=currentUser.id+'/'+pinId+'/'+Date.now()+'_'+ph.file.name;var up=await supabase.storage.from('pin-photos').upload(path,ph.file);if(!up.error){var u=supabase.storage.from('pin-photos').getPublicUrl(path);await supabase.from('pin_photos').insert({pin_id:pinId,photo_url:u.data.publicUrl,storage_path:path})}}}
+    await supabase.from('pin_custom_fields').delete().eq('pin_id',pinId);
+    if(currentPin.custom_fields&&currentPin.custom_fields.length>0){await supabase.from('pin_custom_fields').insert(currentPin.custom_fields.map(function(f,i){return{pin_id:pinId,field_name:f.field_name,field_value:f.field_value,sort_order:i}}))}
+    await loadPins();closePinCard();
+  }catch(err){alert('儲存失敗: '+err.message)}
+}
+
+async function deletePin(){
+  if(!currentPin||!currentPin.id)return;if(!confirm('確定要刪除？'))return;
+  if(localMode||!supabase||!currentUser){pins=pins.filter(function(p){return p.id!==currentPin.id});removeMarker(currentPin.id);saveToLocal();updateStats();renderPinList();updateCountryColors();closePinCard();return}
+  try{var ph=await supabase.from('pin_photos').select('storage_path').eq('pin_id',currentPin.id);if(ph.data)for(var i=0;i<ph.data.length;i++){if(ph.data[i].storage_path)await supabase.storage.from('pin-photos').remove([ph.data[i].storage_path])}
+    await supabase.from('pins').delete().eq('id',currentPin.id);await loadPins();closePinCard();
+  }catch(err){alert('刪除失敗: '+err.message)}
+}
+
+/* LOAD PINS */
+async function loadPins(){
+  if(localMode||!supabase||!currentUser){var s=localStorage.getItem('travel_map_pins');if(s)try{pins=JSON.parse(s)}catch(e){pins=[]}refreshMarkers();return}
+  try{var r=await supabase.from('pins').select('*, pin_photos(*), pin_custom_fields(*)').eq('user_id',currentUser.id).order('created_at',{ascending:false});
+    if(r.error)throw r.error;
+    pins=(r.data||[]).map(function(p){return Object.assign({},p,{photos:(p.pin_photos||[]).map(function(ph){return ph.photo_url}),custom_fields:(p.pin_custom_fields||[]).sort(function(a,b){return a.sort_order-b.sort_order})})});
+    refreshMarkers();
+  }catch(err){console.error('Load error:',err);localMode=true;loadPins()}
+}
+function saveToLocal(){localStorage.setItem('travel_map_pins',JSON.stringify(pins))}
+
+/* REVERSE GEOCODE */
+async function reverseGeocode(lat,lng,target){
+  try{var r=await fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lng+'&format=json&accept-language=zh-TW');var d=await r.json();
+    if(d.address){var country=d.address.country||'',city=d.address.city||d.address.town||d.address.village||d.address.state||'',cc=d.address.country_code||'';
+      if(target){target.country_name=country;target.city_name=city;target.country_code=cc}
+      if(currentPin&&target===currentPin){document.getElementById('pinCountry').value=country;document.getElementById('pinCity').value=city;
+        var vl=document.getElementById('visaLink');if(country){vl.href='https://www.google.com/search?q='+encodeURIComponent('台灣護照 '+country+' 簽證 入境');vl.style.display=''}}
+      return{country:country,city:city,country_code:cc}}
+  }catch(e){console.log('Geocode failed:',e)}return null;
+}
+
+/* SEARCH */
+function toggleSearch(){var p=document.getElementById('searchPanel');p.classList.toggle('open');if(p.classList.contains('open'))document.getElementById('searchInput').focus()}
+function doSearch(q){
+  clearTimeout(searchTimer);var res=document.getElementById('searchResults');
+  if(!q||q.length<2){res.innerHTML='';return}
+  var local=pins.filter(function(p){return(p.country_name||'').indexOf(q)>=0||(p.city_name||'').indexOf(q)>=0});
+  var h=local.slice(0,5).map(function(p){return'<div class="search-item" onclick="searchFlyTo('+p.latitude+','+p.longitude+',\''+p.id+'\')"><i class="fas fa-map-pin"></i> '+escapeHtml(p.country_name)+' '+escapeHtml(p.city_name)+'</div>'}).join('');
+  if(h)h='<div style="font-size:11px;color:var(--text2);padding:4px 8px">我的圖釘</div>'+h;
+  res.innerHTML=h+'<div style="font-size:11px;color:var(--text2);padding:4px 8px"><i class="fas fa-spinner fa-spin"></i> 搜尋中...</div>';
+  searchTimer=setTimeout(function(){
+    fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(q)+'&format=json&limit=5&accept-language=zh-TW')
+      .then(function(r){return r.json()}).then(function(data){
+        var mh=data.map(function(d){return'<div class="search-item" onclick="searchFlyTo('+d.lat+','+d.lon+')"><i class="fas fa-globe"></i> '+escapeHtml(d.display_name).substring(0,60)+'</div>'}).join('');
+        if(mh)h+='<div style="font-size:11px;color:var(--text2);padding:4px 8px">地圖搜尋</div>'+mh;
+        res.innerHTML=h||'<div style="padding:12px;text-align:center;color:var(--text2);font-size:13px">找不到結果</div>';
+      }).catch(function(){});
+  },400);
+}
+function searchFlyTo(lat,lng,pinId){
+  map.flyTo([lat,lng],pinId?10:6,{duration:.8});document.getElementById('searchPanel').classList.remove('open');
+  document.getElementById('searchInput').value='';document.getElementById('searchResults').innerHTML='';
+  if(pinId){var p=pins.find(function(pp){return pp.id===pinId||String(pp.id)===pinId});if(p)setTimeout(function(){openEditPinCard(p)},400)}
+}
+
+/* SIDEBAR */
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open')}
+function switchTab(t){currentTab=t;document.querySelectorAll('.sidebar-tab[data-tab]').forEach(function(el){el.classList.toggle('active',el.dataset.tab===t)});renderPinList()}
+function updateYearFilter(){var sel=document.getElementById('filterYear'),years={};pins.forEach(function(p){if(p.year)years[p.year]=true});sel.innerHTML='<option value="">所有年份</option>'+Object.keys(years).sort().reverse().map(function(y){return'<option value="'+y+'"'+(filterYear===y?' selected':'')+'>'+y+'</option>'}).join('')}
+function applyFilters(){filterContinent=document.getElementById('filterContinent').value;filterYear=document.getElementById('filterYear').value;renderPinList()}
+function getFilteredPins(){var list=currentTab==='all'?pins:pins.filter(function(p){return p.category===currentTab});if(filterContinent)list=list.filter(function(p){return getContinent(p.country_code)===filterContinent});if(filterYear)list=list.filter(function(p){return p.year===filterYear});return list}
+
+function renderPinList(){
+  var list=document.getElementById('pinList'),filtered=getFilteredPins();
+  if(!filtered.length){list.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--text2)"><i class="fas fa-map-marker-alt" style="font-size:28px;margin-bottom:10px;display:block"></i>'+(isTouchDevice?'長按地圖或點 + 新增':'點擊地圖或右鍵新增')+'</div>';return}
+  list.innerHTML=filtered.map(function(pin){return'<div class="pin-list-item" onclick="flyToPin(\''+pin.id+'\')"><div class="pin-list-dot" style="background:'+pin.pin_color+'"></div><div class="pin-list-info"><div class="pin-list-name">'+escapeHtml(pin.country_name||'未命名')+'</div><div class="pin-list-detail">'+(pin.city_name?escapeHtml(pin.city_name)+' · ':'')+(pin.category==='visited'?'已去過':'想去')+(pin.year?' · '+escapeHtml(pin.year):'')+'</div></div></div>'}).join('');
+}
+function flyToPin(id){var pin=pins.find(function(p){return p.id===id||String(p.id)===id});if(pin){if(window.innerWidth<=640)document.getElementById('sidebar').classList.remove('open');map.flyTo([pin.latitude,pin.longitude],8,{duration:.8});setTimeout(function(){openEditPinCard(pin)},300)}}
+
+/* STATS */
+function updateStats(){document.getElementById('statVisited').textContent=pins.filter(function(p){return p.category==='visited'}).length;document.getElementById('statWant').textContent=pins.filter(function(p){return p.category==='want_to_go'}).length}
+
+/* DASHBOARD */
+function openDashboard(){renderDashboard();document.getElementById('dashOverlay').classList.add('open')}
+function closeDashboard(){document.getElementById('dashOverlay').classList.remove('open')}
+function renderDashboard(){
+  var visited=pins.filter(function(p){return p.category==='visited'}),want=pins.filter(function(p){return p.category==='want_to_go'});
+  var countries={};visited.forEach(function(p){if(p.country_name)countries[p.country_name]=true});var cc=Object.keys(countries).length;
+  var conts={};visited.forEach(function(p){var c=getContinent(p.country_code);if(c&&c!=='未知'&&c!=='其他')conts[c]=true});var contC=Object.keys(conts).length;
+  var budget=0;visited.forEach(function(p){budget+=parseBudget(p.budget)});var budgetStr=budget>0?'NT$ '+budget.toLocaleString():'--';
+  var ALL=['亞洲','歐洲','北美洲','南美洲','非洲','大洋洲'],contData={};ALL.forEach(function(c){contData[c]=0});visited.forEach(function(p){var c=getContinent(p.country_code);if(contData[c]!==undefined)contData[c]++});
+  var mx=Math.max.apply(null,ALL.map(function(c){return contData[c]}))||1;
+  var cb=ALL.map(function(c){var pct=Math.round(contData[c]/mx*100);return'<div class="chart-bar"><div class="chart-label">'+c+'</div><div class="chart-track"><div class="chart-fill" style="width:'+Math.max(pct,contData[c]?8:0)+'%;background:'+(contData[c]?'var(--pri)':'#E2E8F0')+'">'+contData[c]+'</div></div></div>'}).join('');
+  var yd={};pins.forEach(function(p){if(p.year&&p.category==='visited')yd[p.year]=(yd[p.year]||0)+1});var ys=Object.keys(yd).sort(),my=Math.max.apply(null,ys.map(function(y){return yd[y]}))||1;
+  var yb=ys.map(function(y){var pct=Math.round(yd[y]/my*100);return'<div class="chart-bar"><div class="chart-label">'+y+'</div><div class="chart-track"><div class="chart-fill" style="width:'+Math.max(pct,8)+'%;background:var(--ok)">'+yd[y]+'</div></div></div>'}).join('');
+  document.getElementById('dashContent').innerHTML='<div class="dash-stats"><div class="dash-stat"><div class="dash-stat-val">'+cc+'</div><div class="dash-stat-label">國家</div></div><div class="dash-stat"><div class="dash-stat-val">'+contC+' / 6</div><div class="dash-stat-label">洲</div></div><div class="dash-stat"><div class="dash-stat-val">'+visited.length+'</div><div class="dash-stat-label">已去過</div></div></div><div class="dash-stats" style="grid-template-columns:1fr 1fr"><div class="dash-stat"><div class="dash-stat-val">'+want.length+'</div><div class="dash-stat-label">想去的地方</div></div><div class="dash-stat"><div class="dash-stat-val" style="font-size:18px">'+budgetStr+'</div><div class="dash-stat-label">已花費總額</div></div></div><div class="dash-section"><h3>各洲分佈</h3>'+cb+'</div>'+(yb?'<div class="dash-section"><h3>年度旅行次數</h3>'+yb+'</div>':'');
+}
+
+/* TIMELINE */
+function openTimeline(){renderTimeline();document.getElementById('tlOverlay').classList.add('open')}
+function closeTimeline(){document.getElementById('tlOverlay').classList.remove('open')}
+function renderTimeline(){
+  var sorted=pins.filter(function(p){return p.year}).sort(function(a,b){return(b.year||'').localeCompare(a.year||'')});
+  if(!sorted.length){document.getElementById('tlContent').innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">尚無有年份的旅行記錄</div>';return}
+  var html='',lastY='';
+  sorted.forEach(function(p){if(p.year!==lastY){html+='<div class="tl-year"><i class="fas fa-calendar"></i> '+escapeHtml(p.year)+'</div>';lastY=p.year}
+    html+='<div class="tl-item" onclick="tlFlyTo(\''+p.id+'\')"><div class="tl-dot" style="background:'+p.pin_color+'"></div><div class="tl-card"><div class="tl-country">'+escapeHtml(p.country_name||'未命名')+(p.city_name?' · '+escapeHtml(p.city_name):'')+'</div><div class="tl-detail">'+(p.category==='visited'?'已去過':'想去')+(p.budget?' · '+escapeHtml(p.budget):'')+(p.reason?' · '+escapeHtml(p.reason).substring(0,30):'')+'</div></div></div>'});
+  document.getElementById('tlContent').innerHTML=html;
+}
+function tlFlyTo(id){closeTimeline();var pin=pins.find(function(p){return p.id===id||String(p.id)===id});if(pin){map.flyTo([pin.latitude,pin.longitude],8,{duration:.8});setTimeout(function(){openEditPinCard(pin)},400)}}
+
+/* EXPORT */
+function openExport(){exportTab='all';document.querySelectorAll('.sidebar-tab[data-export]').forEach(function(el){el.classList.toggle('active',el.dataset.export==='all')});renderExportTable();document.getElementById('exportOverlay').classList.add('open')}
+function closeExport(){document.getElementById('exportOverlay').classList.remove('open')}
+function switchExportTab(t){exportTab=t;document.querySelectorAll('.sidebar-tab[data-export]').forEach(function(el){el.classList.toggle('active',el.dataset.export===t)});renderExportTable()}
+function getExportPins(){return exportTab==='all'?pins:pins.filter(function(p){return p.category===exportTab})}
+function renderExportTable(){var list=getExportPins();if(!list.length){document.getElementById('exportContent').innerHTML='<p style="text-align:center;color:var(--text2);padding:20px">沒有資料</p>';return}document.getElementById('exportContent').innerHTML='<table class="export-table"><thead><tr><th>國家</th><th>城市</th><th>分類</th><th>年度</th><th>花費</th></tr></thead><tbody>'+list.map(function(p){return'<tr><td>'+escapeHtml(p.country_name||'-')+'</td><td>'+escapeHtml(p.city_name||'-')+'</td><td><span class="badge '+(p.category==='visited'?'badge-ok':'badge-warn')+'">'+(p.category==='visited'?'已去過':'想去')+'</span></td><td>'+escapeHtml(p.year||'-')+'</td><td>'+escapeHtml(p.budget||'-')+'</td></tr>'}).join('')+'</tbody></table>'}
+
+function exportCSV(){var list=getExportPins(),hd=['國家','城市','分類','年度','理由','花費','緯度','經度'],ck=[];list.forEach(function(p){(p.custom_fields||[]).forEach(function(f){if(f.field_name&&ck.indexOf(f.field_name)<0)ck.push(f.field_name)})});var fh=hd.concat(ck);var rows=list.map(function(p){var b=[p.country_name||'',p.city_name||'',p.category==='visited'?'已去過':'想去',p.year||'',p.reason||'',p.budget||'',p.latitude,p.longitude];return b.concat(ck.map(function(k){var f=(p.custom_fields||[]).find(function(cf){return cf.field_name===k});return f?f.field_value:''}))});downloadFile('\uFEFF'+[fh].concat(rows).map(function(r){return r.map(function(v){return'"'+String(v).replace(/"/g,'""')+'"'}).join(',')}).join('\n'),'globetrotting.csv','text/csv;charset=utf-8')}
+function exportJSON(){var list=getExportPins();downloadFile(JSON.stringify(list.map(function(p){var cf={};(p.custom_fields||[]).forEach(function(f){if(f.field_name)cf[f.field_name]=f.field_value});return{country:p.country_name,city:p.city_name,category:p.category==='visited'?'已去過':'想去',year:p.year,reason:p.reason,budget:p.budget,lat:p.latitude,lng:p.longitude,custom_fields:cf}}),null,2),'globetrotting.json','application/json')}
+function downloadFile(c,f,m){var b=new Blob([c],{type:m}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=f;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href)}
+
+/* AUTH */
+function toggleAuth(){document.getElementById('authPanel').classList.toggle('open')}
+async function signIn(){if(!supabase){alert('Supabase 未連線');return}var e=document.getElementById('authEmail').value,p=document.getElementById('authPassword').value;if(!e||!p)return;var r=await supabase.auth.signInWithPassword({email:e,password:p});if(r.error){alert('登入失敗: '+r.error.message);return}currentUser=r.data.user;localMode=false;onAuthChange()}
+async function signUp(){if(!supabase){alert('Supabase 未連線');return}var e=document.getElementById('authEmail').value,p=document.getElementById('authPassword').value;if(!e||!p)return;var r=await supabase.auth.signUp({email:e,password:p});if(r.error){alert('註冊失敗: '+r.error.message);return}alert('註冊成功！請確認 Email 後登入。')}
+async function signOut(){if(supabase)await supabase.auth.signOut();currentUser=null;onAuthChange()}
+function onAuthChange(){var ab=document.getElementById('authBtn');if(currentUser){ab.innerHTML='<i class="fas fa-user-check"></i><span class="bl"> '+currentUser.email.split('@')[0]+'</span>';document.getElementById('authForm').style.display='none';document.getElementById('authInfo').style.display='block';document.getElementById('userEmail').textContent=currentUser.email}else{ab.innerHTML='<i class="fas fa-user"></i><span class="bl"> 登入</span>';document.getElementById('authForm').style.display='block';document.getElementById('authInfo').style.display='none'}document.getElementById('authPanel').classList.remove('open');loadPins()}
+
+/* INIT */
+function initSupabase(){try{if(window.supabase&&SUPABASE_URL.indexOf('YOUR_')<0){supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);console.log('Supabase OK')}}catch(e){console.warn('Supabase init failed:',e);supabase=null}}
+async function init(){initSupabase();if(!supabase){localMode=true;loadPins();return}try{var s=await supabase.auth.getSession();if(s.data.session){currentUser=s.data.session.user;onAuthChange()}else{localMode=true;loadPins()}supabase.auth.onAuthStateChange(function(ev,ses){currentUser=ses?ses.user:null;if(!currentUser)localMode=true;onAuthChange()})}catch(e){localMode=true;loadPins()}}
+(function(){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';s.async=true;s.onload=function(){init()};s.onerror=function(){localMode=true;loadPins()};document.head.appendChild(s)})();
+setTimeout(function(){if(!pins.length&&!currentUser){localMode=true;loadPins()}},3000);
 </script>
 </body>
 </html>
