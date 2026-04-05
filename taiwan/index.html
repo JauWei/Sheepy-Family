@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的景點筆記</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root {
+    --bg: linear-gradient(135deg, #fff3cd 0%, #e8f5e9 50%, #e3f2fd 100%);
+    --card-bg: #fff; --card-border: #ffe082; --card-item-border: #f0f0f0;
+    --text: #333; --text-sub: #666; --text-muted: #999; --text-faint: #ccc;
+    --input-border: #e0e0e0; --input-bg: #fff; --form-bg: #fafafa;
+    --accent: #ff7043; --accent-light: #fff3e0;
+    --badge-env-bg: #e3f2fd; --badge-env-c: #1565c0;
+    --badge-type-bg: #e8f5e9; --badge-type-c: #43a047;
+    --badge-price-bg: #fff3e0; --badge-price-c: #e65100;
+    --badge-region-bg: #fce4ec; --badge-region-c: #e91e63;
+    --badge-tag-bg: #f3e5f5; --badge-tag-c: #8e24aa;
+    --hover-shadow: rgba(0,0,0,0.05); --overlay: rgba(0,0,0,0.45);
+    --star-color: #ffc107; --visited-opacity: 0.55;
+    --section-bg: #fff;
+  }
+  [data-theme="dark"] {
+    --bg: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    --card-bg: #1e1e2f; --card-border: #3a3a5c; --card-item-border: #2a2a44;
+    --text: #e0e0e0; --text-sub: #b0b0c0; --text-muted: #888; --text-faint: #555;
+    --input-border: #3a3a5c; --input-bg: #2a2a44; --form-bg: #252540;
+    --accent: #ff8a65; --accent-light: #3a2a1e;
+    --badge-env-bg: #1a2e4a; --badge-env-c: #64b5f6;
+    --badge-type-bg: #1a3a2a; --badge-type-c: #81c784;
+    --badge-price-bg: #3a2a1a; --badge-price-c: #ffb74d;
+    --badge-region-bg: #3a1a2a; --badge-region-c: #f48fb1;
+    --badge-tag-bg: #2a1a3a; --badge-tag-c: #ce93d8;
+    --hover-shadow: rgba(255,255,255,0.03); --overlay: rgba(0,0,0,0.7);
+    --star-color: #ffd54f; --visited-opacity: 0.4;
+    --section-bg: #252540;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Microsoft JhengHei', 'Segoe UI', sans-serif;
+    background: var(--bg); min-height: 100vh; padding: 20px;
+    color: var(--text); transition: background 0.3s, color 0.3s;
+  }
+  .container {
+    max-width: 780px; margin: 0 auto; background: var(--card-bg);
+    border-radius: 20px; padding: 30px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 3px solid var(--card-border);
+    transition: background 0.3s, border-color 0.3s;
+  }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  h1 { color: var(--accent); font-size: 1.8em; }
+  .subtitle { text-align: center; color: var(--text-muted); font-size: 0.9em; margin-bottom: 20px; }
+
+  /* Dark mode toggle */
+  .theme-toggle {
+    width: 44px; height: 24px; border-radius: 12px; border: 2px solid var(--input-border);
+    background: var(--input-bg); cursor: pointer; position: relative; transition: all 0.3s;
+  }
+  .theme-toggle::after {
+    content: '☀️'; position: absolute; left: 2px; top: 1px; font-size: 14px; transition: transform 0.3s;
+  }
+  [data-theme="dark"] .theme-toggle::after { content: '🌙'; transform: translateX(19px); }
+
+  /* Search & Sort bar */
+  .toolbar { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
+  .search-box {
+    flex: 1; min-width: 180px; padding: 10px 14px 10px 36px;
+    border: 2px solid var(--input-border); border-radius: 12px; font-size: 0.95em;
+    outline: none; background: var(--input-bg); color: var(--text);
+    transition: border-color 0.2s; font-family: inherit;
+  }
+  .search-box:focus { border-color: var(--accent); }
+  .search-wrap { position: relative; flex: 1; min-width: 180px; }
+  .search-wrap::before { content: '🔍'; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; }
+  .sort-select {
+    padding: 10px 14px; border: 2px solid var(--input-border); border-radius: 12px;
+    font-size: 0.9em; background: var(--input-bg); color: var(--text);
+    outline: none; cursor: pointer; font-family: inherit;
+  }
+  .view-btns { display: flex; gap: 4px; }
+  .view-btn {
+    width: 36px; height: 36px; border: 2px solid var(--input-border); border-radius: 10px;
+    background: var(--input-bg); cursor: pointer; font-size: 1em; color: var(--text-sub);
+    display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+  }
+  .view-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+  /* Section */
+  .section { margin-bottom: 22px; }
+  .section-title {
+    font-weight: bold; color: var(--text-sub); margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .section-title .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .dot-green { background: #66bb6a; } .dot-pink { background: #f06292; }
+  .dot-orange { background: #ffa726; } .dot-blue { background: #42a5f5; }
+  .dot-purple { background: #ab47bc; } .dot-cyan { background: #26c6da; }
+
+  /* Tags */
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag {
+    padding: 8px 16px; border-radius: 20px; border: 2px solid var(--input-border);
+    background: var(--input-bg); cursor: pointer; font-size: 0.9em;
+    transition: all 0.2s; user-select: none; color: var(--text-sub);
+  }
+  .tag:hover { border-color: #bbb; transform: scale(1.03); }
+  .tag.active { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+  .tag.active-green { border-color: #66bb6a; color: #43a047; background: var(--badge-type-bg); }
+  .tag.active-blue { border-color: #42a5f5; color: #1e88e5; background: var(--badge-env-bg); }
+  .tag.active-pink { border-color: #f06292; color: #e91e63; background: var(--badge-region-bg); }
+  .tag.active-purple { border-color: #ab47bc; color: #8e24aa; background: var(--badge-tag-bg); }
+  .tag.active-cyan { border-color: #26c6da; color: #00838f; background: #e0f7fa; }
+
+  /* Custom tag input */
+  .custom-tag-row { display: flex; gap: 6px; align-items: center; margin-top: 8px; }
+  .custom-tag-input {
+    padding: 6px 12px; border: 2px dashed var(--input-border); border-radius: 20px;
+    font-size: 0.85em; outline: none; width: 140px; background: var(--input-bg);
+    color: var(--text); font-family: inherit;
+  }
+  .custom-tag-input:focus { border-color: var(--accent); }
+  .btn-add-tag {
+    padding: 6px 14px; border-radius: 20px; border: none;
+    background: var(--accent); color: #fff; font-size: 0.8em;
+    cursor: pointer; font-weight: bold;
+  }
+
+  /* Add form */
+  .add-form {
+    background: var(--form-bg); border-radius: 16px; padding: 20px;
+    margin-bottom: 24px; border: 2px dashed var(--input-border);
+    transition: background 0.3s;
+  }
+  .add-form h2 { font-size: 1.1em; color: var(--accent); margin-bottom: 14px; }
+  .form-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .form-row input, .form-row select {
+    padding: 10px 14px; border: 2px solid var(--input-border); border-radius: 12px;
+    font-size: 0.95em; outline: none; transition: border-color 0.2s;
+    font-family: inherit; background: var(--input-bg); color: var(--text);
+  }
+  .form-row input:focus, .form-row select:focus { border-color: var(--accent); }
+  .form-row input[type="text"], .form-row input[type="url"] { flex: 1; min-width: 150px; }
+  .form-row select { min-width: 120px; }
+  .form-row textarea {
+    width: 100%; padding: 10px 14px; border: 2px solid var(--input-border); border-radius: 12px;
+    font-size: 0.95em; outline: none; resize: vertical; min-height: 50px;
+    font-family: inherit; transition: border-color 0.2s;
+    background: var(--input-bg); color: var(--text);
+  }
+  .form-row textarea:focus { border-color: var(--accent); }
+  .form-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .btn-add {
+    padding: 10px 28px; background: linear-gradient(135deg, #ff7043, #ff8a65);
+    color: #fff; border: none; border-radius: 12px; font-size: 1em;
+    cursor: pointer; font-weight: bold; transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn-add:hover { transform: scale(1.04); box-shadow: 0 3px 12px rgba(255,112,67,0.35); }
+  .btn-cancel {
+    padding: 10px 20px; background: var(--input-bg); color: var(--text-sub);
+    border: 2px solid var(--input-border); border-radius: 12px; font-size: 0.95em;
+    cursor: pointer; font-family: inherit;
+  }
+
+  /* Tag chips in form */
+  .form-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .form-tag-chip {
+    padding: 4px 12px; border-radius: 14px; font-size: 0.8em;
+    background: var(--badge-tag-bg); color: var(--badge-tag-c);
+    cursor: pointer; transition: all 0.2s; border: 1px solid transparent;
+  }
+  .form-tag-chip.selected { border-color: var(--badge-tag-c); font-weight: bold; }
+  .form-tag-chip:hover { opacity: 0.8; }
+
+  /* Spot list */
+  .spot-list { margin-top: 10px; }
+  .spot-card {
+    background: var(--card-bg); border: 2px solid var(--card-item-border);
+    border-radius: 16px; padding: 14px 16px; margin-bottom: 10px;
+    display: flex; align-items: flex-start; gap: 10px;
+    transition: border-color 0.2s, box-shadow 0.2s, opacity 0.3s;
+  }
+  .spot-card:hover { border-color: #ffcc80; box-shadow: 0 2px 10px var(--hover-shadow); }
+  .spot-card.visited { opacity: var(--visited-opacity); }
+  .spot-card.visited .spot-name { text-decoration: line-through; }
+  .drag-handle { cursor: grab; color: var(--text-faint); font-size: 1.2em; padding: 2px; user-select: none; }
+  .drag-handle:active { cursor: grabbing; }
+  .spot-star {
+    cursor: pointer; font-size: 1.3em; transition: transform 0.2s; user-select: none;
+    filter: grayscale(1) opacity(0.3);
+  }
+  .spot-star.starred { filter: none; }
+  .spot-star:hover { transform: scale(1.2); }
+  .spot-info { flex: 1; min-width: 0; }
+  .spot-name { font-weight: bold; font-size: 1.02em; color: var(--text); }
+  .spot-meta { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 5px; }
+  .spot-badge { font-size: 0.72em; padding: 3px 9px; border-radius: 12px; font-weight: 500; }
+  .badge-type { background: var(--badge-type-bg); color: var(--badge-type-c); }
+  .badge-region { background: var(--badge-region-bg); color: var(--badge-region-c); }
+  .badge-price { background: var(--badge-price-bg); color: var(--badge-price-c); }
+  .badge-env { background: var(--badge-env-bg); color: var(--badge-env-c); }
+  .badge-tag { background: var(--badge-tag-bg); color: var(--badge-tag-c); }
+  .spot-note { font-size: 0.83em; color: var(--text-muted); margin-top: 5px; }
+  .spot-map-link {
+    font-size: 0.8em; color: #1e88e5; text-decoration: none; display: inline-flex;
+    align-items: center; gap: 4px; margin-top: 4px;
+  }
+  .spot-map-link:hover { text-decoration: underline; }
+  .spot-actions { display: flex; flex-direction: column; gap: 5px; flex-shrink: 0; }
+  .btn-icon {
+    width: 30px; height: 30px; border: none; border-radius: 8px;
+    cursor: pointer; font-size: 0.9em; display: flex; align-items: center;
+    justify-content: center; transition: transform 0.15s;
+  }
+  .btn-icon:hover { transform: scale(1.15); }
+  .btn-visit { background: #e8f5e9; color: #43a047; }
+  .btn-edit { background: #e3f2fd; color: #1565c0; }
+  .btn-delete { background: #fce4ec; color: #e91e63; }
+  [data-theme="dark"] .btn-visit { background: #1a3a2a; }
+  [data-theme="dark"] .btn-edit { background: #1a2e4a; }
+  [data-theme="dark"] .btn-delete { background: #3a1a2a; }
+
+  .filter-summary { text-align: center; color: var(--text-muted); font-size: 0.85em; margin: 8px 0 4px; }
+  .count-badge {
+    background: var(--accent); color: #fff; padding: 2px 10px;
+    border-radius: 10px; font-size: 0.85em; margin-left: 6px;
+  }
+  .empty-state { text-align: center; padding: 30px; color: var(--text-faint); font-size: 1.1em; }
+
+  /* Map view */
+  #mapView { height: 400px; border-radius: 16px; margin-top: 10px; display: none; z-index: 0; }
+  #mapView.show { display: block; }
+
+  /* Modal overlay for edit */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: var(--overlay);
+    z-index: 100; align-items: center; justify-content: center; padding: 1rem;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: var(--card-bg); border-radius: 20px; padding: 24px;
+    max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+  }
+  .modal-box h2 { color: var(--accent); margin-bottom: 16px; font-size: 1.15em; }
+
+  /* Sortable ghost */
+  .sortable-ghost { opacity: 0.3; }
+  .sortable-chosen { box-shadow: 0 4px 16px rgba(255,112,67,0.25); }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    background: #333; color: #fff; padding: 10px 24px; border-radius: 12px;
+    font-size: 0.9em; z-index: 200; opacity: 0; transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 500px) {
+    .container { padding: 16px; }
+    h1 { font-size: 1.4em; }
+    .form-row input, .form-row select { font-size: 0.88em; }
+    #mapView { height: 280px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>📍 我的景點筆記</h1>
+    <div class="theme-toggle" onclick="toggleTheme()" title="切換深淺模式"></div>
+  </div>
+  <p class="subtitle">紀錄想去的景點，輕鬆分類管理</p>
+
+  <!-- Add / Edit Form -->
+  <div class="add-form" id="spotForm">
+    <h2 id="formTitle">➕ 新增景點</h2>
+    <input type="hidden" id="editId">
+    <div class="form-row">
+      <input type="text" id="spotName" placeholder="景點名稱 *" />
+    </div>
+    <div class="form-row">
+      <select id="spotEnv">
+        <option value="">🏠 室內/戶外</option>
+        <option value="室內">🏠 室內</option>
+        <option value="戶外">🌿 戶外</option>
+      </select>
+      <select id="spotType">
+        <option value="">📂 景點類型</option>
+        <option value="水族館">🐟 水族館</option>
+        <option value="昆蟲館">🦗 昆蟲館</option>
+        <option value="動物園">🐘 動物園</option>
+        <option value="動物農場">🐄 動物農場</option>
+        <option value="美術館">🎨 美術館</option>
+        <option value="博物館">🏛️ 博物館</option>
+        <option value="遊樂園">🎢 遊樂園</option>
+        <option value="科學">🔬 科學</option>
+        <option value="親子影城">🎬 親子影城</option>
+        <option value="職業體驗">👷 職業體驗</option>
+        <option value="DIY手作">✂️ DIY手作</option>
+        <option value="圖書館">📚 圖書館</option>
+        <option value="玩水戲水">💧 玩水戲水</option>
+        <option value="戶外景點">🌲 戶外景點</option>
+        <option value="咖啡廳">☕ 咖啡廳</option>
+        <option value="餐廳">🍽️ 餐廳</option>
+        <option value="其他">📌 其他</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <select id="spotPrice">
+        <option value="">💰 票價區間</option>
+        <option value="免費">免費</option>
+        <option value="$300以下">$300以下</option>
+        <option value="$300-500">$300–500</option>
+        <option value="$500+">$500+</option>
+      </select>
+      <select id="spotRegion">
+        <option value="">📍 地區</option>
+        <option value="台北市">台北市</option>
+        <option value="新北市">新北市</option>
+        <option value="桃園市">桃園市</option>
+        <option value="基隆市">基隆市</option>
+        <option value="新竹">新竹</option>
+        <option value="宜蘭">宜蘭</option>
+        <option value="台中市">台中市</option>
+        <option value="南投">南投</option>
+        <option value="彰化">彰化</option>
+        <option value="台南市">台南市</option>
+        <option value="高雄市">高雄市</option>
+        <option value="屏東">屏東</option>
+        <option value="花蓮">花蓮</option>
+        <option value="嘉義">嘉義</option>
+        <option value="其他">其他</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <input type="url" id="spotMaps" placeholder="📍 Google Maps 連結（選填）" />
+    </div>
+    <div class="form-row">
+      <textarea id="spotNote" placeholder="備註（選填）"></textarea>
+    </div>
+    <!-- Tag chips -->
+    <div class="form-tags" id="formTagChips"></div>
+    <div class="form-actions">
+      <button class="btn-cancel" id="btnCancel" style="display:none" onclick="cancelEdit()">取消</button>
+      <button class="btn-add" id="btnSave" onclick="saveSpot()">加入清單</button>
+    </div>
+  </div>
+
+  <!-- Search / Sort / View Toggle -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <input type="text" class="search-box" id="searchBox" placeholder="搜尋景點名稱或備註..." oninput="render()">
+    </div>
+    <select class="sort-select" id="sortSelect" onchange="render()">
+      <option value="custom">📌 自訂排序</option>
+      <option value="newest">🕐 最新新增</option>
+      <option value="oldest">🕐 最早新增</option>
+      <option value="name">🔤 名稱</option>
+      <option value="region">📍 地區</option>
+      <option value="starred">⭐ 收藏優先</option>
+    </select>
+    <div class="view-btns">
+      <button class="view-btn active" id="viewList" onclick="setView('list')" title="清單">📋</button>
+      <button class="view-btn" id="viewMap" onclick="setView('map')" title="地圖">🗺️</button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="section">
+    <div class="section-title"><span class="dot dot-blue"></span> 篩選環境</div>
+    <div class="tags" id="filterEnv">
+      <span class="tag" data-val="室內" onclick="toggleFilter(this,'env')">🏠 室內</span>
+      <span class="tag" data-val="戶外" onclick="toggleFilter(this,'env')">🌿 戶外</span>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title"><span class="dot dot-green"></span> 篩選類型</div>
+    <div class="tags" id="filterType">
+      <span class="tag" data-val="水族館" onclick="toggleFilter(this,'type')">🐟 水族館</span>
+      <span class="tag" data-val="昆蟲館" onclick="toggleFilter(this,'type')">🦗 昆蟲館</span>
+      <span class="tag" data-val="動物園" onclick="toggleFilter(this,'type')">🐘 動物園</span>
+      <span class="tag" data-val="動物農場" onclick="toggleFilter(this,'type')">🐄 動物農場</span>
+      <span class="tag" data-val="美術館" onclick="toggleFilter(this,'type')">🎨 美術館</span>
+      <span class="tag" data-val="博物館" onclick="toggleFilter(this,'type')">🏛️ 博物館</span>
+      <span class="tag" data-val="遊樂園" onclick="toggleFilter(this,'type')">🎢 遊樂園</span>
+      <span class="tag" data-val="科學" onclick="toggleFilter(this,'type')">🔬 科學</span>
+      <span class="tag" data-val="親子影城" onclick="toggleFilter(this,'type')">🎬 親子影城</span>
+      <span class="tag" data-val="職業體驗" onclick="toggleFilter(this,'type')">👷 職業體驗</span>
+      <span class="tag" data-val="DIY手作" onclick="toggleFilter(this,'type')">✂️ DIY手作</span>
+      <span class="tag" data-val="圖書館" onclick="toggleFilter(this,'type')">📚 圖書館</span>
+      <span class="tag" data-val="玩水戲水" onclick="toggleFilter(this,'type')">💧 玩水戲水</span>
+      <span class="tag" data-val="戶外景點" onclick="toggleFilter(this,'type')">🌲 戶外景點</span>
+      <span class="tag" data-val="咖啡廳" onclick="toggleFilter(this,'type')">☕ 咖啡廳</span>
+      <span class="tag" data-val="餐廳" onclick="toggleFilter(this,'type')">🍽️ 餐廳</span>
+      <span class="tag" data-val="其他" onclick="toggleFilter(this,'type')">📌 其他</span>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title"><span class="dot dot-orange"></span> 篩選票價</div>
+    <div class="tags" id="filterPrice">
+      <span class="tag" data-val="免費" onclick="toggleFilter(this,'price')">🎁 免費</span>
+      <span class="tag" data-val="$300以下" onclick="toggleFilter(this,'price')">$300以下</span>
+      <span class="tag" data-val="$300-500" onclick="toggleFilter(this,'price')">$300–500</span>
+      <span class="tag" data-val="$500+" onclick="toggleFilter(this,'price')">$500+</span>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title"><span class="dot dot-pink"></span> 篩選地區</div>
+    <div class="tags" id="filterRegion">
+      <span class="tag" data-val="台北市" onclick="toggleFilter(this,'region')">台北市</span>
+      <span class="tag" data-val="新北市" onclick="toggleFilter(this,'region')">新北市</span>
+      <span class="tag" data-val="桃園市" onclick="toggleFilter(this,'region')">桃園市</span>
+      <span class="tag" data-val="基隆市" onclick="toggleFilter(this,'region')">基隆市</span>
+      <span class="tag" data-val="新竹" onclick="toggleFilter(this,'region')">新竹</span>
+      <span class="tag" data-val="宜蘭" onclick="toggleFilter(this,'region')">宜蘭</span>
+      <span class="tag" data-val="台中市" onclick="toggleFilter(this,'region')">台中市</span>
+      <span class="tag" data-val="南投" onclick="toggleFilter(this,'region')">南投</span>
+      <span class="tag" data-val="彰化" onclick="toggleFilter(this,'region')">彰化</span>
+      <span class="tag" data-val="台南市" onclick="toggleFilter(this,'region')">台南市</span>
+      <span class="tag" data-val="高雄市" onclick="toggleFilter(this,'region')">高雄市</span>
+      <span class="tag" data-val="屏東" onclick="toggleFilter(this,'region')">屏東</span>
+      <span class="tag" data-val="花蓮" onclick="toggleFilter(this,'region')">花蓮</span>
+      <span class="tag" data-val="嘉義" onclick="toggleFilter(this,'region')">嘉義</span>
+    </div>
+  </div>
+
+  <!-- Custom Tags Filter -->
+  <div class="section">
+    <div class="section-title"><span class="dot dot-cyan"></span> 自訂標籤</div>
+    <div class="tags" id="filterTags"></div>
+    <div class="custom-tag-row">
+      <input type="text" class="custom-tag-input" id="newTagInput" placeholder="新增標籤..." maxlength="10">
+      <button class="btn-add-tag" onclick="addCustomTag()">+</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="dot dot-purple"></span> 顯示狀態</div>
+    <div class="tags" id="filterStatus">
+      <span class="tag active-purple" data-val="pending" onclick="toggleStatus(this)">🗒️ 想去</span>
+      <span class="tag" data-val="visited" onclick="toggleStatus(this)">✅ 已去過</span>
+      <span class="tag" data-val="all" onclick="toggleStatus(this)">📋 全部</span>
+    </div>
+  </div>
+
+  <!-- Spot list -->
+  <div class="section">
+    <div class="section-title">
+      <span class="dot dot-orange"></span> 景點清單
+      <span class="count-badge" id="countBadge">0</span>
+    </div>
+    <div class="filter-summary" id="filterSummary"></div>
+    <div id="mapView"></div>
+    <div class="spot-list" id="spotList"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// CONFIG — 請替換為你的 Supabase 專案資訊
+// ============================================================
+const SUPABASE_URL = 'https://kqbsztifpvvcjzvglwox.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_uC88nzPkz8OuQMYm1svvQA_RrGkJftk';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ============================================================
+// STATE
+// ============================================================
+let spots = [];
+let customTags = JSON.parse(localStorage.getItem('spot_custom_tags') || '["雨天備案","半日遊","親子推薦","約會景點","免預約"]');
+let filters = { env: new Set(), type: new Set(), price: new Set(), region: new Set(), tags: new Set() };
+let showStatus = 'pending';
+let currentView = 'list';
+let leafletMap = null, leafletMarkers = [];
+let sortableInstance = null;
+let geoCache = JSON.parse(localStorage.getItem('spot_geocache') || '{}');
+
+// ============================================================
+// DARK MODE
+// ============================================================
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? '' : 'dark');
+  localStorage.setItem('spot_theme', isDark ? 'light' : 'dark');
+  if (leafletMap) setTimeout(() => leafletMap.invalidateSize(), 300);
+}
+if (localStorage.getItem('spot_theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function esc(str) { if (!str) return ''; const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+function $(id) { return document.getElementById(id); }
+
+// ============================================================
+// SUPABASE CRUD
+// ============================================================
+async function loadSpots() {
+  const { data, error } = await sb.from('spots').select('*').order('order_index', { ascending: true, nullsFirst: false });
+  if (error) {
+    console.error(error);
+    $('spotList').innerHTML = '<div class="empty-state">載入失敗，請檢查 Supabase 設定</div>';
+    return;
+  }
+  spots = (data || []).map((s, i) => ({ ...s, order_index: s.order_index ?? i, starred: s.starred ?? false, maps_url: s.maps_url ?? '', tags: s.tags ?? '' }));
+  renderCustomTagsFilter();
+  render();
+}
+
+async function saveSpot() {
+  const name = $('spotName').value.trim();
+  if (!name) { toast('請輸入景點名稱'); return; }
+
+  // Gather selected tags from form
+  const selectedTags = [];
+  document.querySelectorAll('#formTagChips .form-tag-chip.selected').forEach(el => selectedTags.push(el.dataset.tag));
+
+  const payload = {
+    name,
+    env: $('spotEnv').value,
+    type: $('spotType').value,
+    price: $('spotPrice').value,
+    region: $('spotRegion').value,
+    maps_url: $('spotMaps').value.trim(),
+    note: $('spotNote').value.trim(),
+    tags: selectedTags.join(','),
+  };
+
+  const editId = $('editId').value;
+
+  if (editId) {
+    // UPDATE
+    const { error } = await sb.from('spots').update(payload).eq('id', editId);
+    if (error) { toast('更新失敗: ' + error.message); return; }
+    const idx = spots.findIndex(s => String(s.id) === editId);
+    if (idx !== -1) spots[idx] = { ...spots[idx], ...payload };
+    toast('已更新');
+  } else {
+    // INSERT
+    payload.visited = false;
+    payload.starred = false;
+    payload.order_index = spots.length;
+    const { data, error } = await sb.from('spots').insert([payload]).select();
+    if (error) { toast('新增失敗: ' + error.message); return; }
+    spots.push(data[0]);
+    toast('已新增');
+  }
+
+  resetForm();
+  render();
+}
+
+function resetForm() {
+  $('editId').value = '';
+  $('spotName').value = ''; $('spotEnv').value = ''; $('spotType').value = '';
+  $('spotPrice').value = ''; $('spotRegion').value = ''; $('spotMaps').value = '';
+  $('spotNote').value = '';
+  $('formTitle').textContent = '➕ 新增景點';
+  $('btnSave').textContent = '加入清單';
+  $('btnCancel').style.display = 'none';
+  renderFormTagChips();
+}
+
+function cancelEdit() { resetForm(); }
+
+function editSpot(id) {
+  const s = spots.find(s => String(s.id) === String(id));
+  if (!s) return;
+  $('editId').value = s.id;
+  $('spotName').value = s.name || '';
+  $('spotEnv').value = s.env || '';
+  $('spotType').value = s.type || '';
+  $('spotPrice').value = s.price || '';
+  $('spotRegion').value = s.region || '';
+  $('spotMaps').value = s.maps_url || '';
+  $('spotNote').value = s.note || '';
+  $('formTitle').textContent = '✏️ 編輯景點';
+  $('btnSave').textContent = '儲存變更';
+  $('btnCancel').style.display = '';
+  renderFormTagChips(s.tags ? s.tags.split(',') : []);
+  $('spotForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function deleteSpot(id) {
+  if (!confirm('確定要刪除嗎？')) return;
+  const { error } = await sb.from('spots').delete().eq('id', id);
+  if (error) { toast('刪除失敗'); return; }
+  spots = spots.filter(s => String(s.id) !== String(id));
+  render(); toast('已刪除');
+}
+
+async function toggleVisit(id) {
+  const s = spots.find(s => String(s.id) === String(id));
+  if (!s) return;
+  const v = !s.visited;
+  const { error } = await sb.from('spots').update({ visited: v }).eq('id', id);
+  if (error) { toast('更新失敗'); return; }
+  s.visited = v; render();
+}
+
+async function toggleStar(id) {
+  const s = spots.find(s => String(s.id) === String(id));
+  if (!s) return;
+  const v = !s.starred;
+  const { error } = await sb.from('spots').update({ starred: v }).eq('id', id);
+  if (error) { toast('更新失敗'); return; }
+  s.starred = v; render();
+}
+
+// ============================================================
+// CUSTOM TAGS
+// ============================================================
+function saveCustomTags() { localStorage.setItem('spot_custom_tags', JSON.stringify(customTags)); }
+
+function addCustomTag() {
+  const input = $('newTagInput');
+  const val = input.value.trim();
+  if (!val || customTags.includes(val)) { input.value = ''; return; }
+  customTags.push(val);
+  saveCustomTags();
+  renderCustomTagsFilter();
+  renderFormTagChips();
+  input.value = '';
+}
+
+function removeCustomTag(tag) {
+  if (!confirm(`刪除標籤「${tag}」？`)) return;
+  customTags = customTags.filter(t => t !== tag);
+  filters.tags.delete(tag);
+  saveCustomTags();
+  renderCustomTagsFilter();
+  render();
+}
+
+function renderCustomTagsFilter() {
+  const el = $('filterTags');
+  el.innerHTML = customTags.map(tag =>
+    `<span class="tag ${filters.tags.has(tag) ? 'active-cyan' : ''}" data-val="${esc(tag)}" onclick="toggleFilter(this,'tags')">${esc(tag)} <span style="font-size:0.7em;cursor:pointer;margin-left:2px" onclick="event.stopPropagation();removeCustomTag('${esc(tag).replace(/'/g, "\\'")}')">&times;</span></span>`
+  ).join('');
+}
+
+function renderFormTagChips(selected = []) {
+  const el = $('formTagChips');
+  el.innerHTML = customTags.map(tag =>
+    `<span class="form-tag-chip ${selected.includes(tag) ? 'selected' : ''}" data-tag="${esc(tag)}" onclick="this.classList.toggle('selected')">🏷️ ${esc(tag)}</span>`
+  ).join('');
+}
+
+$('newTagInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addCustomTag(); } });
+
+// ============================================================
+// FILTERS
+// ============================================================
+function toggleFilter(el, category) {
+  const val = el.dataset.val;
+  const colorMap = { env: 'active-blue', type: 'active-green', price: 'active', region: 'active-pink', tags: 'active-cyan' };
+  const cls = colorMap[category];
+  if (filters[category].has(val)) { filters[category].delete(val); el.classList.remove(cls); }
+  else { filters[category].add(val); el.classList.add(cls); }
+  render();
+}
+
+function toggleStatus(el) {
+  document.querySelectorAll('#filterStatus .tag').forEach(t => t.classList.remove('active-purple'));
+  el.classList.add('active-purple');
+  showStatus = el.dataset.val;
+  render();
+}
+
+// ============================================================
+// FILTERING, SEARCHING, SORTING
+// ============================================================
+function getFiltered() {
+  const q = ($('searchBox').value || '').trim().toLowerCase();
+  return spots.filter(s => {
+    if (showStatus === 'pending' && s.visited) return false;
+    if (showStatus === 'visited' && !s.visited) return false;
+    if (filters.env.size && !filters.env.has(s.env)) return false;
+    if (filters.type.size && !filters.type.has(s.type)) return false;
+    if (filters.price.size && !filters.price.has(s.price)) return false;
+    if (filters.region.size && !filters.region.has(s.region)) return false;
+    if (filters.tags.size) {
+      const spotTags = (s.tags || '').split(',').filter(Boolean);
+      if (![...filters.tags].some(ft => spotTags.includes(ft))) return false;
+    }
+    if (q) {
+      const hay = ((s.name || '') + ' ' + (s.note || '') + ' ' + (s.region || '') + ' ' + (s.tags || '')).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function getSorted(list) {
+  const mode = $('sortSelect').value;
+  const arr = [...list];
+  switch (mode) {
+    case 'newest': arr.sort((a, b) => (b.id || 0) - (a.id || 0)); break;
+    case 'oldest': arr.sort((a, b) => (a.id || 0) - (b.id || 0)); break;
+    case 'name': arr.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'zh-TW')); break;
+    case 'region': arr.sort((a, b) => (a.region || '').localeCompare(b.region || '', 'zh-TW')); break;
+    case 'starred': arr.sort((a, b) => (b.starred ? 1 : 0) - (a.starred ? 1 : 0) || (a.order_index || 0) - (b.order_index || 0)); break;
+    default: arr.sort((a, b) => (a.order_index || 0) - (b.order_index || 0)); break;
+  }
+  return arr;
+}
+
+// ============================================================
+// VIEW TOGGLE
+// ============================================================
+function setView(v) {
+  currentView = v;
+  $('viewList').classList.toggle('active', v === 'list');
+  $('viewMap').classList.toggle('active', v === 'map');
+  $('spotList').style.display = v === 'list' ? '' : 'none';
+  $('mapView').classList.toggle('show', v === 'map');
+  if (v === 'map') renderMap();
+}
+
+// ============================================================
+// RENDER LIST
+// ============================================================
+function render() {
+  const filtered = getSorted(getFiltered());
+  $('countBadge').textContent = filtered.length;
+
+  // Summary
+  const parts = [];
+  if (filters.env.size) parts.push([...filters.env].join('、'));
+  if (filters.type.size) parts.push([...filters.type].join('、'));
+  if (filters.price.size) parts.push([...filters.price].join('、'));
+  if (filters.region.size) parts.push([...filters.region].join('、'));
+  if (filters.tags.size) parts.push([...filters.tags].join('、'));
+  $('filterSummary').textContent = parts.length ? '篩選：' + parts.join(' / ') : '';
+
+  const list = $('spotList');
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty-state">還沒有景點，快來新增吧！</div>';
+    if (sortableInstance) { sortableInstance.destroy(); sortableInstance = null; }
+    if (currentView === 'map') renderMap();
+    return;
+  }
+
+  const isDrag = $('sortSelect').value === 'custom';
+
+  list.innerHTML = filtered.map(s => {
+    const spotTags = (s.tags || '').split(',').filter(Boolean);
+    const mapsHref = s.maps_url || (s.name ? `https://www.google.com/maps/search/${encodeURIComponent(s.name + (s.region ? ' ' + s.region : ''))}` : '');
+    return `<div class="spot-card ${s.visited ? 'visited' : ''}" data-id="${s.id}">
+      ${isDrag ? '<span class="drag-handle" title="拖曳排序">⠿</span>' : ''}
+      <span class="spot-star ${s.starred ? 'starred' : ''}" onclick="toggleStar('${s.id}')" title="收藏">⭐</span>
+      <div class="spot-info">
+        <div class="spot-name">${esc(s.name)}</div>
+        <div class="spot-meta">
+          ${s.env ? `<span class="spot-badge badge-env">${esc(s.env)}</span>` : ''}
+          ${s.type ? `<span class="spot-badge badge-type">${esc(s.type)}</span>` : ''}
+          ${s.price ? `<span class="spot-badge badge-price">${esc(s.price)}</span>` : ''}
+          ${s.region ? `<span class="spot-badge badge-region">${esc(s.region)}</span>` : ''}
+          ${spotTags.map(t => `<span class="spot-badge badge-tag">🏷️${esc(t)}</span>`).join('')}
+        </div>
+        ${s.note ? `<div class="spot-note">📝 ${esc(s.note)}</div>` : ''}
+        ${mapsHref ? `<a class="spot-map-link" href="${esc(mapsHref)}" target="_blank" rel="noopener">📍 Google Maps 導航</a>` : ''}
+      </div>
+      <div class="spot-actions">
+        <button class="btn-icon btn-visit" title="${s.visited ? '標記未去' : '標記已去'}" onclick="toggleVisit('${s.id}')">${s.visited ? '↩️' : '✅'}</button>
+        <button class="btn-icon btn-edit" title="編輯" onclick="editSpot('${s.id}')">✏️</button>
+        <button class="btn-icon btn-delete" title="刪除" onclick="deleteSpot('${s.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  initSortable(isDrag);
+  if (currentView === 'map') renderMap();
+}
+
+// ============================================================
+// DRAG SORT (SortableJS)
+// ============================================================
+function initSortable(enabled) {
+  if (sortableInstance) { sortableInstance.destroy(); sortableInstance = null; }
+  if (!enabled) return;
+  const el = $('spotList');
+  sortableInstance = new Sortable(el, {
+    animation: 200, handle: '.drag-handle',
+    ghostClass: 'sortable-ghost', chosenClass: 'sortable-chosen',
+    onEnd: async function () {
+      const cards = el.querySelectorAll('.spot-card');
+      const updates = [];
+      cards.forEach((card, idx) => {
+        const id = card.dataset.id;
+        const s = spots.find(s => String(s.id) === id);
+        if (s) { s.order_index = idx; updates.push({ id: s.id, order_index: idx }); }
+      });
+      for (const u of updates) {
+        await sb.from('spots').update({ order_index: u.order_index }).eq('id', u.id);
+      }
+      toast('排序已儲存');
+    }
+  });
+}
+
+// ============================================================
+// MAP VIEW (Leaflet + Nominatim geocoding)
+// ============================================================
+async function geocode(place) {
+  if (geoCache[place]) return geoCache[place];
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(place)}&limit=1&accept-language=zh-TW`);
+    const d = await r.json();
+    if (d.length) {
+      const g = { lat: parseFloat(d[0].lat), lon: parseFloat(d[0].lon) };
+      geoCache[place] = g;
+      localStorage.setItem('spot_geocache', JSON.stringify(geoCache));
+      return g;
+    }
+  } catch (e) {}
+  return null;
+}
+
+async function renderMap() {
+  const mapEl = $('mapView');
+  if (!leafletMap) {
+    leafletMap = L.map('mapView').setView([23.5, 121], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OSM', maxZoom: 18
+    }).addTo(leafletMap);
+    setTimeout(() => leafletMap.invalidateSize(), 300);
+  }
+  // Clear old markers
+  leafletMarkers.forEach(m => leafletMap.removeLayer(m));
+  leafletMarkers = [];
+
+  const filtered = getSorted(getFiltered());
+  const bounds = [];
+
+  for (const s of filtered) {
+    const query = s.name + (s.region ? ' ' + s.region : '');
+    const geo = await geocode(query);
+    if (!geo) continue;
+    const mapsHref = s.maps_url || `https://www.google.com/maps/search/${encodeURIComponent(query)}`;
+    const marker = L.marker([geo.lat, geo.lon]).addTo(leafletMap)
+      .bindPopup(`<b>${esc(s.name)}</b>${s.region ? '<br>📍' + esc(s.region) : ''}${s.note ? '<br><small>' + esc(s.note) + '</small>' : ''}<br><a href="${esc(mapsHref)}" target="_blank">Google Maps →</a>`);
+    leafletMarkers.push(marker);
+    bounds.push([geo.lat, geo.lon]);
+  }
+
+  if (bounds.length) leafletMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
+  setTimeout(() => leafletMap.invalidateSize(), 400);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+$('spotName').addEventListener('keydown', e => { if (e.key === 'Enter') saveSpot(); });
+renderFormTagChips();
+renderCustomTagsFilter();
+loadSpots();
+</script>
+</body>
+</html>
