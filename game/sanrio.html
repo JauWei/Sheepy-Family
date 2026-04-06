@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sanrio Puroland Adventure</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&family=Noto+Sans:wght@300;400;700&display=swap');
+  :root { --font-size:16px; --container-max-w:700px; --container-pad:36px; }
+  .size-small{--font-size:14px}.size-medium{--font-size:16px}.size-large{--font-size:19px}.size-xlarge{--font-size:22px}
+  .device-mobile{--container-max-w:420px;--container-pad:18px}.device-tablet{--container-max-w:600px;--container-pad:28px}.device-desktop{--container-max-w:750px;--container-pad:36px}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Noto Sans TC','Noto Sans',sans-serif;font-size:var(--font-size);background:linear-gradient(135deg,#fce4ec 0%,#f3e5f5 30%,#e8eaf6 60%,#fff8e1 100%);min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:20px;position:relative;overflow-x:hidden}
+  body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(circle at 10% 20%,rgba(248,187,208,.3) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(206,147,216,.3) 0%,transparent 50%),radial-gradient(circle at 50% 50%,rgba(197,202,233,.2) 0%,transparent 60%);z-index:0;animation:bg-shift 12s ease-in-out infinite alternate}
+  @keyframes bg-shift{0%{opacity:.7;transform:scale(1)}100%{opacity:1;transform:scale(1.05)}}
+  .bg-deco{position:fixed;font-size:2em;opacity:.13;z-index:0;animation:float-around 20s ease-in-out infinite;pointer-events:none}
+  .bg-deco:nth-child(1){top:5%;left:5%}.bg-deco:nth-child(2){top:15%;right:8%;animation-delay:-3s;font-size:1.5em}.bg-deco:nth-child(3){bottom:20%;left:10%;animation-delay:-6s;font-size:2.5em}.bg-deco:nth-child(4){bottom:10%;right:5%;animation-delay:-9s}.bg-deco:nth-child(5){top:50%;left:3%;animation-delay:-12s;font-size:1.8em}.bg-deco:nth-child(6){top:40%;right:3%;animation-delay:-15s;font-size:1.3em}
+  @keyframes float-around{0%,100%{transform:translateY(0) rotate(0deg)}25%{transform:translateY(-15px) rotate(5deg)}50%{transform:translateY(5px) rotate(-3deg)}75%{transform:translateY(-8px) rotate(2deg)}}
+  #game-container{max-width:var(--container-max-w);width:100%;background:rgba(255,255,255,.92);border-radius:24px;box-shadow:0 8px 32px rgba(0,0,0,.1),0 0 60px rgba(248,187,208,.15);padding:var(--container-pad);position:relative;overflow:hidden;z-index:1;backdrop-filter:blur(8px);margin-top:10px}
+  #game-container::before{content:'';position:absolute;top:0;left:0;right:0;height:6px;background:linear-gradient(90deg,#f8bbd0,#ce93d8,#9fa8da,#fff9c4,#f48fb1)}
+  h1{text-align:center;color:#ad1457;font-size:1.5em;margin-bottom:4px}
+  #subtitle{text-align:center;color:#8e24aa;font-size:.85em;margin-bottom:16px}
+  #music-toggle{position:absolute;top:14px;right:48px;background:none;border:none;font-size:1.4em;cursor:pointer;z-index:10;opacity:.6;transition:opacity .2s}
+  #music-toggle:hover{opacity:1}
+  #music-toggle.playing{opacity:1;animation:pulse-music 1.5s ease-in-out infinite}
+  @keyframes pulse-music{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+  #settings-toggle{position:absolute;top:14px;right:14px;background:none;border:none;font-size:1.4em;cursor:pointer;z-index:10;opacity:.6;transition:opacity .2s}
+  #settings-toggle:hover{opacity:1}
+  #settings-panel{display:none;background:#fce4ec;border-radius:16px;padding:18px;margin-bottom:16px;animation:fade-in .3s}
+  #settings-panel.open{display:block}
+  @keyframes fade-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+  .setting-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .setting-row:last-child{margin-bottom:0}
+  .setting-label{font-weight:700;color:#ad1457;min-width:70px;font-size:.85em}
+  .pill-group{display:flex;gap:4px;flex-wrap:wrap}
+  .pill{padding:5px 14px;border-radius:20px;border:2px solid #f48fb1;background:#fff;color:#ad1457;font-size:.82em;cursor:pointer;font-family:inherit;transition:all .2s}
+  .pill:hover{background:#fce4ec}.pill.active{background:#f48fb1;color:#fff;border-color:#ec407a}
+  #scene-emoji{text-align:center;font-size:2.8em;margin-bottom:8px;animation:gentle-bounce 2s ease-in-out infinite}
+  @keyframes gentle-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  #character-image{text-align:center;margin-bottom:12px;min-height:50px}
+  #character-image img.char-main-img{max-width:150px;max-height:150px;border-radius:50%;border:4px solid #f8bbd0;box-shadow:0 4px 20px rgba(244,143,177,.2);object-fit:cover;background:#fff0f5;animation:img-pop .5s ease-out;transition:transform .3s}
+  #character-image img.char-main-img:hover{transform:scale(1.08) rotate(2deg)}
+  @keyframes img-pop{0%{transform:scale(.5);opacity:0}70%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+  .char-name-tag{display:inline-block;margin-top:6px;padding:3px 14px;background:linear-gradient(135deg,#fce4ec,#f8bbd0);border-radius:12px;font-size:.82em;color:#ad1457;font-weight:700}
+  .group-img{width:48px;height:48px;border-radius:50%;object-fit:cover;border:3px solid #f8bbd0;background:#fff0f5;transition:transform .3s;cursor:pointer}
+  .group-img:hover{transform:scale(1.2) rotate(5deg)}
+  .group-img.joined{border-color:#ec407a;box-shadow:0 0 8px rgba(236,64,122,.5)}
+  #status-bar{display:flex;justify-content:space-between;margin-bottom:12px;padding:7px 14px;background:#fce4ec;border-radius:12px;font-size:.82em;color:#ad1457;flex-wrap:wrap;gap:4px}
+  #party-bar{display:flex;gap:6px;justify-content:center;margin-bottom:10px;flex-wrap:wrap;min-height:32px}
+  #party-bar img{width:32px;height:32px;border-radius:50%;border:2px solid #ec407a;object-fit:cover;animation:img-pop .4s ease-out}
+  #story-box{background:#fff0f5;border:2px solid #f8bbd0;border-radius:16px;padding:18px;margin-bottom:16px;line-height:1.8;color:#4a148c;font-size:1em;min-height:100px;white-space:pre-line}
+  #choices{display:flex;flex-direction:column;gap:8px}
+  .choice-btn{background:linear-gradient(135deg,#fce4ec,#f3e5f5);border:2px solid #f48fb1;border-radius:14px;padding:12px 18px;font-size:.92em;font-family:inherit;color:#ad1457;cursor:pointer;transition:all .2s;text-align:left;display:flex;align-items:center;gap:8px}
+  .choice-btn:hover{background:linear-gradient(135deg,#f8bbd0,#ce93d8);transform:translateX(6px);box-shadow:0 3px 12px rgba(244,143,177,.3)}
+  .choice-btn:active{transform:translateX(3px) scale(.98)}
+  .choice-btn img{width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #f8bbd0;flex-shrink:0}
+  #restart-btn{margin-top:14px;background:linear-gradient(135deg,#f48fb1,#ec407a);border:none;border-radius:14px;padding:12px 32px;font-size:1em;font-family:inherit;color:#fff;cursor:pointer;transition:all .2s}
+  #restart-btn:hover{transform:scale(1.05);box-shadow:0 4px 16px rgba(236,64,122,.4)}
+  footer{text-align:center;margin-top:14px;font-size:.7em;color:#bdbdbd}
+  #setup-screen{text-align:center}
+  #setup-screen h2{color:#ad1457;margin-bottom:16px;font-size:1.2em}
+  .setup-section{margin-bottom:18px}
+  .setup-section h3{color:#8e24aa;font-size:.95em;margin-bottom:10px}
+  .role-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:10px}
+  .role-card{background:#fff0f5;border:3px solid #f8bbd0;border-radius:16px;padding:12px 8px;cursor:pointer;transition:all .2s;text-align:center}
+  .role-card:hover{transform:translateY(-4px);box-shadow:0 6px 20px rgba(244,143,177,.25);border-color:#f48fb1}
+  .role-card.selected{border-color:#ec407a;background:#fce4ec;box-shadow:0 4px 16px rgba(236,64,122,.3)}
+  .role-card img{width:60px;height:60px;border-radius:50%;object-fit:cover;margin-bottom:6px}
+  .role-card .role-name{font-weight:700;color:#ad1457;font-size:.88em}
+  .role-card .role-desc{font-size:.7em;color:#8e24aa;margin-top:3px;line-height:1.3}
+  #start-game-btn{margin-top:20px;background:linear-gradient(135deg,#f8bbd0,#f48fb1);border:2px solid #ec407a;border-radius:16px;padding:14px 40px;font-size:1.1em;font-family:inherit;color:#fff;font-weight:700;cursor:pointer;transition:all .2s}
+  #start-game-btn:hover{transform:scale(1.05);box-shadow:0 4px 16px rgba(236,64,122,.4)}
+  #start-game-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .location-banner{text-align:center;padding:8px;margin-bottom:10px;background:linear-gradient(135deg,#fce4ec,#f3e5f5);border-radius:12px;font-size:.85em;color:#4a148c;font-weight:700}
+</style>
+</head>
+<body>
+<div class="bg-deco">🌸</div><div class="bg-deco">⭐</div><div class="bg-deco">🎀</div><div class="bg-deco">💖</div><div class="bg-deco">🌈</div><div class="bg-deco">☁️</div>
+<div id="game-container">
+  <button id="music-toggle" onclick="toggleMusic()" title="BGM">🔇</button>
+  <button id="settings-toggle" onclick="toggleSettings()">⚙️</button>
+  <div id="settings-panel">
+    <div class="setting-row"><span class="setting-label" data-i18n="s_lang">Lang</span><div class="pill-group" id="lang-pills"></div></div>
+    <div class="setting-row"><span class="setting-label" data-i18n="s_font">Font</span><div class="pill-group" id="font-pills"></div></div>
+    <div class="setting-row"><span class="setting-label" data-i18n="s_device">Device</span><div class="pill-group" id="device-pills"></div></div>
+  </div>
+  <h1 id="game-title">🏰 A Magical Day at Sanrio Puroland</h1>
+  <div id="subtitle">~ Friendship, Joy & Being Yourself ~</div>
+  <div id="setup-screen">
+    <div class="setup-section">
+      <h3 data-i18n="choose_role">Choose your character</h3>
+      <div class="role-grid" id="role-grid"></div>
+    </div>
+    <button id="start-game-btn" disabled onclick="startGame()" data-i18n="start_btn">Start Adventure!</button>
+  </div>
+  <div id="game-screen" style="display:none">
+    <div id="status-bar"><span id="chapter-display"></span><span id="player-role-display"></span></div>
+    <div id="party-bar"></div>
+    <div id="scene-emoji">🌸</div>
+    <div id="character-image"></div>
+    <div id="story-box"></div>
+    <div id="choices"></div>
+  </div>
+  <footer>Sanrio characters &copy; Sanrio &middot; Fan-made game</footer>
+</div>
+<script>
+// ========== i18n ==========
+const L = {
+en: {
+  title:'🏰 A Magical Day at Sanrio Puroland', sub:'~ Friendship, Joy & Being Yourself ~',
+  s_lang:'Lang', s_font:'Font', s_device:'Device',
+  choose_role:'Choose your character', start_btn:'Start Adventure!', restart:'🔄 Play Again',
+  none:'None', party:'Party: ',
+  // roles
+  r_kitty:'Hello Kitty', rd_kitty:'Kind and caring girl who loves baking',
+  r_melody:'My Melody', rd_melody:'Sweet pink-hooded rabbit from Mariland',
+  r_kuromi:'Kuromi', rd_kuromi:'Tough-looking but girly rival of My Melody',
+  r_keroppi:'Keroppi', rd_keroppi:'Adventurous frog who loves swimming and singing',
+  r_kiki:'Kiki', rd_kiki:'Star child from the sky (Little Twin Stars)',
+  r_gudetama:'Gudetama', rd_gudetama:'Lazy egg who doesn\'t want to do anything',
+  r_aggretsuko:'Aggretsuko', rd_aggretsuko:'Office worker red panda with hidden rage',
+  r_hangyodon:'Hangyodon', rd_hangyodon:'Half-fish creature who is clumsy but lovable',
+  // NPCs
+  n_pompom:'Pompompurin', n_cinna:'Cinnamoroll', n_pochacco:'Pochacco', n_tuxedo:'Tuxedo Sam', n_badtz:'Badtz-Maru',
+  // trust
+  trust_hi:'💖 Deepest Bond', trust_mid:'💕 Warm Friendship', trust_lo:'💛 Budding Affection',
+  // ===== Scenes =====
+  // --- CH1: Puroland ---
+  ch1:'Chapter 1: Sanrio Puroland',
+  start_text:'One bright morning, you — {p} — step through the sparkling gates of Sanrio Puroland.\n\nThe air smells of cotton candy and strawberries. Pastel colors paint every surface, and cheerful music drifts from distant rides.\n\nYou notice five familiar faces scattered around the entrance plaza.\n\nWho would you like to approach first?',
+  c_pompom:'Approach the sleepy golden retriever by the pudding cart',
+  c_cinna:'Walk toward the fluffy white puppy floating near the clouds',
+  c_pochacco:'Check out the sporty dog doing tricks by the fountain',
+  c_tuxedo:'Find the elegant penguin adjusting his bow tie by the mirror',
+  c_badtz:'Look at the spiky-haired penguin sitting on a throne of plushies',
+
+  // --- Pompompurin deep ---
+  pompom_t:'Pompompurin\'s Spot',
+  pompom1:'You walk over to the pudding cart where a golden retriever in a brown beret is dozing off. A half-eaten pudding sits on a plate beside him.\n\n"Zzz... oh!" Pompompurin blinks awake. "Hi, {p}. Sorry... I was dreaming about pudding. Which is funny because there\'s pudding right here too."\n\nHe yawns widely and adjusts his beret. "Do you like pudding? I think pudding is the best thing in the whole world... after naps."',
+  pompom1_a:'"Want to share that pudding together?"',
+  pompom1_b:'"You seem really peaceful. Don\'t you ever worry about things?"',
+  pompom1_c:'"That beret looks really cute on you."',
+  pompom2a:'You sit down and share the pudding. Pompompurin\'s eyes light up with pure joy.\n\n"You know, {p}, most people rush past me because I\'m always sleeping. They think I\'m lazy. But sharing pudding... nobody ever wants to just sit and share pudding."\n\nHe reaches into his beret and pulls out a tiny golden spoon: "Here! My special pudding spoon. For you!"\n\nYou received [Pompompurin\'s Golden Spoon]!\n\n"Hey {p}... can I come with you? Walking is tiring, but with friends it\'s like a nice stroll after a nap."',
+  pompom2b:'Pompompurin tilts his head, thinking deeply — or maybe drowsily.\n\n"Worry? Hmm... I used to worry that everyone thought I was useless because I sleep so much. But then I realized — the world needs someone to remind people it\'s okay to slow down."\n\nHe smiles at you: "You\'re the first person to ask me that, {p}. Most people just laugh. Would you let me walk with you? I promise I\'ll only nap a little bit."',
+  pompom2c:'"My beret?" Pompompurin touches it shyly. "My owner gave it to me. She said it makes me look distinguished. But nobody ever notices it... they just see a sleeping dog."\n\nHis tail wags: "You really looked at me, {p}. Not just past me. That makes me so happy I could... well, I could stay awake for a whole hour! Can I come with you?"',
+  pompom_join:'"Yay!" Pompompurin stands up, stretches, and tucks the remaining pudding into his beret.\n\n"I\'ll bring snacks for the journey! And if anyone gets tired, I know all the best napping spots."\n\nHe waddles happily beside you, already slightly drowsy.\n\n[Pompompurin joined your party!]',
+  pompom_join_btn:'"Of course, let\'s go together!"',
+
+  // --- Cinnamoroll deep ---
+  cinna_t:'Cinnamoroll\'s Cloud',
+  cinna1:'You look up and see a small white puppy hovering near a cotton candy cloud, his big floppy ears gently flapping. His curly cinnamon roll tail bounces as he drifts.\n\n"Oh!" Cinnamoroll notices you and floats down shyly. "H-hello, {p}. I\'m sorry, I was hiding up there. Sometimes there are so many people and I get a little nervous..."\n\nHe lands softly, his ears drooping. "Are you... here to talk to me?"',
+  cinna1_a:'"You can fly! That\'s amazing!"',
+  cinna1_b:'"It\'s okay to be shy. I\'m happy to talk at your pace."',
+  cinna1_c:'"The view from up there must be beautiful."',
+  cinna2a:'"A-amazing?" Cinnamoroll\'s ears perk up and he accidentally floats a few inches off the ground. "Most people say it\'s weird. Dogs aren\'t supposed to fly..."\n\nHe blushes: "But when I fly, I can see everyone smiling from above. It makes me feel like the world is full of good things."\n\n"You made me feel amazing, {p}. Can I fly alongside you? I\'ll be your lookout from the sky!"',
+  cinna2b:'Cinnamoroll stares at you, his big blue eyes shimmering.\n\n"At my pace...? Nobody ever says that. They always want me to come down, to speak up, to be braver." His voice cracks slightly.\n\nThen he smiles — small but genuine: "You make me feel like being shy is okay, {p}. That means more than you know. May I stay with you? I feel safe when you\'re near."\n\nYou received [Cinnamoroll\'s Cloud Charm]!',
+  cinna2c:'Cinnamoroll\'s eyes sparkle. "The view? Oh, {p}, it\'s wonderful! You can see the whole park, all the way to the rainbow bridge. And at sunset, the clouds turn pink and gold..."\n\nHe floats up and extends a tiny paw: "Would you like me to show you someday? I mean... if you\'d let me come along. I could show you all the beautiful views I\'ve found."',
+  cinna_join:'Cinnamoroll does a happy little spin in the air, his cinnamon roll tail bobbing.\n\n"I\'ll fly just a little above so I can spot beautiful things for everyone! And... and if anyone feels sad, I\'ll share my cloud."\n\nHe gently floats beside you, occasionally drifting up, then coming back down to stay close.\n\n[Cinnamoroll joined your party!]',
+  cinna_join_btn:'"I\'d love that! Let\'s go!"',
+
+  // --- Pochacco deep ---
+  pochacco_t:'Pochacco\'s Playground',
+  pochacco1:'By the fountain, a white dog with black floppy ears is attempting tricks — and spectacularly failing. He does a backflip, lands on his face, and pops right back up.\n\n"Ta-da! ...Okay, that wasn\'t the plan." Pochacco grins at you. "Hey {p}! Want to see me try again? I\'ve been practicing this trick for three weeks!"\n\nThere\'s a banana ice cream cone melting beside him, completely forgotten.',
+  pochacco1_a:'"You\'re so energetic! That was actually impressive!"',
+  pochacco1_b:'"Does it hurt when you fall? You always bounce back so fast..."',
+  pochacco1_c:'"Hey, your ice cream is melting!"',
+  pochacco2a:'"Impressive!?" Pochacco\'s entire body wiggles with excitement. "NOBODY ever says that! They usually say \'be more careful\' or \'stop being so clumsy.\' But you think it\'s impressive!"\n\nHe immediately tries another flip — and crashes into the fountain. He surfaces, laughing: "See! I\'m impressive AND wet! {p}, you should come with me! I know all the fun spots in the park!"',
+  pochacco2b:'Pochacco\'s smile flickers. He sits down, suddenly quiet.\n\n"...Yeah. It hurts sometimes. But if I stop bouncing back, people will stop smiling." He looks at his paws. "Everyone expects me to be the funny, energetic one. But sometimes I just want someone to notice that I fall."\n\nHe looks up at you: "You noticed, {p}. Thank you. Can I be honest around you? I mean... can I come with you? I\'ll still be fun, but maybe I can also just... be me."\n\nYou received [Pochacco\'s Brave Heart Badge]!',
+  pochacco2c:'"MY ICE CREAM!" Pochacco dives for it, catches the scoop mid-fall, and somehow lands in the splits.\n\nHe looks up triumphantly: "Saved it! Want a lick, {p}? It\'s banana — the best flavor! Don\'t let anyone tell you otherwise."\n\nHe shares the ice cream happily: "You saved my ice cream by telling me! That makes us best friends. Can I come along? I promise to only crash into things sometimes!"',
+  pochacco_join:'Pochacco bounces up, does a spin (successfully this time!), and strikes a pose.\n\n"Adventure time! I\'ll scout ahead! And find all the banana ice cream stands along the way!"\n\nHe runs ahead, trips, gets up, and gives a thumbs up.\n\n[Pochacco joined your party!]',
+  pochacco_join_btn:'"Absolutely! Let\'s have fun!"',
+
+  // --- Tuxedo Sam deep ---
+  tuxedo_t:'Tuxedo Sam\'s Stage',
+  tuxedo1:'Near the park\'s hall of mirrors, an emperor penguin in a perfectly tied bow tie is inspecting his reflection with great seriousness.\n\n"Hmm. The powder blue today, I think. No... the cerulean." He notices you. "Ah, {p}! Forgive me — I was selecting today\'s bow tie. I have 365, one for each day. Today feels like a... do you have an opinion?"\n\nHe holds up two nearly identical bow ties.',
+  tuxedo1_a:'"They\'re both gorgeous! You have amazing taste."',
+  tuxedo1_b:'"It must be a lot of pressure to always look perfect."',
+  tuxedo1_c:'"Which one makes YOU feel happiest?"',
+  tuxedo2a:'"Gorgeous?" Tuxedo Sam puffs up with pride. "Well, naturally. I do spend considerable effort on curation."\n\nThen he deflates slightly: "...But you know, {p}, you\'re the first person who didn\'t just laugh. Everyone thinks a penguin caring about bow ties is silly. But fashion is my language."\n\nHe carefully pins a tiny bow tie to your collar: "A gift. From my collection. Because you appreciated it."\n\nYou received [Tuxedo Sam\'s Mini Bow Tie]!\n\n"Walk with me? I could use someone who understands elegance."',
+  tuxedo2b:'Tuxedo Sam freezes. His flippers slowly lower the bow ties.\n\n"Pressure..." he repeats quietly. "Yes. Every morning I wake up and think — what if today I look less than perfect? What if someone sees the me underneath all these bow ties?"\n\nHe looks at you with vulnerable eyes: "You\'re the first to see through the bow ties, {p}. The real me is... just a penguin who\'s afraid of being ordinary. May I walk with you? You make me feel like ordinary might be okay."',
+  tuxedo2c:'Tuxedo Sam blinks. "Which one makes ME feel...?"\n\nHe stares at the bow ties, genuinely considering it for what seems like the first time. Then he picks up a slightly worn, slightly faded one from the bottom of his case.\n\n"This one. My very first bow tie. It\'s not fashionable anymore, but..." he touches it gently. "It\'s the one my parents gave me."\n\n"Thank you, {p}. No one ever asked what makes ME happy. Can I join you? I want to rediscover what I truly like."',
+  tuxedo_join:'Tuxedo Sam straightens his chosen bow tie, clicks his heels together, and gives a formal bow.\n\n"I shall be the party\'s fashion advisor! And... perhaps learn to be a little less perfect along the way."\n\nHe walks beside you with impeccable posture, though his flipper subtly reaches toward your hand.\n\n[Tuxedo Sam joined your party!]',
+  tuxedo_join_btn:'"It would be an honor!"',
+
+  // --- Badtz-Maru deep ---
+  badtz_t:'Badtz-Maru\'s Territory',
+  badtz1:'On a pile of plushies arranged like a throne, a small spiky-haired penguin sits with arms crossed, trying to look intimidating.\n\n"Hey! You! {p}!" Badtz-Maru points at you. "You\'re in MY territory. Everything you see here? Mine. That bench? Mine. That cloud? MINE."\n\nBut you notice his throne of plushies is made entirely of cute Sanrio characters... including a well-worn Hello Kitty doll he\'s half-hiding behind his back.',
+  badtz1_a:'"Wow, you\'re the boss of all this? Impressive kingdom!"',
+  badtz1_b:'"That Hello Kitty plushie behind your back is really cute."',
+  badtz1_c:'"Must be lonely being the boss with nobody to boss around."',
+  badtz2a:'"FINALLY! Someone who gets it!" Badtz-Maru stands on his throne triumphantly. "I AM the boss! The GREATEST! The most—"\n\nHe wobbles and falls off the plushie pile. Sitting on the ground, his tough facade cracks: "...Okay, fine. I\'m not really the boss. I just... everyone always ignores the mean-looking penguin. So I figured if I can\'t be liked, I\'d be feared."\n\n"But you actually came over, {p}. Nobody comes over. Can I... come with you instead of sitting on this dumb throne?"',
+  badtz2b:'Badtz-Maru turns BRIGHT red. "I — THAT — it\'s not — I\'m HOLDING IT HOSTAGE! Yeah! It\'s a prisoner!"\n\nBut his grip on it is gentle. After a long pause: "...My mom gave it to me. When I was really little and scared of the dark. Don\'t tell anyone."\n\nHis voice gets very small: "{p}... you\'re the only one who noticed. Everyone just sees the tough act. Can I... maybe... come along? I\'ll protect everyone! For real this time."\n\nYou received [Badtz-Maru\'s Secret Trust]!',
+  badtz2c:'Badtz-Maru opens his mouth to argue, then closes it. His spiky hair seems to deflate slightly.\n\n"...Yeah." He kicks at a plushie. "It is lonely. Everyone runs away because I\'m always yelling about being the boss. But I only yell because... if I\'m quiet, nobody notices I\'m here at all."\n\nHe looks up at you with surprisingly soft eyes: "You noticed though, {p}. Even when I was being loud and annoying. Can I come with you? I promise to only declare myself boss... occasionally."',
+  badtz_join:'"Don\'t think this means I\'m being NICE or anything!" Badtz-Maru says, hopping off his throne and trying to maintain dignity.\n\nBut his tail is wagging. And he carefully tucks the Hello Kitty plushie into his bag before anyone notices.\n\n"I\'ll be the party\'s bodyguard! Nobody messes with us!"\n\n[Badtz-Maru joined your party!]',
+  badtz_join_btn:'"Welcome aboard, boss!"',
+
+  // --- CH2-5: Travel & meet others ---
+  ch_travel:'Chapter {n}: {loc}',
+  loc_forest:'Strawberry Forest', loc_bridge:'Rainbow Bridge', loc_melody:'Melody Land', loc_star:'Star Hill',
+  travel_intro:'You and your friends arrive at {loc}.\n\n{scene}',
+
+  // Short encounters for remaining NPCs
+  pompom_short:'Under a strawberry tree, Pompompurin is curled up napping on a pile of soft leaves. His beret has slipped over one eye, and a half-eaten pudding cup is balanced perfectly on his tummy.\n\n"Zzz... mmmh... pudding mountain..." He talks in his sleep. Then one eye opens: "Oh! {p}! And friends! Sorry, I was having the best dream. You all look like you\'re having fun..."\n\nHe yawns and looks at your group with a mix of longing and sleepiness: "I\'ve been napping here by myself for a while... it\'s comfortable, but kind of quiet."',
+  pompom_short_a:'"Come nap with us as we walk! We\'ll be your pillow!"',
+  pompom_short_b:'Gently adjust his beret so it sits right, without waking him fully',
+  pompom_short_c:'"What were you dreaming about?"',
+  pompom_s2a:'Pompompurin\'s tail goes wild. "A walking nap!? That\'s the greatest invention ever! I can lean on someone while we walk and half-sleep!"\n\nHe immediately leans against you: "See? Perfect. {p}, you understand the art of doing nothing. Can I stay leaning on you forever? I mean, on the journey."',
+  pompom_s2b:'You gently fix his beret. Pompompurin freezes, then his eyes get watery.\n\n"...My owner used to do that." His voice is barely a whisper. "Nobody has fixed my beret in a long time. I didn\'t even know it was crooked. You... really see me, {p}."\n\nHe sniffles: "Can I come with you? I want to walk with someone who notices the little things."\n\nYou received [A Warm Beret Memory]!',
+  pompom_s2c:'"Pudding mountain!" His eyes light up. "There was a whole mountain made of pudding, and I was the king, and everyone was happy and full and taking naps in pudding boats..."\n\nHe sighs dreamily. Then looks at you: "{p}, you\'re the first person who wanted to hear about my dreams. Usually people say \'wake up, Pompompurin.\' Can I dream alongside you instead?"',
+  pompom_short_join:'Pompompurin rolls onto his feet, tucks the pudding cup into his beret (somehow), and yawns one more time.\n\n"I move slowly, but I\'ll carry everyone\'s snacks! And if anyone needs a warm body to lean against during breaks, that\'s literally my specialty."\n\nHe toddles into the group, already half-closing his eyes, but smiling wide.\n\n[Pompompurin joined your party!]',
+  pompom_short_jbtn:'"Let\'s go, sleepyhead!"',
+
+  cinna_short:'On Rainbow Bridge, a tiny white figure is perched on the highest railing, ears catching the wind like little wings. Cinnamoroll watches the colors shimmer below, his curly tail swaying.\n\n"Oh..." He sees your group and pulls his ears close, making himself small. "H-hello, {p}... I was just... watching the rainbows. They\'re really pretty from up here. But..."\n\nHe looks at your party, eyes full of longing but also fear: "There are so many of you. Are you all... friends? What\'s that like?"',
+  cinna_short_a:'"Come find out! We\'d love to have you!"',
+  cinna_short_b:'Float a paper airplane up to him with "You\'re welcome here" written on it',
+  cinna_short_c:'"You don\'t have to come down. Can I come up to you instead?"',
+  cinna_s2a:'"You\'d... love to?" Cinnamoroll\'s ears straighten in surprise, and he accidentally takes off, doing a startled loop in the air.\n\n"Sorry! That happens when I\'m surprised-happy!" He floats down slowly. "I\'ve watched friend groups from above for so long. I never thought someone would invite me. {p}, really?"',
+  cinna_s2b:'You fold a paper airplane and sail it up. Cinnamoroll catches it with his ears, reads it, and clutches it to his chest.\n\n"Welcome... here..." He whispers the words like a spell. His eyes overflow. "No one ever came up to meet me before. They always just called me down. You came to MY sky."\n\n"{p}... this is the most beautiful letter I\'ve ever received. Can I come down to YOUR world now?"\n\nYou received [Sky Letter of Friendship]!',
+  cinna_s2c:'Cinnamoroll\'s eyes go wide. "Come UP? To me?"\n\nHe floats down just enough to lift you slightly — just a foot off the ground. "This is my world," he says softly. "From up here, everything looks gentle. Even scary things."\n\n"You wanted to see MY view, {p}. Nobody ever wanted to see MY view. Please... can I see YOUR world too? Together?"',
+  cinna_short_join:'Cinnamoroll takes a deep breath and floats down to the group, landing softly like a snowflake.\n\n"I might hide behind someone when I get shy," he admits quietly. "But I\'ll always be here. And I\'ll find the prettiest clouds for everyone."\n\nHe tentatively floats beside you, then gently rests his head against your shoulder for one brief second.\n\n[Cinnamoroll joined your party!]',
+  cinna_short_jbtn:'"Welcome home, Cinnamoroll!"',
+
+  pochacco_short:'In Melody Land\'s activity zone, Pochacco is attempting to ride a unicycle while juggling banana ice cream cones. It goes about as well as you\'d expect.\n\n"WHOA — WHOAAA —" CRASH. Ice cream everywhere. He sits up, covered in banana, and grins: "Six seconds! New personal record!"\n\nThen he sees your group and his grin wavers: "Oh hey, {p}! Cool group! I was just... training. I\'m gonna be the best at SOMETHING someday. Just haven\'t figured out what yet..."',
+  pochacco_short_a:'"Being yourself is already the best thing!"',
+  pochacco_short_b:'Help him up and wipe the ice cream off his ears',
+  pochacco_short_c:'"Six seconds IS pretty impressive. Want to try for seven together?"',
+  pochacco_s2a:'Pochacco freezes mid-wipe. "Being... myself?"\n\n"But myself is the guy who crashes into everything and can\'t finish anything and—" He stops. Thinks. "Wait. Myself is ALSO the guy who always gets back up. And tries everything. And never gives up."\n\nHis eyes sparkle: "{p}, you just made me realize I already found my talent. It\'s perseverance! Can I persevere alongside you?"',
+  pochacco_s2b:'You kneel down and gently wipe banana ice cream off his floppy black ears. Pochacco goes completely still.\n\n"You\'re... helping me?" His voice cracks. "Usually people just laugh when I fall. \'Classic Pochacco,\' they say. Nobody ever helps me up."\n\nA single tear mixes with the ice cream: "You didn\'t just see the funny part, {p}. You saw that I needed help. Can I... can I stay with you? With someone who helps?"\n\nYou received [Pochacco\'s Grateful Paw Print]!',
+  pochacco_s2c:'"SEVEN!?" Pochacco\'s tail spins like a propeller. "You want to TRY WITH ME!? Nobody ever wants to fail together! They only want to watch me fail alone!"\n\nHe grabs your hands: "If we crash, we crash together. That\'s the best kind of friendship! {p}, let\'s crash through this whole adventure together!"',
+  pochacco_short_join:'Pochacco leaps up, does three somersaults (landing two of them), and strikes a hero pose.\n\n"Pochacco, reporting for duty! I\'ll run ahead and find all the fun stuff! And if there\'s danger, I\'ll distract it by falling on my face!"\n\nHe sprints forward, trips, rolls, and pops up: "TOTALLY PLANNED!"\n\n[Pochacco joined your party!]',
+  pochacco_short_jbtn:'"Let\'s go, champion!"',
+
+  tuxedo_short:'At Star Hill\'s observation deck, Tuxedo Sam stands alone, meticulously polishing a bow tie under the starlight. His reflection gleams in the polished brass railing.\n\n"Oh, {p}. Good evening." He quickly puts on his composed face. "I was just ensuring my evening attire is appropriate for stargazing. One must match the occasion, after all."\n\nBut you notice his collection case is open, and inside, many bow ties are frayed and worn. He sees you looking and snaps it shut.\n\n"Those are... vintage. Yes. Vintage."',
+  tuxedo_short_a:'"Vintage means they\'re loved. The most worn ones are the most precious."',
+  tuxedo_short_b:'Compliment his current bow tie sincerely',
+  tuxedo_short_c:'"The stars don\'t care about bow ties, Sam. They just want company."',
+  tuxedo_s2a:'Tuxedo Sam clutches the case. "Loved?" He opens it again, gently touching a frayed edge.\n\n"I never thought of it that way. I was ashamed of the worn ones. I thought they showed I wasn\'t perfect." He picks up the most worn bow tie of all. "This was from my first day at Puroland. My parents said I looked handsome."\n\nHis eyes glisten: "{p}, you turned my shame into treasure. May I walk with someone who sees beauty in imperfection?"',
+  tuxedo_s2b:'"Oh! Well, thank you." Tuxedo Sam adjusts it proudly. "It\'s a hand-tied Windsor knot with a double-loop finish. I spent forty minutes on it this morning."\n\nThen quieter: "...Forty minutes, and you\'re the first person today to actually see it. Most people don\'t even notice I wear bow ties. They just see \'a penguin.\'"\n\nHe looks at you warmly: "{p}, you appreciate craftsmanship. May I join your group? I promise to tie everyone\'s shoelaces beautifully."\n\nYou received [Sam\'s Star-Polished Bow Tie]!',
+  tuxedo_s2c:'Tuxedo Sam stares at you. Then he slowly looks up at the stars.\n\n"They just want... company?" He says it like he\'s hearing the most revolutionary idea. Slowly, he unties his bow tie and puts it away.\n\n"I\'ve been dressing up for the world, but the world doesn\'t need me dressed up. It just needs me present." He turns to you with bare neck and watery eyes. "{p}, may I be present with you? Just me. No bow ties required."',
+  tuxedo_short_join:'Tuxedo Sam closes his collection case with gentle finality and tucks it under his flipper.\n\n"I bring 365 bow ties and an encyclopedic knowledge of formal etiquette. Also..." he hesitates. "A genuine desire to learn that not everything needs to be perfect."\n\nHe falls into step beside you, and for the first time, his posture relaxes just slightly.\n\n[Tuxedo Sam joined your party!]',
+  tuxedo_short_jbtn:'"Welcome, Sam. Just as you are."',
+
+  badtz_short:'Behind a rock on Star Hill, you hear dramatic muttering. Badtz-Maru is surrounded by small action figures he\'s arranged in battle formation, narrating an epic war.\n\n"And then the GREAT Badtz-Maru defeated EVERYONE and became RULER OF THE UNIVERSE—"\n\nHe sees you and kicks the figures behind the rock. "I wasn\'t playing! I was strategizing! For my world domination plan!"\n\nBut his eyes keep darting to your group, and there\'s something behind his scowl that looks a lot like hope.',
+  badtz_short_a:'"Your strategy looked epic! Can you be our team\'s strategist?"',
+  badtz_short_b:'"You know, it\'s okay to play. Everyone needs imagination."',
+  badtz_short_c:'"We could use a strong leader. Want the job?"',
+  badtz_s2a:'"STRAT—" Badtz-Maru catches himself mid-shout. "I mean. Yes. Obviously. I am a tactical genius. I was TOTALLY strategizing for exactly this moment."\n\nBut his eyes are shining. "Nobody ever wanted my strategies before. They just said I was being weird. {p}, if you really want my brain on your team... I\'m in. But I get to name the party!"',
+  badtz_s2b:'Badtz-Maru\'s tough face crumbles. "Okay to... play?"\n\nHe picks up a figure from behind the rock. It\'s a tiny hero with a cape. "I wasn\'t just playing. I was imagining a world where someone like me could be the hero. In real life, I\'m just the grumpy penguin nobody picks for their team."\n\nHe clutches the figure: "{p}... you just said it\'s okay to be me. Can I be the hero in YOUR story?"\n\nYou received [Badtz-Maru\'s Hero Figure]!',
+  badtz_s2c:'Badtz-Maru\'s spiky hair LITERALLY stands up straighter. "LEADER!? You want ME to LEAD!?"\n\nHe clears his throat, trying to be dignified: "I mean, naturally. About time someone recognized my talents. I accept your offer."\n\nThen quieter: "...{p}, nobody has ever trusted me with anything. I\'ll be the best leader. I\'ll protect everyone. I promise."',
+  badtz_short_join:'Badtz-Maru marches to the front of the group, arms crossed, trying to look commanding.\n\n"LISTEN UP! As your new strategist-leader-bodyguard, I have THREE RULES: One, nobody gets left behind. Two, I decide the battle cries. Three..." his voice softens, "...no making fun of anyone\'s dreams."\n\nHe quickly looks away so nobody sees his eyes watering.\n\n[Badtz-Maru joined your party!]',
+  badtz_short_jbtn:'"Lead the way, commander!"',
+
+  // --- Final chapter ---
+  ch_final:'Final Chapter: The Warmest Puroland',
+  final_text:'All five friends are together! You find a magical spot in the heart of Puroland — a cozy pavilion glowing with warm pink light.\n\n🐕 Pompompurin shares pudding with everyone\n🐶 Cinnamoroll drifts gentle clouds overhead for shade\n🐾 Pochacco does tricks that actually work (mostly)\n🐧 Tuxedo Sam adjusts everyone\'s outfits lovingly\n😈 Badtz-Maru sits on the highest bench, pretending not to smile\n\nThe evening settles in, warm and golden. But then — a commotion from the park entrance...',
+  final_a:'Rush to the entrance to see what\'s happening',
+  final_b:'Make sure all your friends are safe first',
+
+  rescue_text:'At the entrance, a group of smaller Sanrio friends are lost and scared — the lights went out on their ride and they can\'t find their way back!\n\nLittle stars, baby cinnamons, tiny melodies... they look up at you with big eyes.\n\n"We\'re lost! Can you help us find the way home?"',
+  rescue_a:'"Of course! Everyone follow us!"',
+  rescue_b:'Ask your friends for ideas',
+
+  protect_text:'You check on each friend:\n\nPompompurin ✓ Has pudding for energy\nCinnamoroll ✓ Can scout from above\nPochacco ✓ Ready to run for help\nTuxedo Sam ✓ Has a pocket flashlight (fashionable)\nBadtz-Maru ✓ Ready to "intimidate" the dark\n\n"{p} checked on everyone first..." Cinnamoroll says softly, touched.\n\nThen you all hear the little ones calling for help!',
+  protect_a:'Let\'s go help them together!',
+
+  vote_text:'You gather your friends\' ideas:\n\nPompompurin: "I can light the way with my golden glow! ...After a quick nap."\nCinnamoroll: "I\'ll fly above and find the safest path!"\nPochacco: "I\'ll run ahead! I crash into things but I always find the way!"\nTuxedo Sam: "I have a perfectly organized map of this park."\nBadtz-Maru: "I\'ll scare away anything scary! ...By being scarier!"\n\nEveryone nods. Together, you have everything you need!',
+  vote_a:'Let\'s go rescue them!',
+
+  ending_text:'With all your friends working together, you guide the little ones back to safety. The park fills with light again.\n\nEvery friend you made today showed their true selves:\n\nPompompurin: "Thank you for showing me that going slow is a strength, {p}."\nCinnamoroll: "You helped me come down from the clouds... and find something even better on the ground."\nPochacco: "Falling isn\'t failing when you have friends to get up for!"\nTuxedo Sam: "The finest bow tie in the world... is the bond between friends."\nBadtz-Maru: "I\'m not the boss of everything. But I AM the boss of protecting my friends. ...Don\'t make this weird."\n\nAll together, under the Puroland stars:\n"Friendship isn\'t about being perfect. It\'s about being perfectly yourself — and finding people who love that."',
+
+  end_title:'🌟 The End 🌟', end_sub:'~ A Magical Day at Sanrio Puroland ~',
+  end_role:'Your role: ', end_party:'Your party: ', end_trust:'Trust level: ', end_items:'Treasures: ',
+  end_msg:'All your Sanrio friends will always be here!\nPuroland is waiting for your next visit.',
+},
+zh: {
+  title:'🏰 三麗鷗彩虹樂園的魔法一日', sub:'～ 友情、快樂，做最真實的自己 ～',
+  s_lang:'語言', s_font:'字體', s_device:'裝置',
+  choose_role:'選擇你要扮演的角色', start_btn:'開始冒險！', restart:'🔄 再玩一次',
+  none:'無', party:'隊伍：',
+  r_kitty:'Hello Kitty', rd_kitty:'喜歡烘焙的善良女孩',
+  r_melody:'美樂蒂', rd_melody:'來自瑪麗蘭的粉色兔兔',
+  r_kuromi:'酷洛米', rd_kuromi:'外表帥氣但內心少女的美樂蒂對手',
+  r_keroppi:'大眼蛙', rd_keroppi:'愛游泳愛唱歌的冒險小蛙',
+  r_kiki:'Kiki', rd_kiki:'來自天空的星星小子（雙子星）',
+  r_gudetama:'蛋黃哥', rd_gudetama:'什麼都不想做的懶懶蛋',
+  r_aggretsuko:'衝吧烈子', rd_aggretsuko:'有隱藏暴怒的上班族小熊貓',
+  r_hangyodon:'人魚漢頓', rd_hangyodon:'笨拙但可愛的半魚人',
+  n_pompom:'布丁狗', n_cinna:'大耳狗', n_pochacco:'帕恰狗', n_tuxedo:'山姆企鵝', n_badtz:'酷企鵝',
+  trust_hi:'💖 最深的羈絆', trust_mid:'💕 溫暖的友誼', trust_lo:'💛 初萌的情誼',
+  ch1:'第一章：三麗鷗彩虹樂園',
+  start_text:'一個明亮的早晨，你——{p}——踏入了閃閃發光的三麗鷗彩虹樂園大門。\n\n空氣中瀰漫著棉花糖和草莓的香氣。粉嫩的色彩點綴著每一處，歡樂的音樂從遠方飄來。\n\n你注意到入口廣場上有五張熟悉的面孔。\n\n你想先去找誰呢？',
+  c_pompom:'走向在布丁攤旁打瞌睡的黃金獵犬',
+  c_cinna:'走向在雲朵邊飄浮的白色小狗',
+  c_pochacco:'去看在噴泉旁表演特技的運動小狗',
+  c_tuxedo:'找到在鏡子旁整理領結的優雅企鵝',
+  c_badtz:'看看坐在玩偶寶座上的尖髮企鵝',
+
+  pompom_t:'布丁狗的角落',
+  pompom1:'你走到布丁攤旁，一隻戴著咖啡色貝雷帽的黃金獵犬正在打瞌睡。旁邊放著一杯吃了一半的布丁。\n\n「呼呼...哦！」布丁狗眨眨眼醒來。「嗨，{p}。抱歉...我剛在做關於布丁的夢。有趣的是旁邊就有布丁呢。」\n\n他打了個大呵欠，調整了一下貝雷帽。「你喜歡布丁嗎？我覺得布丁是世界上最棒的東西...僅次於午睡。」',
+  pompom1_a:'「要不要一起分享那個布丁？」',
+  pompom1_b:'「你看起來好平靜。你不會擔心事情嗎？」',
+  pompom1_c:'「那頂貝雷帽好可愛啊。」',
+  pompom2a:'你坐下來一起分享布丁。布丁狗的眼睛閃爍著純粹的喜悅。\n\n「你知道嗎，{p}，大部分人因為我總在睡覺就走過去了。他們覺得我懶。但分享布丁...從來沒有人想要坐下來一起分享布丁。」\n\n他從貝雷帽裡掏出一把小小的金色湯匙：「給你！我的特製布丁湯匙。」\n\n你獲得了【布丁狗的金色湯匙】！\n\n「嘿{p}...我可以跟你走嗎？走路很累，但有朋友就像午睡後的散步一樣舒服。」',
+  pompom2b:'布丁狗歪著頭，認真地思考——或者是昏昏沉沉地。\n\n「擔心？嗯...我以前會擔心大家覺得我沒用，因為我總在睡覺。但後來我發現——世界需要一個提醒大家慢下來也沒關係的人。」\n\n他對你微笑：「你是第一個問我這個的人，{p}。大部分人只是笑笑。你願意讓我跟著走嗎？我保證只會小睡一下下。」',
+  pompom2c:'「我的貝雷帽？」布丁狗害羞地摸了摸。「是我的主人給我的。她說這讓我看起來很有氣質。但從來沒人注意到...他們只看到一隻在睡覺的狗。」\n\n他的尾巴搖了搖：「你真的仔細看了我呢，{p}。不是看過我，是看了我。這讓我開心到...我可以保持清醒一整個小時！我可以跟你走嗎？」',
+  pompom_join:'「耶！」布丁狗站起來伸了個懶腰，把剩下的布丁塞進貝雷帽裡。\n\n「路上的點心我來準備！而且如果有人累了，我知道所有最好的午睡地點。」\n\n他開心地搖搖擺擺走在你旁邊，已經有點想睡了。\n\n【布丁狗加入了隊伍！】',
+  pompom_join_btn:'「當然，一起走吧！」',
+
+  cinna_t:'大耳狗的雲朵',
+  cinna1:'你抬頭看見一隻小小的白色小狗飄浮在棉花糖雲朵旁，大大的耳朵輕輕拍動著。他那捲曲的肉桂捲尾巴隨著飄動而彈跳。\n\n「哦！」大耳狗注意到你，害羞地飄了下來。「你...你好，{p}。對不起，我躲在上面。有時候人太多了我會有點緊張...」\n\n他輕輕落地，耳朵耷拉下來。「你是...來找我說話的嗎？」',
+  cinna1_a:'「你會飛！好厲害！」',
+  cinna1_b:'「害羞也沒關係。我很開心能和你慢慢聊。」',
+  cinna1_c:'「從上面看的風景一定很美吧。」',
+  cinna2a:'「厲...厲害？」大耳狗的耳朵豎起來，不小心又飄離地面幾公分。「大部分人說那很奇怪。狗不應該會飛...」\n\n他臉紅了：「但當我飛的時候，我能從上面看到大家在微笑。讓我覺得世界充滿了美好。」\n\n「你讓我覺得自己很棒，{p}。我可以飛在你旁邊嗎？我當你從天空的瞭望員！」',
+  cinna2b:'大耳狗盯著你，大大的藍色眼睛閃閃發亮。\n\n「照我的步調...？從來沒有人這樣說。他們總是要我下來、大聲說話、更勇敢一點。」他的聲音微微顫抖。\n\n然後他笑了——小小的但很真誠：「你讓我覺得害羞也沒關係，{p}。這對我意義重大。我可以待在你身邊嗎？在你身旁我覺得很安心。」\n\n你獲得了【大耳狗的雲朵吊飾】！',
+  cinna2c:'大耳狗的眼睛亮了起來。「風景？哦，{p}，好漂亮的！你能看到整個樂園，一直到彩虹橋。日落的時候雲朵會變成粉色和金色...」\n\n他飄起來伸出小小的爪子：「要不要改天我帶你去看？我是說...如果你願意讓我跟著的話。我可以帶你看我發現的所有美麗風景。」',
+  cinna_join:'大耳狗在空中開心地轉了一圈，肉桂捲尾巴彈來彈去。\n\n「我會飛在上面一點點，幫大家找漂亮的東西！還有...如果有人難過了，我會分享我的雲朵。」\n\n他輕輕地飄在你身旁，偶爾飄高一點，又回來靠近你。\n\n【大耳狗加入了隊伍！】',
+  cinna_join_btn:'「太好了！一起走吧！」',
+
+  pochacco_t:'帕恰狗的遊樂場',
+  pochacco1:'在噴泉旁，一隻有著黑色軟耳朵的白色小狗正在嘗試特技——而且壯觀地失敗了。他翻了個後空翻，臉著地，然後立刻彈起來。\n\n「鐺鐺！...好吧，這不是計畫中的。」帕恰狗對你咧嘴笑。「嘿{p}！想看我再試一次嗎？我已經練了三個禮拜了！」\n\n旁邊有一支香蕉冰淇淋正在融化，完全被遺忘了。',
+  pochacco1_a:'「你好有活力！剛才其實很厲害耶！」',
+  pochacco1_b:'「摔倒會痛嗎？你總是這麼快就站起來...」',
+  pochacco1_c:'「欸，你的冰淇淋在融化耶！」',
+  pochacco2a:'「厲害！？」帕恰狗整個身體興奮地搖擺。「從來沒有人這樣說！他們通常說『小心一點』或『不要那麼笨手笨腳的。』但你覺得厲害！」\n\n他馬上又翻了一個——然後栽進噴泉。他浮出水面大笑：「看！我又厲害又全身濕！{p}，你應該跟我一起來！我知道樂園裡所有好玩的地方！」',
+  pochacco2b:'帕恰狗的笑容閃了一下。他坐下來，突然安靜了。\n\n「...嗯。有時候會痛。但如果我不再爬起來，人們就不會再笑了。」他看著自己的爪子。「大家都期待我當那個搞笑、活力充沛的角色。但有時候我只是想要有人注意到我摔倒了。」\n\n他抬頭看你：「你注意到了，{p}。謝謝你。我可以在你面前做真正的自己嗎？我是說...我可以跟你走嗎？我還是會很有趣的，但也許我也可以只是...做我自己。」\n\n你獲得了【帕恰狗的勇氣徽章】！',
+  pochacco2c:'「我的冰淇淋！」帕恰狗飛撲過去，在半空中接住了冰淇淋球，然後不知怎的劈叉著地。\n\n他得意地抬頭：「救到了！要舔一口嗎{p}？是香蕉口味的——最棒的口味！誰說都不行。」\n\n他開心地分享冰淇淋：「你救了我的冰淇淋！這就是最好的朋友了。我可以跟著嗎？我保證只有偶爾才會撞到東西！」',
+  pochacco_join:'帕恰狗跳起來，轉了一圈（這次成功了！），擺了個帥氣的姿勢。\n\n「冒險時間！我去前面探路！順便找沿途所有的香蕉冰淇淋攤！」\n\n他跑向前方，絆倒了，翻滾起身，比了個讚。\n\n【帕恰狗加入了隊伍！】',
+  pochacco_join_btn:'「當然！一起去玩吧！」',
+
+  tuxedo_t:'山姆企鵝的舞台',
+  tuxedo1:'在樂園的鏡廳旁，一隻穿著完美打結領結的帝王企鵝正嚴肅地檢查自己的倒影。\n\n「嗯。今天粉藍色的好。不...還是天藍色的。」他注意到你。「啊，{p}！抱歉——我在挑今天的領結。我有365條，每天一條。今天的感覺是...你有什麼意見嗎？」\n\n他舉起兩條幾乎一模一樣的領結。',
+  tuxedo1_a:'「兩條都好漂亮！你品味真好。」',
+  tuxedo1_b:'「總是要看起來完美一定壓力很大吧。」',
+  tuxedo1_c:'「哪條讓你自己覺得最開心？」',
+  tuxedo2a:'「漂亮？」山姆企鵝驕傲地挺起胸膛。「那當然。我花了很多心思在挑選上。」\n\n然後他稍微洩氣了：「...但你知道嗎，{p}，你是第一個沒有笑的人。大家都覺得企鵝在意領結很可笑。但時尚是我的語言。」\n\n他小心地別了一個迷你領結在你的領口：「送你。從我的收藏裡。因為你懂得欣賞。」\n\n你獲得了【山姆企鵝的迷你領結】！\n\n「跟我走吧？我需要一個懂得優雅的同伴。」',
+  tuxedo2b:'山姆企鵝僵住了。他的鰭慢慢放下領結。\n\n「壓力...」他輕聲重複。「是的。每天早上我醒來都在想——如果今天看起來不夠完美怎麼辦？如果有人看到這些領結下面的我怎麼辦？」\n\n他用脆弱的眼神看著你：「你是第一個看穿領結的人，{p}。真正的我只是...一隻害怕平凡的企鵝。我可以跟你走嗎？你讓我覺得平凡也許也很好。」',
+  tuxedo2c:'山姆企鵝眨了眨眼。「讓我自己覺得...？」\n\n他盯著領結，好像第一次認真考慮這個問題。然後他從箱子最底層拿出一條略舊、略褪色的。\n\n「這條。我的第一條領結。它已經不時髦了，但是...」他輕輕觸碰。「是爸媽給我的。」\n\n「謝謝你，{p}。從來沒有人問過什麼讓我開心。我可以加入你嗎？我想重新找回我真正喜歡的東西。」',
+  tuxedo_join:'山姆企鵝整理好選中的領結，雙腳併攏，正式鞠了一躬。\n\n「我將擔任隊伍的時尚顧問！還有...也許學著不那麼追求完美。」\n\n他以無可挑剔的姿態走在你身旁，不過他的鰭悄悄地伸向你的手。\n\n【山姆企鵝加入了隊伍！】',
+  tuxedo_join_btn:'「這是我的榮幸！」',
+
+  badtz_t:'酷企鵝的地盤',
+  badtz1:'在一堆排列成寶座的玩偶上，一隻尖頭髮的小企鵝雙手交叉，試圖看起來很嚇人。\n\n「喂！你！{p}！」酷企鵝指著你。「你在我的地盤！你看到的一切都是我的。那張椅子？我的。那朵雲？也是我的！」\n\n但你注意到他的玩偶寶座全是可愛的三麗鷗角色...包括一個藏在背後的、用舊了的Hello Kitty娃娃。',
+  badtz1_a:'「哇，這些都歸你管？好厲害的王國！」',
+  badtz1_b:'「你背後那個Hello Kitty娃娃好可愛。」',
+  badtz1_c:'「當老大但沒人可以管，一定很寂寞吧。」',
+  badtz2a:'「終於！有人懂了！」酷企鵝得意地站在寶座上。「我就是老大！最偉大的！最——」\n\n他搖晃著從玩偶堆上掉了下來。坐在地上，強硬的外表裂開了：「...好啦。我不是真的老大。只是...大家都不理看起來兇兇的企鵝。所以我想如果不能被喜歡，那就被怕好了。」\n\n「但你居然走過來了，{p}。沒有人會走過來。我可以...跟你走嗎？別坐在這個笨寶座了。」',
+  badtz2b:'酷企鵝的臉瞬間通紅。「我——那個——才不是——我是在挾持它當人質！對！它是囚犯！」\n\n但他抱著它的手很溫柔。沉默了很久：「...是媽媽給我的。小時候怕黑的時候。不要告訴別人。」\n\n他的聲音變得很小：「{p}...只有你注意到了。大家都只看到裝兇的樣子。我可以...也許...跟著走嗎？我會保護大家的！真的。」\n\n你獲得了【酷企鵝的秘密信任】！',
+  badtz2c:'酷企鵝張嘴想反駁，又閉上了。他的尖頭髮好像稍微洩氣了。\n\n「...嗯。」他踢了踢一個玩偶。「是很寂寞。大家都跑掉因為我總在喊著要當老大。但我喊只是因為...如果安靜下來，根本沒有人注意到我。」\n\n他用意外柔軟的眼神看著你：「但你注意到了，{p}。就算我又大聲又煩人。我可以跟你走嗎？我保證只會偶爾宣布自己是老大...偶爾。」',
+  badtz_join:'「別以為這代表我在示好！」酷企鵝說著，從寶座上跳下來試圖保持尊嚴。\n\n但他的尾巴在搖。而且他在沒人注意的時候小心地把Hello Kitty娃娃塞進了包裡。\n\n「我是隊伍的保鏢！沒人敢惹我們！」\n\n【酷企鵝加入了隊伍！】',
+  badtz_join_btn:'「歡迎加入，老大！」',
+
+  ch_travel:'第{n}章：{loc}',
+  loc_forest:'草莓森林', loc_bridge:'彩虹橋', loc_melody:'美樂蒂樂園', loc_star:'星星山丘',
+  travel_intro:'你和夥伴們來到了{loc}。\n\n{scene}',
+
+  pompom_short:'在草莓樹下，布丁狗蜷縮在一堆柔軟的落葉上午睡。他的貝雷帽滑到一隻眼睛上，一杯吃了一半的布丁完美地平衡在肚子上。\n\n「呼呼...嗯嗯...布丁山...」他在夢中說話。然後一隻眼睛睜開：「哦！{p}！還有朋友們！抱歉，我在做最棒的夢。你們看起來好開心...」\n\n他打了個呵欠，用又渴望又睏倦的眼神看著你的隊伍：「我一個人在這裡睡了好久...很舒服，但有點安靜。」',
+  pompom_short_a:'「跟我們一起邊走邊睡！我們當你的枕頭！」',
+  pompom_short_b:'輕輕幫他把貝雷帽戴好，不完全吵醒他',
+  pompom_short_c:'「你在夢什麼？」',
+  pompom_s2a:'布丁狗的尾巴瘋狂搖擺。「邊走邊睡！？這是最偉大的發明！我可以靠著人邊走邊半睡！」\n\n他馬上靠在你身上：「看？完美。{p}，你懂得什麼都不做的藝術。我可以永遠靠著你嗎？我是說，在旅途中。」',
+  pompom_s2b:'你輕輕幫他把貝雷帽戴好。布丁狗僵住了，然後眼眶濕潤了。\n\n「...我的主人以前會這樣做。」他的聲音幾乎是耳語。「很久沒有人幫我整理貝雷帽了。我都不知道它歪了。你...真的看見我了，{p}。」\n\n他吸吸鼻子：「我可以跟你走嗎？我想和會注意小事的人一起走。」\n\n你獲得了【溫暖的貝雷帽記憶】！',
+  pompom_s2c:'「布丁山！」他的眼睛亮了。「有一座整座都是布丁做的山，我是國王，大家都開開心心吃飽飽，坐著布丁小船午睡...」\n\n他夢幻地嘆了口氣。然後看著你：「{p}，你是第一個想聽我的夢的人。通常大家都說『醒醒啦布丁狗。』我可以在你旁邊做夢嗎？」',
+  pompom_short_join:'布丁狗滾著站起來，把布丁杯塞進貝雷帽（不知道怎麼做到的），再打了個呵欠。\n\n「我走得慢，但我幫大家拿點心！而且如果有人休息時需要一個溫暖的靠墊，那就是我的專長。」\n\n他搖搖擺擺走進隊伍，已經半閉著眼睛，但笑得很開心。\n\n【布丁狗加入了隊伍！】',
+  pompom_short_jbtn:'「走吧，小瞌睡蟲！」',
+
+  cinna_short:'在彩虹橋上，一個小小的白色身影停在最高的欄杆上，耳朵像小翅膀一樣迎著風。大耳狗看著下方閃爍的色彩，捲曲的尾巴搖曳著。\n\n「哦...」他看到你的隊伍，把耳朵拉近身體，縮得更小了。「你...你好，{p}...我只是...在看彩虹。從這裡看好漂亮。但是...」\n\n他看著你的隊伍，眼裡滿是渴望和恐懼：「你們好多人。你們都是...朋友嗎？那是什麼感覺？」',
+  cinna_short_a:'「來感受看看吧！我們很歡迎你！」',
+  cinna_short_b:'折一架紙飛機送上去，上面寫著「歡迎你」',
+  cinna_short_c:'「你不用下來。我可以上去找你嗎？」',
+  cinna_s2a:'「你們...歡迎？」大耳狗的耳朵驚訝地豎直，不小心飛了起來，在空中驚慌地轉了一圈。\n\n「對不起！驚喜開心的時候會這樣！」他慢慢飄下來。「我從上面看了好久好久的朋友群。從來沒想過有人會邀請我。{p}，真的嗎？」',
+  cinna_s2b:'你折了一架紙飛機送上去。大耳狗用耳朵接住，讀完後緊緊抱在胸前。\n\n「歡迎...你...」他像念咒語一樣低語著。眼淚溢了出來。「從來沒有人上來找我。他們都是叫我下去。你來到了我的天空。」\n\n「{p}...這是我收到的最美的信。我現在可以下來到你的世界嗎？」\n\n你獲得了【天空友誼信】！',
+  cinna_s2c:'大耳狗的眼睛睜得好大。「上來？來找我？」\n\n他飄低到足以把你輕輕托起——離地只有一點點。「這是我的世界，」他輕聲說。「從上面看，一切都很溫柔。連可怕的事情也是。」\n\n「你想看我的風景，{p}。從來沒有人想看我的風景。拜託...你也讓我看你的世界好嗎？一起？」',
+  cinna_short_join:'大耳狗深吸一口氣，飄到隊伍旁邊，像雪花一樣輕輕落下。\n\n「我害羞的時候可能會躲到誰後面，」他小聲承認。「但我會一直在。而且我會幫大家找到最漂亮的雲朵。」\n\n他試探性地飄在你旁邊，然後輕輕把頭靠在你肩上一秒。\n\n【大耳狗加入了隊伍！】',
+  cinna_short_jbtn:'「歡迎回家，大耳狗！」',
+
+  pochacco_short:'在美樂蒂樂園的活動區，帕恰狗正試著邊騎獨輪車邊拋接香蕉冰淇淋。結果如你所料。\n\n「哇——哇啊——」砰。冰淇淋到處都是。他坐起來，全身沾滿香蕉，咧嘴笑：「六秒！新個人紀錄！」\n\n然後他看到你的隊伍，笑容動搖了：「嘿{p}！好酷的隊伍！我只是...在訓練。總有一天我會成為某件事的第一名。只是還沒找到是什麼...」',
+  pochacco_short_a:'「做你自己就已經是最棒的了！」',
+  pochacco_short_b:'扶他起來，幫他擦掉耳朵上的冰淇淋',
+  pochacco_short_c:'「六秒真的很厲害耶。要不要一起挑戰七秒？」',
+  pochacco_s2a:'帕恰狗擦到一半停住了。「做...自己？」\n\n「但我自己就是那個撞到所有東西、什麼都做不完的傢伙——」他停下來想了想。「等等。我自己也是那個永遠會站起來、什麼都嘗試、永不放棄的傢伙。」\n\n他的眼睛閃閃發光：「{p}，你讓我發現我已經找到自己的才華了。是堅持不懈！我可以在你身邊堅持下去嗎？」',
+  pochacco_s2b:'你蹲下來溫柔地擦掉他黑色軟耳朵上的香蕉冰淇淋。帕恰狗完全不動了。\n\n「你在...幫我？」他的聲音顫抖。「通常大家摔倒只會笑。『經典帕恰狗，』他們說。從來沒有人扶我起來。」\n\n一滴眼淚混進冰淇淋裡：「你不只看到搞笑的部分，{p}。你看到我需要幫助。我可以...留在你身邊嗎？跟會幫忙的人在一起？」\n\n你獲得了【帕恰狗的感恩爪印】！',
+  pochacco_s2c:'「七秒！？」帕恰狗的尾巴像螺旋槳一樣轉。「你要跟我一起試！？從來沒有人想一起失敗！他們只想看我一個人失敗！」\n\n他抓住你的手：「如果摔了，一起摔。那是最棒的友誼！{p}，讓我們一起摔著完成整個冒險吧！」',
+  pochacco_short_join:'帕恰狗跳起來，連翻三個跟斗（成功了兩個），擺了個英雄姿勢。\n\n「帕恰狗報到！我去前面找好玩的東西！如果有危險，我就用臉摔下去分散注意力！」\n\n他衝向前方，絆倒了，翻滾起身：「完全是計畫好的！」\n\n【帕恰狗加入了隊伍！】',
+  pochacco_short_jbtn:'「出發吧，冠軍！」',
+
+  tuxedo_short:'在星星山丘的觀景台，山姆企鵝獨自站在星光下仔細擦拭一條領結。他的倒影在黃銅欄杆上閃閃發光。\n\n「哦，{p}。晚安。」他快速戴上冷靜的表情。「我只是確保晚禮服適合觀星。畢竟場合要配合嘛。」\n\n但你注意到他的收藏箱打開著，裡面很多領結都磨損褪色了。他看到你在看，啪地合上。\n\n「那些是...復古款。對。復古。」',
+  tuxedo_short_a:'「復古代表被珍愛。最舊的才是最珍貴的。」',
+  tuxedo_short_b:'真心地讚美他現在戴的領結',
+  tuxedo_short_c:'「星星不在意領結，山姆。它們只想要陪伴。」',
+  tuxedo_s2a:'山姆企鵝緊握著箱子。「珍愛？」他又打開，輕輕觸碰著磨損的邊緣。\n\n「我從來沒這樣想過。我一直為舊的感到羞愧。覺得它們暴露了我不夠完美。」他拿起磨損最多的那條。「這是我到樂園的第一天戴的。爸媽說我看起來很帥。」\n\n他的眼眶閃著光：「{p}，你把我的羞恥變成了寶藏。我可以和看見不完美之美的人一起走嗎？」',
+  tuxedo_s2b:'「哦！謝謝你。」山姆企鵝驕傲地整了整。「這是手工打的溫莎結加雙環收尾。我今天早上花了四十分鐘打的。」\n\n然後更安靜地：「...四十分鐘，你是今天第一個看到的人。大部分人根本沒注意到我戴領結。他們只看到『一隻企鵝。』」\n\n他溫暖地看著你：「{p}，你欣賞用心。我可以加入你們嗎？我保證把大家的鞋帶都綁得很漂亮。」\n\n你獲得了【山姆的星光領結】！',
+  tuxedo_s2c:'山姆企鵝盯著你。然後慢慢抬頭看星星。\n\n「只想要...陪伴？」他說出口時像聽到了最革命性的想法。慢慢地，他解開領結收起來。\n\n「我一直為世界打扮自己，但世界不需要我打扮。只需要我在場。」他光著脖子、眼眶濕潤地看著你。「{p}，我可以和你在一起嗎？只是我。不需要領結。」',
+  tuxedo_short_join:'山姆企鵝輕柔地合上收藏箱，夾在鰭下。\n\n「我帶了365條領結和一部正式禮儀百科全書。還有...」他猶豫了。「真心想學習不是所有事都需要完美。」\n\n他跟上你的步伐，有生以來第一次，姿態稍微放鬆了。\n\n【山姆企鵝加入了隊伍！】',
+  tuxedo_short_jbtn:'「歡迎，山姆。做你自己就好。」',
+
+  badtz_short:'在星星山丘的一塊岩石後面，你聽到戲劇性的喃喃自語。酷企鵝被一堆排成戰鬥陣型的小公仔圍著，正在旁白一場史詩大戰。\n\n「然後偉大的酷企鵝打敗了所有人成為宇宙統治者——」\n\n他看到你，把公仔踢到岩石後面。「我才沒有在玩！我在制定策略！為了我的世界征服計畫！」\n\n但他的眼睛一直偷看你的隊伍，嘟嘟的臉後面有著像是希望的東西。',
+  badtz_short_a:'「你的策略看起來好厲害！你當我們的軍師好不好？」',
+  badtz_short_b:'「玩耍也沒關係啊。每個人都需要想像力。」',
+  badtz_short_c:'「我們需要一個厲害的領導。要不要這個工作？」',
+  badtz_s2a:'「軍——」酷企鵝喊到一半收住。「我是說。對。當然。我是戰術天才。我完全是為了這一刻在準備的。」\n\n但他的眼睛在發光。「從來沒有人要過我的策略。他們只說我很怪。{p}，如果你真的想要我的腦袋加入你的隊伍...我加入。但是隊名我來取！」',
+  badtz_s2b:'酷企鵝的強硬臉崩塌了。「可以...玩？」\n\n他從岩石後面撿起一個公仔。是一個穿著披風的小英雄。「我不只是在玩。我在想像一個像我這樣的人可以當英雄的世界。在現實裡，我只是那個沒人想選進隊伍的臭臉企鵝。」\n\n他緊握著公仔：「{p}...你說做我自己也沒關係。我可以在你的故事裡當英雄嗎？」\n\n你獲得了【酷企鵝的英雄公仔】！',
+  badtz_s2c:'酷企鵝的尖頭髮直接豎得更高了。「領導！？你要我當領導！？」\n\n他清清喉嚨，試著表現得有尊嚴：「我是說，當然。是時候有人認可我的才華了。我接受你的任命。」\n\n然後更安靜地：「...{p}，從來沒有人信任我任何事。我會成為最好的領導。我會保護每個人。我保證。」',
+  badtz_short_join:'酷企鵝走到隊伍最前面，雙手交叉，試著看起來很威嚴。\n\n「都聽好了！作為你們新的軍師-領導-保鏢，我有三條規矩：第一，不准丟下任何人。第二，戰鬥口號我來決定。第三...」他的聲音柔和下來，「...不准嘲笑任何人的夢想。」\n\n他趕快轉過頭去，不讓人看到他眼眶泛紅。\n\n【酷企鵝加入了隊伍！】',
+  badtz_short_jbtn:'「帶路吧，指揮官！」',
+
+  ch_final:'最終章：最溫暖的樂園',
+  final_text:'五位朋友都到齊了！你們找到了樂園中心一處魔幻的地方——一座散發著溫暖粉色光芒的涼亭。\n\n🐕 布丁狗跟大家分享布丁\n🐶 大耳狗在頭頂飄出柔柔的雲朵遮陽\n🐾 帕恰狗表演特技而且大部分成功了\n🐧 山姆企鵝愛心幫大家整理儀容\n😈 酷企鵝坐在最高的椅子上假裝沒在笑\n\n夜幕降臨，溫暖而金色。但這時——樂園入口傳來一陣騷動...',
+  final_a:'衝去入口看看發生什麼事',
+  final_b:'先確認所有朋友都安全',
+  rescue_text:'在入口，一群三麗鷗小夥伴迷路了又害怕——他們遊樂設施的燈熄了，找不到回去的路！\n\n小星星們、小肉桂們、小美樂蒂們...用大大的眼睛望著你。\n\n「我們迷路了！你可以幫我們找到回家的路嗎？」',
+  rescue_a:'「當然！大家跟著我們！」',
+  rescue_b:'問問朋友們的意見',
+  protect_text:'你確認了每位朋友的狀況：\n\n布丁狗 ✓ 有布丁補充體力\n大耳狗 ✓ 可以從上面偵察\n帕恰狗 ✓ 隨時準備跑去求援\n山姆企鵝 ✓ 有口袋手電筒（時尚款）\n酷企鵝 ✓ 準備好「嚇退」黑暗\n\n「{p}先確認了每個人...」大耳狗輕聲說，感動極了。\n\n然後你們都聽到了小夥伴們的求救聲！',
+  protect_a:'我們一起去幫忙！',
+  vote_text:'你集合了朋友們的想法：\n\n布丁狗：「我可以用金色光芒照亮道路！...小睡一下之後。」\n大耳狗：「我飛上去找最安全的路！」\n帕恰狗：「我跑在前面！雖然會撞到東西但我總能找到路！」\n山姆企鵝：「我有一張完美整理的樂園地圖。」\n酷企鵝：「我來嚇走所有可怕的東西！...用更可怕的方式！」\n\n大家都點頭。合在一起，你們擁有一切所需！',
+  vote_a:'我們去救他們！',
+  ending_text:'在所有朋友的合作下，你們引導小夥伴們安全回家。樂園的燈重新亮起。\n\n今天認識的每位朋友都展現了真正的自己：\n\n布丁狗：「謝謝你讓我知道慢慢來也是一種力量，{p}。」\n大耳狗：「你幫我從雲端走下來...發現地面有更美好的東西。」\n帕恰狗：「有了朋友站起來的理由，摔倒就不是失敗！」\n山姆企鵝：「世界上最好的領結...是朋友之間的紐帶。」\n酷企鵝：「我不是所有事的老大。但我是保護朋友的老大。...不要讓這變得奇怪。」\n\n大家一起在樂園的星空下：\n「友情不是要完美。是完美地做自己——然後找到愛你這樣的人。」',
+  end_title:'🌟 遊戲結束 🌟', end_sub:'～ 三麗鷗彩虹樂園的魔法一日 ～',
+  end_role:'你的角色：', end_party:'你的隊伍：', end_trust:'信任等級：', end_items:'寶物：',
+  end_msg:'所有三麗鷗朋友永遠都在這裡！\n樂園等著你下次再來。',
+},
+fr: {
+  title:'🏰 Une Journée Magique à Sanrio Puroland', sub:'~ Amitié, Joie & Être Soi-Même ~',
+  s_lang:'Langue', s_font:'Police', s_device:'Appareil',
+  choose_role:'Choisissez votre personnage', start_btn:'Commencer !', restart:'🔄 Rejouer',
+  none:'Aucun', party:'Équipe : ',
+  r_kitty:'Hello Kitty', rd_kitty:'Fille gentille qui adore la pâtisserie',
+  r_melody:'My Melody', rd_melody:'Lapin rose adorable de Mariland',
+  r_kuromi:'Kuromi', rd_kuromi:'Rivale de My Melody, dure mais girly',
+  r_keroppi:'Keroppi', rd_keroppi:'Grenouille aventurière qui adore nager',
+  r_kiki:'Kiki', rd_kiki:'Enfant des étoiles (Little Twin Stars)',
+  r_gudetama:'Gudetama', rd_gudetama:'Œuf paresseux qui ne veut rien faire',
+  r_aggretsuko:'Aggretsuko', rd_aggretsuko:'Panda roux employée avec une rage cachée',
+  r_hangyodon:'Hangyodon', rd_hangyodon:'Créature mi-poisson maladroite mais adorable',
+  n_pompom:'Pompompurin', n_cinna:'Cinnamoroll', n_pochacco:'Pochacco', n_tuxedo:'Tuxedo Sam', n_badtz:'Badtz-Maru',
+  trust_hi:'💖 Lien Profond', trust_mid:'💕 Amitié Chaleureuse', trust_lo:'💛 Affection Naissante',
+  ch1:'Chapitre 1 : Sanrio Puroland',
+  start_text:"Un beau matin, vous — {p} — franchissez les portes scintillantes de Sanrio Puroland.\n\nL'air sent la barbe à papa et les fraises. Des couleurs pastels recouvrent chaque surface.\n\nVous remarquez cinq visages familiers sur la place d'entrée.\n\nQui approcher en premier ?",
+  c_pompom:'Approcher le golden retriever endormi près du chariot de pudding',
+  c_cinna:'Aller vers le chiot blanc flottant près des nuages',
+  c_pochacco:'Voir le chien sportif qui fait des acrobaties près de la fontaine',
+  c_tuxedo:'Trouver le pingouin élégant ajustant son nœud papillon',
+  c_badtz:'Regarder le pingouin rebelle sur son trône de peluches',
+
+  pompom_t:'Le Coin de Pompompurin',
+  pompom1:"Près du chariot de pudding, un golden retriever en béret marron somnole. Un pudding à moitié mangé est posé à côté.\n\n« Zzz... oh ! » Pompompurin cligne des yeux. « Salut, {p}. Pardon... je rêvais de pudding. C'est drôle parce qu'il y en a juste là aussi. »\n\nIl bâille et ajuste son béret. « Tu aimes le pudding ? Moi, c'est la meilleure chose au monde... après les siestes. »",
+  pompom1_a:'« On partage ce pudding ensemble ? »',
+  pompom1_b:'« Tu as l\'air si paisible. Tu ne t\'inquiètes jamais ? »',
+  pompom1_c:'« Ce béret te va vraiment bien ! »',
+  pompom2a:"Vous partagez le pudding. Les yeux de Pompompurin brillent de joie.\n\n« Tu sais, {p}, la plupart des gens passent devant moi parce que je dors toujours. Mais partager un pudding... personne ne veut jamais juste s'asseoir et partager. »\n\nIl sort une petite cuillère dorée de son béret : « Tiens ! Ma cuillère spéciale ! »\n\nVous recevez [Cuillère Dorée de Pompompurin] !\n\n« {p}... je peux venir avec toi ? Marcher, c'est fatigant, mais avec des amis, c'est comme une promenade après une sieste. »",
+  pompom2b:"Pompompurin penche la tête, réfléchissant — ou somnolant.\n\n« M'inquiéter ? Hmm... avant, je m'inquiétais que tout le monde me trouve inutile parce que je dors trop. Mais j'ai réalisé — le monde a besoin de quelqu'un qui rappelle qu'on peut ralentir. »\n\nIl vous sourit : « Tu es le premier à me demander ça, {p}. Les autres rient, c'est tout. Tu veux bien que je vienne ? Je promets de ne faire qu'une petite sieste. »",
+  pompom2c:"« Mon béret ? » Il le touche timidement. « C'est ma propriétaire qui me l'a donné. Elle dit que ça me donne un air distingué. Mais personne ne le remarque... ils voient juste un chien qui dort. »\n\nSa queue remue : « Tu m'as vraiment regardé, {p}. Pas juste en passant. Ça me rend si heureux que... je pourrais rester éveillé une heure entière ! Je peux venir ? »",
+  pompom_join:"« Youpi ! » Pompompurin se lève, s'étire et range le pudding dans son béret.\n\n« J'apporte les goûters ! Et si quelqu'un est fatigué, je connais les meilleurs spots de sieste. »\n\nIl trottine joyeusement, déjà un peu somnolent.\n\n[Pompompurin rejoint l'équipe !]",
+  pompom_join_btn:'« Bien sûr, allons-y ! »',
+
+  cinna_t:'Le Nuage de Cinnamoroll',
+  cinna1:"Vous levez les yeux : un petit chiot blanc flotte près d'un nuage de barbe à papa, ses grandes oreilles battant doucement.\n\n« Oh ! » Cinnamoroll vous remarque et descend timidement. « B-bonjour, {p}. Pardon, je me cachais là-haut. Parfois il y a trop de monde et je suis un peu nerveux... »\n\nIl atterrit doucement, oreilles baissées. « Tu es... venu me parler ? »",
+  cinna1_a:'« Tu peux voler ! C\'est incroyable ! »',
+  cinna1_b:'« C\'est OK d\'être timide. Je suis content de parler à ton rythme. »',
+  cinna1_c:'« La vue de là-haut doit être magnifique. »',
+  cinna2a:"« I-incroyable ? » Ses oreilles se dressent et il s'envole accidentellement. « La plupart des gens disent que c'est bizarre. Les chiens ne sont pas censés voler... »\n\nIl rougit : « Mais en volant, je vois tout le monde sourire d'en haut. Ça me fait croire que le monde est rempli de bonnes choses. »\n\n« Tu me fais sentir incroyable, {p}. Je peux voler à tes côtés ? »",
+  cinna2b:"Cinnamoroll vous fixe, ses grands yeux bleus brillants.\n\n« À mon rythme... ? Personne ne dit jamais ça. Ils veulent toujours que je descende, que je parle plus fort, que je sois plus courageux. »\n\nPuis il sourit — petit mais sincère : « Tu me fais sentir que la timidité est OK, {p}. Puis-je rester près de toi ? Je me sens en sécurité. »\n\nVous recevez [Charme Nuage de Cinnamoroll] !",
+  cinna2c:"Les yeux de Cinnamoroll pétillent. « La vue ? Oh, {p}, c'est merveilleux ! On voit tout le parc, jusqu'au pont arc-en-ciel. Au coucher du soleil, les nuages deviennent roses et dorés... »\n\nIl flotte et tend une petite patte : « Tu veux que je te montre un jour ? Si tu me laisses venir... je te montrerai tous les beaux panoramas que j'ai trouvés. »",
+  cinna_join:"Cinnamoroll fait un petit tour dans les airs, sa queue en rouleau rebondissant.\n\n« Je volerai un peu au-dessus pour repérer les belles choses ! Et si quelqu'un est triste, je partagerai mon nuage. »\n\nIl flotte doucement à vos côtés.\n\n[Cinnamoroll rejoint l'équipe !]",
+  cinna_join_btn:'« J\'adorerais ! Allons-y ! »',
+
+  pochacco_t:'Le Terrain de Pochacco',
+  pochacco1:"Près de la fontaine, un chien blanc aux oreilles noires tente des acrobaties — et échoue spectaculairement. Backflip, atterrissage sur le nez, rebond immédiat.\n\n« Ta-da ! ...OK, c'était pas prévu. » Pochacco vous sourit. « Hé {p} ! Tu veux me voir réessayer ? Je m'entraîne depuis trois semaines ! »\n\nUne glace à la banane fond à côté de lui, oubliée.",
+  pochacco1_a:'« Tu es tellement dynamique ! C\'était impressionnant ! »',
+  pochacco1_b:'« Ça fait mal de tomber ? Tu te relèves si vite... »',
+  pochacco1_c:'« Hé, ta glace fond ! »',
+  pochacco2a:"« Impressionnant !? » Pochacco tremble d'excitation. « PERSONNE ne dit ça ! Ils disent 'fais attention' ou 'arrête d'être maladroit.' Mais toi tu trouves ça impressionnant ! »\n\nIl tente un autre flip — et plonge dans la fontaine. Il resurface en riant : « Tu vois ! Impressionnant ET trempé ! {p}, viens avec moi ! Je connais tous les endroits fun du parc ! »",
+  pochacco2b:"Le sourire de Pochacco vacille. Il s'assoit, soudain calme.\n\n« ...Oui. Parfois ça fait mal. Mais si j'arrête de rebondir, les gens arrêtent de sourire. » Il regarde ses pattes. « Tout le monde attend que je sois le rigolo. Mais parfois je veux juste que quelqu'un remarque que je tombe. »\n\nIl vous regarde : « Tu as remarqué, {p}. Merci. Puis-je être moi-même avec toi ? »\n\nVous recevez [Badge de Courage de Pochacco] !",
+  pochacco2c:"« MA GLACE ! » Pochacco plonge, attrape la boule en plein vol et atterrit en grand écart.\n\nIl lève les yeux, triomphant : « Sauvée ! Tu en veux, {p} ? C'est banane — le meilleur parfum ! »\n\nIl partage joyeusement : « Tu as sauvé ma glace ! On est meilleurs amis maintenant. Je peux venir ? Je promets de ne rentrer dans les choses que parfois ! »",
+  pochacco_join:"Pochacco bondit, fait une pirouette (réussie !), et pose.\n\n« C'est parti ! J'éclaire le chemin ! Et je trouve toutes les glaceries à la banane ! »\n\nIl court, trébuche, se relève, pouce en l'air.\n\n[Pochacco rejoint l'équipe !]",
+  pochacco_join_btn:'« Absolument ! Amusons-nous ! »',
+
+  tuxedo_t:'La Scène de Tuxedo Sam',
+  tuxedo1:"Près de la salle des miroirs, un pingouin empereur ajuste son nœud papillon avec le plus grand sérieux.\n\n« Hmm. Le bleu poudre aujourd'hui. Non... le céruléen. » Il vous remarque. « Ah, {p} ! Pardon — je choisissais le nœud du jour. J'en ai 365. Aujourd'hui, j'hésite... un avis ? »\n\nIl montre deux nœuds quasi identiques.",
+  tuxedo1_a:'« Les deux sont magnifiques ! Quel goût ! »',
+  tuxedo1_b:'« Ça doit être stressant de toujours paraître parfait. »',
+  tuxedo1_c:'« Lequel te rend le plus HEUREUX ? »',
+  tuxedo2a:"« Magnifiques ? » Tuxedo Sam gonfle de fierté. « Évidemment. Je mets beaucoup de soin dans ma collection. »\n\nPuis il dégonfle : « ...Mais tu sais, {p}, tu es le premier à ne pas rire. Tout le monde trouve ridicule qu'un pingouin s'intéresse aux nœuds papillon. Mais la mode est mon langage. »\n\nIl épingle un mini nœud à votre col : « Un cadeau. Parce que tu comprends. »\n\nVous recevez [Mini Nœud de Tuxedo Sam] !\n\n« Marchons ensemble ? J'ai besoin de quelqu'un qui apprécie l'élégance. »",
+  tuxedo2b:"Tuxedo Sam se fige. Ses nageoires abaissent lentement les nœuds.\n\n« La pression... » répète-t-il. « Oui. Chaque matin je me demande — et si je n'étais pas assez parfait ? Et si on voyait le moi sous tous ces nœuds ? »\n\nRegard vulnérable : « Tu es le premier à voir à travers, {p}. Le vrai moi n'est qu'un pingouin qui a peur d'être ordinaire. Puis-je marcher avec toi ? Tu me fais sentir que l'ordinaire, c'est bien. »",
+  tuxedo2c:"Tuxedo Sam cligne des yeux. « Lequel ME rend... ? »\n\nIl fixe les nœuds, réfléchissant vraiment pour la première fois. Puis prend un nœud usé du fond de sa valise.\n\n« Celui-ci. Mon tout premier. Il n'est plus à la mode, mais... » il le touche. « C'est celui de mes parents. »\n\n« Merci, {p}. Personne n'a jamais demandé ce qui ME rend heureux. Puis-je venir ? Je veux redécouvrir ce que j'aime vraiment. »",
+  tuxedo_join:"Tuxedo Sam ajuste son nœud, claque des talons et s'incline.\n\n« Je serai le conseiller mode ! Et peut-être... apprendrai-je à être un peu moins parfait. »\n\nIl marche à vos côtés avec une posture impeccable, sa nageoire cherchant discrètement votre main.\n\n[Tuxedo Sam rejoint l'équipe !]",
+  tuxedo_join_btn:'« Ce serait un honneur ! »',
+
+  badtz_t:'Le Territoire de Badtz-Maru',
+  badtz1:"Sur un trône de peluches, un petit pingouin aux cheveux en pics croise les bras, tentant d'être intimidant.\n\n« Hé ! Toi ! {p} ! » Badtz-Maru vous pointe du doigt. « T'es sur MON territoire. Tout ce que tu vois ? À moi. Ce banc ? À moi. Ce nuage ? À MOI ! »\n\nMais son trône est fait de peluches Sanrio adorables... dont une poupée Hello Kitty usée qu'il cache derrière son dos.",
+  badtz1_a:'« Waouh, tu es le chef de tout ça ? Quel royaume ! »',
+  badtz1_b:'« Cette peluche Hello Kitty derrière ton dos est trop mignonne. »',
+  badtz1_c:'« Être chef sans personne à diriger, ça doit être solitaire. »',
+  badtz2a:"« ENFIN ! Quelqu'un qui comprend ! » Badtz-Maru se dresse sur son trône. « JE SUIS le chef ! Le plus grand ! Le plus — »\n\nIl vacille et tombe. Assis par terre, la façade craque : « ...OK. Je suis pas vraiment le chef. C'est juste que... personne ne s'intéresse au pingouin qui a l'air méchant. Alors j'ai décidé que si je ne pouvais pas être aimé, je serais craint. »\n\n« Mais toi tu es venu, {p}. Personne ne vient. Je peux... venir avec toi plutôt ? »",
+  badtz2b:"Badtz-Maru devient ÉCARLATE. « Je — C'est — C'est pas — C'EST UN OTAGE ! Oui ! Un prisonnier ! »\n\nMais il la tient doucement. Après un long silence : « ...C'est maman qui me l'a donnée. Quand j'avais peur du noir, petit. Dis-le à personne. »\n\nSa voix devient toute petite : « {p}... t'es le seul à avoir remarqué. Tout le monde ne voit que le dur. Je peux... peut-être... venir ? Je protégerai tout le monde ! Pour de vrai. »\n\nVous recevez [Confiance Secrète de Badtz-Maru] !",
+  badtz2c:"Badtz-Maru ouvre la bouche pour protester, puis la ferme. Ses cheveux se dégonflent un peu.\n\n« ...Ouais. » Il shoote dans une peluche. « C'est solitaire. Tout le monde fuit parce que je crie tout le temps que je suis le chef. Mais je crie parce que... si je me tais, personne ne remarque que je suis là. »\n\nIl vous regarde avec des yeux étonnamment doux : « Mais toi tu as remarqué, {p}. Même quand j'étais bruyant et pénible. Je peux venir ? Je promets de ne me déclarer chef que... de temps en temps. »",
+  badtz_join:"« Ça veut PAS dire que je suis GENTIL ! » dit-il en sautant de son trône.\n\nMais sa queue remue. Et il range discrètement la peluche Hello Kitty dans son sac.\n\n« Je suis le garde du corps ! Personne nous embête ! »\n\n[Badtz-Maru rejoint l'équipe !]",
+  badtz_join_btn:'« Bienvenue, chef ! »',
+
+  ch_travel:'Chapitre {n} : {loc}',
+  loc_forest:'Forêt aux Fraises', loc_bridge:'Pont Arc-en-Ciel', loc_melody:'Pays de Melody', loc_star:'Colline des Étoiles',
+  travel_intro:'Vous et vos amis arrivez à {loc}.\n\n{scene}',
+
+  pompom_short:"Sous un fraisier, Pompompurin dort roulé en boule sur un lit de feuilles. Son béret a glissé et un pudding est posé sur son ventre.\n\n« Zzz... montagne de pudding... » Il marmonne. Puis un œil s'ouvre : « Oh ! {p} ! Et des amis ! Pardon, je faisais le plus beau rêve. Vous avez l'air de bien vous amuser... »\n\nIl bâille et regarde votre groupe avec envie et sommeil : « Je dors ici tout seul depuis un moment... c'est douillet, mais un peu silencieux. »",
+  pompom_short_a:'« Viens dormir en marchant avec nous ! On sera ton oreiller ! »',
+  pompom_short_b:'Remettre doucement son béret droit sans le réveiller',
+  pompom_short_c:'« De quoi tu rêvais ? »',
+  pompom_s2a:"Sa queue s'affole. « Dormir en marchant !? C'est la plus grande invention ! Je peux m'appuyer sur quelqu'un et demi-dormir ! »\n\nIl s'appuie aussitôt sur vous : « Parfait. {p}, tu comprends l'art de ne rien faire. Je peux m'appuyer sur toi pour toujours ? Enfin, pendant le voyage. »",
+  pompom_s2b:"Vous remettez son béret. Pompompurin se fige, puis ses yeux s'embuent.\n\n« ...Ma propriétaire faisait ça. » murmure-t-il. « Personne n'a remis mon béret depuis longtemps. Je ne savais même pas qu'il était de travers. Tu... me vois vraiment, {p}. »\n\nIl renifle : « Je peux venir ? Je veux marcher avec quelqu'un qui remarque les petites choses. »\n\nVous recevez [Un Souvenir de Béret Chaleureux] !",
+  pompom_s2c:"« Montagne de pudding ! » Ses yeux brillent. « Une montagne entière en pudding, et j'étais le roi, et tout le monde était heureux et faisait la sieste dans des bateaux de pudding... »\n\nIl soupire. Puis vous regarde : « {p}, tu es le premier à vouloir entendre mes rêves. D'habitude on dit 'réveille-toi, Pompompurin.' Je peux rêver à côté de toi ? »",
+  pompom_short_join:"Pompompurin roule sur ses pattes, range le pudding dans son béret et bâille une dernière fois.\n\n« Je marche lentement, mais je porte les goûters ! Et si quelqu'un veut un coussin chaud, c'est ma spécialité. »\n\nIl trottine dans le groupe, yeux à moitié fermés, mais tout sourire.\n\n[Pompompurin rejoint l'équipe !]",
+  pompom_short_jbtn:'« Allez, marmotte ! »',
+
+  cinna_short:"Sur le Pont Arc-en-Ciel, une silhouette blanche perche sur la plus haute rambarde, oreilles au vent. Cinnamoroll regarde les couleurs chatoyer.\n\n« Oh... » Il voit votre groupe et rapproche ses oreilles. « B-bonjour, {p}... je regardais les arcs-en-ciel. C'est si joli d'ici. Mais... »\n\nIl regarde votre équipe, les yeux pleins de désir et de peur : « Vous êtes tellement. Vous êtes tous... amis ? C'est comment ? »",
+  cinna_short_a:'« Viens voir par toi-même ! On t\'accueillerait avec joie ! »',
+  cinna_short_b:'Envoyer un avion en papier avec « Bienvenue ici » écrit dessus',
+  cinna_short_c:'« Tu n\'as pas besoin de descendre. Je peux monter ? »',
+  cinna_s2a:"« Vous... avec joie ? » Ses oreilles se dressent et il décolle involontairement, faisant une boucle surprise.\n\n« Pardon ! Ça arrive quand je suis surprise-content ! » Il descend lentement. « J'ai regardé les groupes d'amis d'en haut si longtemps. Je n'aurais jamais cru qu'on m'inviterait. {p}, vraiment ? »",
+  cinna_s2b:"Vous envoyez un avion en papier. Cinnamoroll l'attrape avec ses oreilles, le lit et le serre contre son cœur.\n\n« Bienvenue... ici... » Il murmure les mots comme un sortilège. Ses yeux débordent. « Personne n'est jamais monté me voir avant. Ils m'appelaient toujours en bas. Toi, tu es venu dans MON ciel. »\n\n« {p}... c'est la plus belle lettre que j'aie reçue. Je peux descendre dans TON monde ? »\n\nVous recevez [Lettre Céleste d'Amitié] !",
+  cinna_s2c:"Les yeux de Cinnamoroll s'écarquillent. « Monter ? Vers moi ? »\n\nIl descend juste assez pour vous soulever légèrement. « C'est mon monde, » dit-il doucement. « D'en haut, tout paraît doux. Même ce qui fait peur. »\n\n« Tu as voulu voir MA vue, {p}. Personne ne voulait MA vue. S'il te plaît... je peux voir TON monde aussi ? Ensemble ? »",
+  cinna_short_join:"Cinnamoroll inspire profondément et descend comme un flocon de neige.\n\n« Je me cacherai peut-être derrière quelqu'un quand je serai timide, » admet-il. « Mais je serai toujours là. Et je trouverai les plus beaux nuages. »\n\nIl flotte à vos côtés, puis pose brièvement sa tête sur votre épaule.\n\n[Cinnamoroll rejoint l'équipe !]",
+  cinna_short_jbtn:'« Bienvenue chez toi, Cinnamoroll ! »',
+
+  pochacco_short:"Dans la zone d'activités, Pochacco jongle des glaces banane sur un monocycle. Ça se passe comme prévu.\n\n« WHOA — WHOAAA — » CRASH. Glace partout. Il se relève, couvert de banane : « Six secondes ! Record perso ! »\n\nPuis il voit votre groupe : « Oh hé, {p} ! Cool votre équipe ! Je m'entraînais. Je serai le meilleur en QUELQUE CHOSE un jour. J'ai juste pas trouvé quoi... »",
+  pochacco_short_a:'« Être toi-même est déjà le mieux ! »',
+  pochacco_short_b:'L\'aider à se relever et essuyer la glace sur ses oreilles',
+  pochacco_short_c:'« Six secondes, c\'est impressionnant. On vise sept ensemble ? »',
+  pochacco_s2a:"Pochacco s'arrête net. « Être... moi-même ? »\n\n« Mais moi-même c'est le gars qui rentre dans tout et ne finit rien et — » Il s'arrête. Réfléchit. « Attends. Moi-même c'est AUSSI le gars qui se relève toujours. Qui essaie tout. Qui n'abandonne jamais. »\n\nSes yeux brillent : « {p}, tu viens de me faire réaliser que j'ai déjà trouvé mon talent. C'est la persévérance ! Je peux persévérer à tes côtés ? »",
+  pochacco_s2b:"Vous vous agenouillez et essuyez la glace banane de ses oreilles noires. Pochacco ne bouge plus.\n\n« Tu... m'aides ? » Sa voix tremble. « D'habitude les gens rient quand je tombe. 'Classique Pochacco.' Personne ne m'aide à me relever. »\n\nUne larme se mêle à la glace : « Tu n'as pas vu que le côté drôle, {p}. Tu as vu que j'avais besoin d'aide. Je peux... rester avec toi ? »\n\nVous recevez [Empreinte de Gratitude de Pochacco] !",
+  pochacco_s2c:"« SEPT !? » Sa queue tourne comme une hélice. « Tu veux ESSAYER AVEC MOI !? Personne ne veut échouer ensemble ! Ils veulent juste me regarder échouer seul ! »\n\nIl attrape vos mains : « Si on tombe, on tombe ensemble. C'est la meilleure amitié ! {p}, traversons toute cette aventure en tombant ensemble ! »",
+  pochacco_short_join:"Pochacco bondit, trois saltos (deux réussis), pose héroïque.\n\n« Pochacco au rapport ! J'éclaire la route ! Et si c'est dangereux, je distrais en tombant sur la figure ! »\n\nIl sprinte, trébuche, roule, pouce en l'air : « TOTALEMENT PRÉVU ! »\n\n[Pochacco rejoint l'équipe !]",
+  pochacco_short_jbtn:'« En avant, champion ! »',
+
+  tuxedo_short:"Sur le pont d'observation, Tuxedo Sam polit un nœud papillon sous les étoiles. Son reflet brille sur la rambarde.\n\n« Oh, {p}. Bonsoir. » Il remet vite son masque composé. « Je vérifiais que ma tenue soit appropriée pour observer les étoiles. Il faut être à la hauteur de l'occasion. »\n\nMais sa valise est ouverte — beaucoup de nœuds sont usés et élimés. Il la referme vite.\n\n« C'est du... vintage. Oui. Vintage. »",
+  tuxedo_short_a:'« Vintage veut dire aimé. Les plus usés sont les plus précieux. »',
+  tuxedo_short_b:'Complimenter sincèrement son nœud actuel',
+  tuxedo_short_c:'« Les étoiles se moquent des nœuds papillon, Sam. Elles veulent de la compagnie. »',
+  tuxedo_s2a:"Tuxedo Sam serre la valise. « Aimé ? » Il l'ouvre à nouveau, touchant un bord effiloché.\n\n« Je n'y avais jamais pensé. J'avais honte des usés. Je pensais qu'ils montraient que je n'étais pas parfait. » Il prend le plus usé. « Celui de mon premier jour à Puroland. Mes parents disaient que j'étais beau. »\n\nSes yeux brillent : « {p}, tu as transformé ma honte en trésor. Puis-je marcher avec quelqu'un qui voit la beauté dans l'imperfection ? »",
+  tuxedo_s2b:"« Oh ! Merci. » Il l'ajuste fièrement. « C'est un Windsor noué à la main avec double boucle. Quarante minutes ce matin. »\n\nPlus bas : « ...Quarante minutes, et tu es le premier aujourd'hui à le voir. La plupart ne remarquent même pas mes nœuds. Ils voient juste 'un pingouin.' »\n\nRegard chaleureux : « {p}, tu apprécies le travail bien fait. Puis-je rejoindre votre groupe ? Je nouerai les lacets de tout le monde joliment. »\n\nVous recevez [Nœud Étoilé de Sam] !",
+  tuxedo_s2c:"Tuxedo Sam vous fixe. Puis lève lentement les yeux vers les étoiles.\n\n« Juste de la compagnie ? » Il dit ça comme une révélation. Lentement, il défait son nœud et le range.\n\n« Je me suis habillé pour le monde, mais le monde n'a pas besoin de moi habillé. Juste présent. » Il vous regarde, cou nu, yeux humides. « {p}, puis-je être présent avec toi ? Juste moi. Pas de nœud requis. »",
+  tuxedo_short_join:"Tuxedo Sam ferme sa valise avec douceur.\n\n« J'apporte 365 nœuds papillon et une encyclopédie d'étiquette. Aussi... » Il hésite. « Un désir sincère d'apprendre que tout n'a pas besoin d'être parfait. »\n\nIl s'aligne à vos côtés, et pour la première fois, sa posture se relâche légèrement.\n\n[Tuxedo Sam rejoint l'équipe !]",
+  tuxedo_short_jbtn:'« Bienvenue, Sam. Tel que tu es. »',
+
+  badtz_short:"Derrière un rocher, des marmonnements dramatiques. Badtz-Maru est entouré de figurines en formation de combat.\n\n« Et alors le GRAND Badtz-Maru a vaincu TOUT LE MONDE — »\n\nIl vous voit et cache les figurines. « Je jouais PAS ! C'était de la STRATÉGIE ! Pour mon plan de domination mondiale ! »\n\nMais ses yeux ne cessent de revenir vers votre groupe, et derrière sa moue, quelque chose ressemble à de l'espoir.",
+  badtz_short_a:'« Ta stratégie avait l\'air épique ! Tu veux être notre stratège ? »',
+  badtz_short_b:'« Tu sais, c\'est OK de jouer. Tout le monde a besoin d\'imagination. »',
+  badtz_short_c:'« On a besoin d\'un chef fort. Tu veux le poste ? »',
+  badtz_s2a:"« STRAT— » Il se rattrape. « Je veux dire. Oui. Évidemment. Je suis un génie tactique. Je me préparais EXACTEMENT pour ce moment. »\n\nMais ses yeux brillent. « Personne n'a jamais voulu mes stratégies. Ils disaient que j'étais bizarre. {p}, si tu veux vraiment mon cerveau dans ton équipe... j'en suis. Mais c'est moi qui nomme l'équipe ! »",
+  badtz_s2b:"La façade de Badtz-Maru s'effondre. « OK de... jouer ? »\n\nIl ramasse une figurine. Un petit héros avec une cape. « Je ne faisais pas que jouer. J'imaginais un monde où quelqu'un comme moi pouvait être le héros. En vrai, je suis juste le pingouin grognon que personne ne choisit. »\n\nIl serre la figurine : « {p}... tu as dit que c'est OK d'être moi. Je peux être le héros dans TON histoire ? »\n\nVous recevez [Figurine Héros de Badtz-Maru] !",
+  badtz_s2c:"Les pics de Badtz-Maru se dressent ENCORE PLUS. « CHEF !? Tu me veux comme CHEF !? »\n\nIl se racle la gorge : « Évidemment. Il était temps qu'on reconnaisse mes talents. J'accepte. »\n\nPlus bas : « ...{p}, personne ne m'a jamais fait confiance. Je serai le meilleur chef. Je protégerai tout le monde. Promis. »",
+  badtz_short_join:"Badtz-Maru marche en tête, bras croisés, air commandant.\n\n« ÉCOUTEZ ! En tant que nouveau stratège-chef-garde du corps, j'ai TROIS RÈGLES : Un, personne n'est laissé derrière. Deux, c'est moi qui décide les cris de guerre. Trois... » sa voix s'adoucit, « ...on ne se moque de personne. »\n\nIl se détourne vite pour cacher ses yeux humides.\n\n[Badtz-Maru rejoint l'équipe !]",
+  badtz_short_jbtn:'« En avant, commandant ! »',
+
+  ch_final:'Chapitre Final : Le Puroland le Plus Chaleureux',
+  final_text:"Les cinq amis sont réunis ! Un pavillon magique au cœur de Puroland baigné de lumière rose.\n\n🐕 Pompompurin partage du pudding\n🐶 Cinnamoroll fait de l'ombre avec ses nuages\n🐾 Pochacco fait des tours (presque tous réussis)\n🐧 Tuxedo Sam ajuste les tenues de tous\n😈 Badtz-Maru fait semblant de ne pas sourire\n\nLe soir tombe, chaud et doré. Mais alors — de l'agitation à l'entrée...",
+  final_a:'Courir voir ce qui se passe',
+  final_b:"D'abord vérifier que tout le monde va bien",
+  rescue_text:"À l'entrée, de petits amis Sanrio sont perdus et effrayés — les lumières se sont éteintes !\n\nDe petites étoiles, bébés cinnamons, petites mélodies... vous regardent avec de grands yeux.\n\n« On est perdus ! Vous pouvez nous aider ? »",
+  rescue_a:'« Bien sûr ! Tout le monde, suivez-nous ! »',
+  rescue_b:"Demander l'avis de ses amis",
+  protect_text:"Vous vérifiez chaque ami :\n\nPompompurin ✓ Pudding pour l'énergie\nCinnamoroll ✓ Peut survoler\nPochacco ✓ Prêt à courir\nTuxedo Sam ✓ A une lampe de poche (élégante)\nBadtz-Maru ✓ Prêt à « intimider » le noir\n\n« {p} a vérifié tout le monde d'abord... » murmure Cinnamoroll, ému.\n\nPuis vous entendez les petits appeler à l'aide !",
+  protect_a:'Allons les aider ensemble !',
+  vote_text:"Pompompurin : « J'éclaire le chemin avec ma lueur dorée ! ...Après une micro-sieste. »\nCinnamoroll : « Je survole pour trouver le chemin sûr ! »\nPochacco : « Je cours devant ! Je rentre dans les trucs mais je trouve toujours ! »\nTuxedo Sam : « J'ai un plan parfait du parc. »\nBadtz-Maru : « J'effraye tout ce qui est effrayant ! ...En étant plus effrayant ! »\n\nTout le monde acquiesce. Ensemble, vous avez tout ce qu'il faut !",
+  vote_a:'Allons les sauver !',
+  ending_text:"Ensemble, vous guidez les petits en sécurité. Le parc se rallume.\n\nChaque ami montre sa vraie nature :\n\nPompompurin : « Merci de m'avoir montré que la lenteur est une force, {p}. »\nCinnamoroll : « Tu m'as aidé à descendre des nuages... et trouver mieux au sol. »\nPochacco : « Tomber n'est pas échouer quand on a des amis pour qui se relever ! »\nTuxedo Sam : « Le plus beau nœud papillon... c'est le lien entre amis. »\nBadtz-Maru : « Je suis pas le chef de tout. Mais je SUIS le chef de protéger mes amis. ...Faites pas un truc bizarre avec ça. »\n\nTous ensemble sous les étoiles :\n« L'amitié, ce n'est pas être parfait. C'est être parfaitement soi-même — et trouver ceux qui aiment ça. »",
+  end_title:'🌟 Fin 🌟', end_sub:'~ Une Journée Magique à Sanrio Puroland ~',
+  end_role:'Votre rôle : ', end_party:'Votre équipe : ', end_trust:'Confiance : ', end_items:'Trésors : ',
+  end_msg:"Tous vos amis Sanrio seront toujours là !\nPuroland vous attend.",
+}
+};
+
+function T(k) { return (L[S.lang]||L.en)[k] || L.en[k] || k; }
+function Tp(k) {
+  let t = T(k);
+  if (t._noReplace) return t;
+  t = String(t);
+  if (S.playerRole) t = t.replace(/\{p\}/g, T('r_'+S.playerRole));
+  if (S.firstNpc) t = t.replace(/\{npc\}/g, T('n_'+S.firstNpc));
+  return t;
+}
+
+// ========== State ==========
+const S = { lang:'en', fontSize:'medium', device:'mobile', playerRole:null, firstNpc:null, party:[], trust:0, items:[], curScene:null };
+const npcOrder = ['pompom','cinna','pochacco','tuxedo','badtz'];
+const npcData = {
+  pompom:{emoji:'🐕',img:'https://sanrio-sea.com/wp-content/uploads/2024/02/Pompompurin.png'},
+  cinna:{emoji:'🐶',img:'https://sanrio-sea.com/wp-content/uploads/2024/02/Cinamoroll.png'},
+  pochacco:{emoji:'🐾',img:'https://sanrio-sea.com/wp-content/uploads/2024/02/Pocchaco.png'},
+  tuxedo:{emoji:'🐧',img:'https://sanrio-sea.com/wp-content/uploads/2024/02/Tuxedosam.png'},
+  badtz:{emoji:'😈',img:'https://sanrio-sea.com/wp-content/uploads/2024/02/Badtz-Maru.png'}
+};
+const roleData = {
+  kitty:{emoji:'🎀',img:'https://sanrio-sea.com/wp-content/uploads/2024/02/Hello-Kitty.png'},
+  melody:{emoji:'🐰',img:'https://sanrio-sea.com/wp-content/uploads/2024/02/My-Melody.png'},
+  kuromi:{emoji:'💜',img:'https://sanrio-sea.com/wp-content/uploads/2024/02/Kuromi.png'},
+  keroppi:{emoji:'🐸',img:'https://sanrio-sea.com/wp-content/uploads/2024/02/Kerokeroppi.png'},
+  kiki:{emoji:'⭐',img:'https://sanrio-sea.com/wp-content/uploads/2024/02/Little-Twin-Stars-1.png'},
+  gudetama:{emoji:'🍳',img:'https://sanrio-sea.com/wp-content/uploads/2024/02/Gudetama-1.png'},
+  aggretsuko:{emoji:'🦊',img:'https://sanrio-sea.com/wp-content/uploads/2024/02/Aggretsuko.png'},
+  hangyodon:{emoji:'🐟',img:'https://sanrio-sea.com/wp-content/uploads/2024/02/Hangyodon.png'}
+};
+
+// ========== Scene definitions ==========
+const scenes = {
+  start: { emoji:'🌸', text:'start_text', showGroup:true, choices:[
+    {text:'c_pompom',next:'pompom1',img:'pompom'},{text:'c_cinna',next:'cinna1',img:'cinna'},
+    {text:'c_pochacco',next:'pochacco1',img:'pochacco'},{text:'c_tuxedo',next:'tuxedo1',img:'tuxedo'},{text:'c_badtz',next:'badtz1',img:'badtz'}
+  ]},
+  // Pompompurin deep
+  pompom1:{emoji:'🐕',npc:'pompom',text:'pompom1',onEnter(){S.firstNpc='pompom'},choices:[
+    {text:'pompom1_a',next:'pompom2a'},{text:'pompom1_b',next:'pompom2b'},{text:'pompom1_c',next:'pompom2c'}]},
+  pompom2a:{emoji:'🍮',npc:'pompom',text:'pompom2a',onEnter(){S.trust+=2;S.items.push('🥄')},choices:[{text:'pompom_join_btn',next:'pompom_join'}]},
+  pompom2b:{emoji:'💭',npc:'pompom',text:'pompom2b',onEnter(){S.trust+=2},choices:[{text:'pompom_join_btn',next:'pompom_join'}]},
+  pompom2c:{emoji:'🎩',npc:'pompom',text:'pompom2c',onEnter(){S.trust+=2},choices:[{text:'pompom_join_btn',next:'pompom_join'}]},
+  pompom_join:{emoji:'🎉',npc:'pompom',text:'pompom_join',onEnter(){addParty('pompom')},choices:[{text:'→',next:'travel_next'}]},
+  // Cinnamoroll deep
+  cinna1:{emoji:'🐶',npc:'cinna',text:'cinna1',onEnter(){S.firstNpc='cinna'},choices:[
+    {text:'cinna1_a',next:'cinna2a'},{text:'cinna1_b',next:'cinna2b'},{text:'cinna1_c',next:'cinna2c'}]},
+  cinna2a:{emoji:'☁️',npc:'cinna',text:'cinna2a',onEnter(){S.trust+=2},choices:[{text:'cinna_join_btn',next:'cinna_join'}]},
+  cinna2b:{emoji:'💙',npc:'cinna',text:'cinna2b',onEnter(){S.trust+=3;S.items.push('☁️')},choices:[{text:'cinna_join_btn',next:'cinna_join'}]},
+  cinna2c:{emoji:'🌅',npc:'cinna',text:'cinna2c',onEnter(){S.trust+=2},choices:[{text:'cinna_join_btn',next:'cinna_join'}]},
+  cinna_join:{emoji:'🎉',npc:'cinna',text:'cinna_join',onEnter(){addParty('cinna')},choices:[{text:'→',next:'travel_next'}]},
+  // Pochacco deep
+  pochacco1:{emoji:'🐾',npc:'pochacco',text:'pochacco1',onEnter(){S.firstNpc='pochacco'},choices:[
+    {text:'pochacco1_a',next:'pochacco2a'},{text:'pochacco1_b',next:'pochacco2b'},{text:'pochacco1_c',next:'pochacco2c'}]},
+  pochacco2a:{emoji:'💦',npc:'pochacco',text:'pochacco2a',onEnter(){S.trust+=2},choices:[{text:'pochacco_join_btn',next:'pochacco_join'}]},
+  pochacco2b:{emoji:'💗',npc:'pochacco',text:'pochacco2b',onEnter(){S.trust+=3;S.items.push('🏅')},choices:[{text:'pochacco_join_btn',next:'pochacco_join'}]},
+  pochacco2c:{emoji:'🍌',npc:'pochacco',text:'pochacco2c',onEnter(){S.trust+=2},choices:[{text:'pochacco_join_btn',next:'pochacco_join'}]},
+  pochacco_join:{emoji:'🎉',npc:'pochacco',text:'pochacco_join',onEnter(){addParty('pochacco')},choices:[{text:'→',next:'travel_next'}]},
+  // Tuxedo Sam deep
+  tuxedo1:{emoji:'🐧',npc:'tuxedo',text:'tuxedo1',onEnter(){S.firstNpc='tuxedo'},choices:[
+    {text:'tuxedo1_a',next:'tuxedo2a'},{text:'tuxedo1_b',next:'tuxedo2b'},{text:'tuxedo1_c',next:'tuxedo2c'}]},
+  tuxedo2a:{emoji:'🎀',npc:'tuxedo',text:'tuxedo2a',onEnter(){S.trust+=2;S.items.push('🎀')},choices:[{text:'tuxedo_join_btn',next:'tuxedo_join'}]},
+  tuxedo2b:{emoji:'💔',npc:'tuxedo',text:'tuxedo2b',onEnter(){S.trust+=3},choices:[{text:'tuxedo_join_btn',next:'tuxedo_join'}]},
+  tuxedo2c:{emoji:'❤️',npc:'tuxedo',text:'tuxedo2c',onEnter(){S.trust+=3},choices:[{text:'tuxedo_join_btn',next:'tuxedo_join'}]},
+  tuxedo_join:{emoji:'🎉',npc:'tuxedo',text:'tuxedo_join',onEnter(){addParty('tuxedo')},choices:[{text:'→',next:'travel_next'}]},
+  // Badtz-Maru deep
+  badtz1:{emoji:'😈',npc:'badtz',text:'badtz1',onEnter(){S.firstNpc='badtz'},choices:[
+    {text:'badtz1_a',next:'badtz2a'},{text:'badtz1_b',next:'badtz2b'},{text:'badtz1_c',next:'badtz2c'}]},
+  badtz2a:{emoji:'👑',npc:'badtz',text:'badtz2a',onEnter(){S.trust+=2},choices:[{text:'badtz_join_btn',next:'badtz_join'}]},
+  badtz2b:{emoji:'🧸',npc:'badtz',text:'badtz2b',onEnter(){S.trust+=3;S.items.push('🤫')},choices:[{text:'badtz_join_btn',next:'badtz_join'}]},
+  badtz2c:{emoji:'💜',npc:'badtz',text:'badtz2c',onEnter(){S.trust+=3},choices:[{text:'badtz_join_btn',next:'badtz_join'}]},
+  badtz_join:{emoji:'🎉',npc:'badtz',text:'badtz_join',onEnter(){addParty('badtz')},choices:[{text:'→',next:'travel_next'}]},
+
+  // Short encounters (travel)
+  pompom_s:{emoji:'🐕',npc:'pompom',text:'pompom_short',choices:[
+    {text:'pompom_short_a',next:'pompom_s2a'},{text:'pompom_short_b',next:'pompom_s2b'},{text:'pompom_short_c',next:'pompom_s2c'}]},
+  pompom_s2a:{emoji:'😴',npc:'pompom',text:'pompom_s2a',onEnter(){S.trust+=2},choices:[{text:'pompom_short_jbtn',next:'pompom_sj'}]},
+  pompom_s2b:{emoji:'🎩',npc:'pompom',text:'pompom_s2b',onEnter(){S.trust+=3;S.items.push('🎩')},choices:[{text:'pompom_short_jbtn',next:'pompom_sj'}]},
+  pompom_s2c:{emoji:'💭',npc:'pompom',text:'pompom_s2c',onEnter(){S.trust+=2},choices:[{text:'pompom_short_jbtn',next:'pompom_sj'}]},
+  pompom_sj:{emoji:'🎉',npc:'pompom',text:'pompom_short_join',onEnter(){addParty('pompom');S.trust+=1},choices:[{text:'→',next:'travel_next'}]},
+
+  cinna_s:{emoji:'🐶',npc:'cinna',text:'cinna_short',choices:[
+    {text:'cinna_short_a',next:'cinna_s2a'},{text:'cinna_short_b',next:'cinna_s2b'},{text:'cinna_short_c',next:'cinna_s2c'}]},
+  cinna_s2a:{emoji:'☁️',npc:'cinna',text:'cinna_s2a',onEnter(){S.trust+=2},choices:[{text:'cinna_short_jbtn',next:'cinna_sj'}]},
+  cinna_s2b:{emoji:'✉️',npc:'cinna',text:'cinna_s2b',onEnter(){S.trust+=3;S.items.push('✉️')},choices:[{text:'cinna_short_jbtn',next:'cinna_sj'}]},
+  cinna_s2c:{emoji:'🌅',npc:'cinna',text:'cinna_s2c',onEnter(){S.trust+=3},choices:[{text:'cinna_short_jbtn',next:'cinna_sj'}]},
+  cinna_sj:{emoji:'🎉',npc:'cinna',text:'cinna_short_join',onEnter(){addParty('cinna');S.trust+=1},choices:[{text:'→',next:'travel_next'}]},
+
+  pochacco_s:{emoji:'🐾',npc:'pochacco',text:'pochacco_short',choices:[
+    {text:'pochacco_short_a',next:'pochacco_s2a'},{text:'pochacco_short_b',next:'pochacco_s2b'},{text:'pochacco_short_c',next:'pochacco_s2c'}]},
+  pochacco_s2a:{emoji:'💪',npc:'pochacco',text:'pochacco_s2a',onEnter(){S.trust+=2},choices:[{text:'pochacco_short_jbtn',next:'pochacco_sj'}]},
+  pochacco_s2b:{emoji:'🤝',npc:'pochacco',text:'pochacco_s2b',onEnter(){S.trust+=3;S.items.push('🐾')},choices:[{text:'pochacco_short_jbtn',next:'pochacco_sj'}]},
+  pochacco_s2c:{emoji:'🎯',npc:'pochacco',text:'pochacco_s2c',onEnter(){S.trust+=2},choices:[{text:'pochacco_short_jbtn',next:'pochacco_sj'}]},
+  pochacco_sj:{emoji:'🎉',npc:'pochacco',text:'pochacco_short_join',onEnter(){addParty('pochacco');S.trust+=1},choices:[{text:'→',next:'travel_next'}]},
+
+  tuxedo_s:{emoji:'🐧',npc:'tuxedo',text:'tuxedo_short',choices:[
+    {text:'tuxedo_short_a',next:'tuxedo_s2a'},{text:'tuxedo_short_b',next:'tuxedo_s2b'},{text:'tuxedo_short_c',next:'tuxedo_s2c'}]},
+  tuxedo_s2a:{emoji:'💎',npc:'tuxedo',text:'tuxedo_s2a',onEnter(){S.trust+=2},choices:[{text:'tuxedo_short_jbtn',next:'tuxedo_sj'}]},
+  tuxedo_s2b:{emoji:'🎀',npc:'tuxedo',text:'tuxedo_s2b',onEnter(){S.trust+=2;S.items.push('⭐')},choices:[{text:'tuxedo_short_jbtn',next:'tuxedo_sj'}]},
+  tuxedo_s2c:{emoji:'🌟',npc:'tuxedo',text:'tuxedo_s2c',onEnter(){S.trust+=3},choices:[{text:'tuxedo_short_jbtn',next:'tuxedo_sj'}]},
+  tuxedo_sj:{emoji:'🎉',npc:'tuxedo',text:'tuxedo_short_join',onEnter(){addParty('tuxedo');S.trust+=1},choices:[{text:'→',next:'travel_next'}]},
+
+  badtz_s:{emoji:'😈',npc:'badtz',text:'badtz_short',choices:[
+    {text:'badtz_short_a',next:'badtz_s2a'},{text:'badtz_short_b',next:'badtz_s2b'},{text:'badtz_short_c',next:'badtz_s2c'}]},
+  badtz_s2a:{emoji:'🗺️',npc:'badtz',text:'badtz_s2a',onEnter(){S.trust+=2},choices:[{text:'badtz_short_jbtn',next:'badtz_sj'}]},
+  badtz_s2b:{emoji:'🦸',npc:'badtz',text:'badtz_s2b',onEnter(){S.trust+=3;S.items.push('🦸')},choices:[{text:'badtz_short_jbtn',next:'badtz_sj'}]},
+  badtz_s2c:{emoji:'👑',npc:'badtz',text:'badtz_s2c',onEnter(){S.trust+=2},choices:[{text:'badtz_short_jbtn',next:'badtz_sj'}]},
+  badtz_sj:{emoji:'🎉',npc:'badtz',text:'badtz_short_join',onEnter(){addParty('badtz');S.trust+=1},choices:[{text:'→',next:'travel_next'}]},
+
+  // Final
+  final:{emoji:'🏰',text:'final_text',showGroup:true,choices:[{text:'final_a',next:'rescue'},{text:'final_b',next:'protect'}]},
+  rescue:{emoji:'🌧️',text:'rescue_text',showGroup:true,choices:[{text:'rescue_a',next:'ending'},{text:'rescue_b',next:'vote'}]},
+  protect:{emoji:'🛡️',text:'protect_text',showGroup:true,onEnter(){S.trust+=2},choices:[{text:'protect_a',next:'rescue'}]},
+  vote:{emoji:'💬',text:'vote_text',showGroup:true,onEnter(){S.trust+=1},choices:[{text:'vote_a',next:'ending'}]},
+  ending:{emoji:'🎉',text:'ending_text',showGroup:true,isEnding:true,choices:[]}
+};
+
+const shortSceneMap = {pompom:'pompom_s',cinna:'cinna_s',pochacco:'pochacco_s',tuxedo:'tuxedo_s',badtz:'badtz_s'};
+const locations = ['loc_forest','loc_bridge','loc_melody','loc_star'];
+
+function addParty(npc) { if (!S.party.includes(npc)) S.party.push(npc); }
+function getNextUnmet() { return npcOrder.find(n => !S.party.includes(n)); }
+
+// ========== Settings ==========
+function buildPills(id,opts,cur,cb){const c=document.getElementById(id);c.innerHTML='';opts.forEach(o=>{const b=document.createElement('button');b.className='pill'+(o.v===cur?' active':'');b.textContent=o.l;b.onclick=()=>{cb(o.v);c.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));b.classList.add('active')};c.appendChild(b)})}
+function initSettings(){
+  buildPills('lang-pills',[{l:'English',v:'en'},{l:'中文',v:'zh'},{l:'Français',v:'fr'}],S.lang,v=>{S.lang=v;refreshAll()});
+  buildPills('font-pills',[{l:'S',v:'small'},{l:'M',v:'medium'},{l:'L',v:'large'},{l:'XL',v:'xlarge'}],S.fontSize,v=>{S.fontSize=v;applyClasses()});
+  buildPills('device-pills',[{l:'📱',v:'mobile'},{l:'📱💻',v:'tablet'},{l:'🖥️',v:'desktop'}],S.device,v=>{S.device=v;applyClasses()});
+}
+function applyClasses(){document.body.className='size-'+S.fontSize+' device-'+S.device}
+function toggleSettings(){document.getElementById('settings-panel').classList.toggle('open')}
+
+function refreshAll(){
+  document.getElementById('game-title').textContent=T('title');
+  document.getElementById('subtitle').textContent=T('sub');
+  document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=T(el.getAttribute('data-i18n'))});
+  buildRoleGrid();
+  if(S.curScene && document.getElementById('game-screen').style.display!=='none'){
+    renderScene(S.curScene);
+  }
+}
+
+// ========== Role Selection ==========
+function buildRoleGrid(){
+  const g=document.getElementById('role-grid');g.innerHTML='';
+  Object.entries(roleData).forEach(([k,r])=>{
+    const c=document.createElement('div');c.className='role-card'+(S.playerRole===k?' selected':'');
+    c.innerHTML=`<img src="${r.img}" onerror="this.style.display='none'"><div class="role-name">${r.emoji} ${T('r_'+k)}</div><div class="role-desc">${T('rd_'+k)}</div>`;
+    c.onclick=()=>{S.playerRole=k;g.querySelectorAll('.role-card').forEach(x=>x.classList.remove('selected'));c.classList.add('selected');document.getElementById('start-game-btn').disabled=false};
+    g.appendChild(c);
+  });
+}
+
+// ========== Render ==========
+function updatePartyBar(){
+  const bar=document.getElementById('party-bar');bar.innerHTML='';
+  S.party.forEach(n=>{
+    const img=document.createElement('img');img.src=npcData[n].img;img.title=T('n_'+n);
+    img.onerror=function(){this.outerHTML='<span style="font-size:1.2em">'+npcData[n].emoji+'</span>'};
+    bar.appendChild(img);
+  });
+}
+
+function renderScene(id){
+  if(id==='travel_next'){
+    const next=getNextUnmet();
+    if(!next){id='final';}
+    else{
+      const locIdx=S.party.length-1;
+      const loc=locations[locIdx%locations.length];
+      const chNum=S.party.length+1;
+      const shortId=shortSceneMap[next];
+      showTravelIntro(chNum,loc,next,shortId);
+      return;
+    }
+  }
+
+  S.curScene=id;
+  const scene=scenes[id];if(!scene)return;
+  if(scene.onEnter)scene.onEnter();
+
+  // Chapter
+  let chapter='';
+  if(id==='start')chapter=T('ch1');
+  else if(id.startsWith('pompom'))chapter=T('pompom_t');
+  else if(id.startsWith('cinna'))chapter=T('cinna_t');
+  else if(id.startsWith('pochacco'))chapter=T('pochacco_t');
+  else if(id.startsWith('tuxedo'))chapter=T('tuxedo_t');
+  else if(id.startsWith('badtz'))chapter=T('badtz_t');
+  else if(['final','rescue','protect','vote','ending'].includes(id))chapter=T('ch_final');
+  else if(scene.npc)chapter=T('n_'+scene.npc);
+  document.getElementById('chapter-display').textContent=chapter;
+
+  const pr=S.playerRole?roleData[S.playerRole]:null;
+  document.getElementById('player-role-display').textContent=pr?(pr.emoji+' '+T('r_'+S.playerRole)):'';
+  document.getElementById('scene-emoji').textContent=scene.emoji||'🌸';
+  updatePartyBar();
+
+  // Character image
+  const ci=document.getElementById('character-image');ci.innerHTML='';
+  if(scene.showGroup){
+    const d=document.createElement('div');d.style.cssText='display:flex;justify-content:center;gap:6px;flex-wrap:wrap';
+    npcOrder.forEach(n=>{
+      const img=document.createElement('img');img.src=npcData[n].img;img.className='group-img'+(S.party.includes(n)?' joined':'');
+      img.title=T('n_'+n);img.onerror=function(){this.style.display='none'};d.appendChild(img);
+    });
+    ci.appendChild(d);
+  } else if(scene.npc&&npcData[scene.npc]){
+    const img=document.createElement('img');img.src=npcData[scene.npc].img;img.className='char-main-img';
+    img.onerror=function(){this.style.display='none'};ci.appendChild(img);
+    const tag=document.createElement('div');tag.className='char-name-tag';
+    tag.textContent=npcData[scene.npc].emoji+' '+T('n_'+scene.npc);ci.appendChild(tag);
+  }
+
+  // Text
+  const text=Tp(scene.text);
+  const sb=document.getElementById('story-box');sb.textContent='';
+  typeWriter(sb,text,0);
+
+  // Choices
+  const cd=document.getElementById('choices');cd.innerHTML='';
+  if(scene.isEnding){
+    setTimeout(()=>{
+      const trustLvl=S.trust>=10?T('trust_hi'):S.trust>=6?T('trust_mid'):T('trust_lo');
+      const stats=document.createElement('div');stats.style.cssText='text-align:center;margin-top:12px;padding:16px;background:#fce4ec;border-radius:16px';
+      let h=`<h2>${T('end_title')}</h2><p>${T('end_sub')}</p><br>`;
+      h+=`<p>${T('end_role')}${pr?pr.emoji:''} ${T('r_'+S.playerRole)}</p>`;
+      h+=`<p>${T('end_party')}${S.party.map(n=>npcData[n].emoji+' '+T('n_'+n)).join(', ')}</p>`;
+      h+=`<p>${T('end_trust')}${trustLvl}</p>`;
+      if(S.items.length)h+=`<p>${T('end_items')}${S.items.join(' ')}</p>`;
+      h+=`<br><p style="white-space:pre-line">${T('end_msg')}</p>`;
+      stats.innerHTML=h;
+      cd.appendChild(stats);
+      const btn=document.createElement('button');btn.id='restart-btn';btn.textContent=T('restart');
+      btn.onclick=resetGame;cd.appendChild(btn);
+    },2000);
+    return;
+  }
+
+  const choiceList=scene.choices||[];
+  setTimeout(()=>{
+    choiceList.forEach(ch=>{
+      const btn=document.createElement('button');btn.className='choice-btn';
+      if(ch.img&&npcData[ch.img]){
+        const im=document.createElement('img');im.src=npcData[ch.img].img;im.onerror=function(){this.style.display='none'};btn.appendChild(im);
+      }
+      const sp=document.createElement('span');sp.textContent=Tp(ch.text);btn.appendChild(sp);
+      btn.onclick=()=>renderScene(ch.next);
+      cd.appendChild(btn);
+    });
+  },Math.min(text.length*10,1800));
+}
+
+function showTravelIntro(chNum,locKey,nextNpc,shortSceneId){
+  S.curScene='travel_'+nextNpc;
+  const locName=T(locKey);
+  const chapter=T('ch_travel').replace('{n}',chNum).replace('{loc}',locName);
+  document.getElementById('chapter-display').textContent=chapter;
+  document.getElementById('scene-emoji').textContent=['🍓','🌈','🎵','⭐'][S.party.length-1]||'🗺️';
+  updatePartyBar();
+
+  const ci=document.getElementById('character-image');ci.innerHTML='';
+  const img=document.createElement('img');img.src=npcData[nextNpc].img;img.className='char-main-img';
+  img.onerror=function(){this.style.display='none'};ci.appendChild(img);
+  const tag=document.createElement('div');tag.className='char-name-tag';
+  tag.textContent=npcData[nextNpc].emoji+' '+T('n_'+nextNpc);ci.appendChild(tag);
+
+  const shortScene=scenes[shortSceneId];
+  const text=Tp(shortScene.text);
+  const sb=document.getElementById('story-box');sb.textContent='';
+  typeWriter(sb,text,0);
+
+  const cd=document.getElementById('choices');cd.innerHTML='';
+  setTimeout(()=>{
+    shortScene.choices.forEach(ch=>{
+      const btn=document.createElement('button');btn.className='choice-btn';
+      const sp=document.createElement('span');sp.textContent=Tp(ch.text);btn.appendChild(sp);
+      btn.onclick=()=>renderScene(ch.next);
+      cd.appendChild(btn);
+    });
+  },Math.min(text.length*10,1800));
+}
+
+function typeWriter(el,text,i){if(i<text.length){el.textContent+=text.charAt(i);setTimeout(()=>typeWriter(el,text,i+1),15)}}
+
+function startGame(){
+  if(!S.playerRole)return;
+  document.getElementById('setup-screen').style.display='none';
+  document.getElementById('game-screen').style.display='block';
+  renderScene('start');
+}
+
+function resetGame(){
+  S.firstNpc=null;S.party=[];S.trust=0;S.items=[];S.curScene=null;S.playerRole=null;
+  document.getElementById('game-screen').style.display='none';
+  document.getElementById('setup-screen').style.display='block';
+  document.getElementById('start-game-btn').disabled=true;
+  buildRoleGrid();
+}
+
+// ========== Music ==========
+let audioCtx=null,musicPlaying=false,musicNodes=[],musicTimer=null;
+function createMusic(){
+  if(audioCtx)stopMusic();
+  audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  const master=audioCtx.createGain();master.gain.value=0.18;master.connect(audioCtx.destination);
+  const delay=audioCtx.createDelay();delay.delayTime.value=0.3;
+  const fb=audioCtx.createGain();fb.gain.value=0.2;
+  const dg=audioCtx.createGain();dg.gain.value=0.15;
+  delay.connect(fb);fb.connect(delay);delay.connect(dg);dg.connect(master);
+  const notes=[261.63,293.66,329.63,392,440,523.25,587.33,659.25,783.99,880];
+  const pats=[[4,3,2,0,2,3,4,5],[5,7,6,5,4,3,2,4],[0,2,4,5,4,2,3,0],[2,4,5,7,5,4,2,3],[5,4,2,0,2,4,5,7],[7,5,4,2,4,5,7,9],[4,2,0,2,4,5,4,2],[0,0,2,4,5,5,4,2]];
+  const chords=[[261.63,329.63,392],[293.66,369.99,440],[261.63,329.63,440],[293.66,392,493.88]];
+  let pi=0;const gap=0.42;
+  function playNote(f,t,d){
+    const o=audioCtx.createOscillator();o.type='sine';o.frequency.value=f;
+    const o2=audioCtx.createOscillator();o2.type='triangle';o2.frequency.value=f*2;
+    const e=audioCtx.createGain();e.gain.setValueAtTime(0,t);e.gain.linearRampToValueAtTime(.6,t+.05);e.gain.exponentialRampToValueAtTime(.01,t+d);
+    const e2=audioCtx.createGain();e2.gain.setValueAtTime(0,t);e2.gain.linearRampToValueAtTime(.08,t+.05);e2.gain.exponentialRampToValueAtTime(.01,t+d);
+    o.connect(e);e.connect(master);e.connect(delay);o2.connect(e2);e2.connect(master);
+    o.start(t);o.stop(t+d+.1);o2.start(t);o2.stop(t+d+.1);musicNodes.push(o,o2);
+  }
+  function sched(){
+    if(!musicPlaying)return;
+    const pat=pats[pi%pats.length];const now=audioCtx.currentTime+.1;
+    const ch=chords[pi%chords.length];
+    ch.forEach(f=>{const o=audioCtx.createOscillator();o.type='sine';o.frequency.value=f/2;const e=audioCtx.createGain();
+      e.gain.setValueAtTime(0,now);e.gain.linearRampToValueAtTime(.04,now+.2);e.gain.setValueAtTime(.04,now+gap*7);e.gain.exponentialRampToValueAtTime(.001,now+gap*8);
+      o.connect(e);e.connect(master);o.start(now);o.stop(now+gap*8+.2);musicNodes.push(o)});
+    for(let i=0;i<pat.length;i++)playNote(notes[pat[i]],now+i*gap,.35);
+    pi++;musicTimer=setTimeout(sched,gap*8*1000);
+  }
+  musicPlaying=true;sched();
+}
+function stopMusic(){musicPlaying=false;if(musicTimer){clearTimeout(musicTimer);musicTimer=null}musicNodes.forEach(n=>{try{n.stop()}catch(e){}});musicNodes=[];if(audioCtx){audioCtx.close().catch(()=>{});audioCtx=null}}
+function toggleMusic(){const b=document.getElementById('music-toggle');if(musicPlaying){stopMusic();b.textContent='🔇';b.classList.remove('playing')}else{createMusic();b.textContent='🎵';b.classList.add('playing')}}
+
+// ========== Init ==========
+applyClasses();initSettings();buildRoleGrid();refreshAll();
+</script>
+</body>
+</html>

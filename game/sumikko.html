@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>角落小夥伴文字冒險 - すみっコぐらし</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&family=Noto+Sans:wght@300;400;700&display=swap');
+  :root { --font-size:16px; --container-max-w:700px; --container-pad:36px; }
+  .size-small{--font-size:14px}.size-medium{--font-size:16px}.size-large{--font-size:19px}.size-xlarge{--font-size:22px}
+  .device-mobile{--container-max-w:420px;--container-pad:18px}.device-tablet{--container-max-w:600px;--container-pad:28px}.device-desktop{--container-max-w:750px;--container-pad:36px}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Noto Sans TC','Noto Sans',sans-serif;font-size:var(--font-size);background:linear-gradient(135deg,#fce4ec 0%,#e8f5e9 30%,#e3f2fd 60%,#fff9c4 100%);min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:20px;position:relative;overflow-x:hidden}
+  body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(circle at 10% 20%,rgba(248,187,208,.3) 0%,transparent 50%),radial-gradient(circle at 90% 80%,rgba(187,222,251,.3) 0%,transparent 50%),radial-gradient(circle at 50% 50%,rgba(200,230,201,.2) 0%,transparent 60%);z-index:0;animation:bg-shift 12s ease-in-out infinite alternate}
+  @keyframes bg-shift{0%{opacity:.7;transform:scale(1)}100%{opacity:1;transform:scale(1.05)}}
+  .bg-deco{position:fixed;font-size:2em;opacity:.13;z-index:0;animation:float-around 20s ease-in-out infinite;pointer-events:none}
+  .bg-deco:nth-child(1){top:5%;left:5%}.bg-deco:nth-child(2){top:15%;right:8%;animation-delay:-3s;font-size:1.5em}.bg-deco:nth-child(3){bottom:20%;left:10%;animation-delay:-6s;font-size:2.5em}.bg-deco:nth-child(4){bottom:10%;right:5%;animation-delay:-9s}.bg-deco:nth-child(5){top:50%;left:3%;animation-delay:-12s;font-size:1.8em}.bg-deco:nth-child(6){top:40%;right:3%;animation-delay:-15s;font-size:1.3em}
+  @keyframes float-around{0%,100%{transform:translateY(0) rotate(0deg)}25%{transform:translateY(-15px) rotate(5deg)}50%{transform:translateY(5px) rotate(-3deg)}75%{transform:translateY(-8px) rotate(2deg)}}
+  #game-container{max-width:var(--container-max-w);width:100%;background:rgba(255,255,255,.92);border-radius:24px;box-shadow:0 8px 32px rgba(0,0,0,.1),0 0 60px rgba(248,187,208,.15);padding:var(--container-pad);position:relative;overflow:hidden;z-index:1;backdrop-filter:blur(8px);margin-top:10px}
+  #game-container::before{content:'';position:absolute;top:0;left:0;right:0;height:6px;background:linear-gradient(90deg,#f8bbd0,#c8e6c9,#bbdefb,#fff9c4,#d1c4e9)}
+  h1{text-align:center;color:#5d4037;font-size:1.5em;margin-bottom:4px}
+  #subtitle{text-align:center;color:#8d6e63;font-size:.85em;margin-bottom:16px}
+  #music-toggle{position:absolute;top:14px;right:48px;background:none;border:none;font-size:1.4em;cursor:pointer;z-index:10;opacity:.6;transition:opacity .2s}
+  #music-toggle:hover{opacity:1}
+  #music-toggle.playing{opacity:1;animation:pulse-music 1.5s ease-in-out infinite}
+  @keyframes pulse-music{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+  #settings-toggle{position:absolute;top:14px;right:14px;background:none;border:none;font-size:1.4em;cursor:pointer;z-index:10;opacity:.6;transition:opacity .2s}
+  #settings-toggle:hover{opacity:1}
+  #settings-panel{display:none;background:#f3e5f5;border-radius:16px;padding:18px;margin-bottom:16px;animation:fade-in .3s}
+  #settings-panel.open{display:block}
+  @keyframes fade-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+  .setting-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .setting-row:last-child{margin-bottom:0}
+  .setting-label{font-weight:700;color:#6a1b9a;min-width:70px;font-size:.85em}
+  .pill-group{display:flex;gap:4px;flex-wrap:wrap}
+  .pill{padding:5px 14px;border-radius:20px;border:2px solid #ce93d8;background:#fff;color:#6a1b9a;font-size:.82em;cursor:pointer;font-family:inherit;transition:all .2s}
+  .pill:hover{background:#f3e5f5}.pill.active{background:#ce93d8;color:#fff;border-color:#ab47bc}
+  #scene-emoji{text-align:center;font-size:2.8em;margin-bottom:8px;animation:gentle-bounce 2s ease-in-out infinite}
+  @keyframes gentle-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  #character-image{text-align:center;margin-bottom:12px;min-height:50px}
+  #character-image img.char-main-img{max-width:150px;max-height:150px;border-radius:50%;border:4px solid #ffe0b2;box-shadow:0 4px 20px rgba(255,183,77,.2);object-fit:cover;background:#fffde7;animation:img-pop .5s ease-out;transition:transform .3s}
+  #character-image img.char-main-img:hover{transform:scale(1.08) rotate(2deg)}
+  @keyframes img-pop{0%{transform:scale(.5);opacity:0}70%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+  .char-name-tag{display:inline-block;margin-top:6px;padding:3px 14px;background:linear-gradient(135deg,#fff8e1,#ffe0b2);border-radius:12px;font-size:.82em;color:#5d4037;font-weight:700}
+  .group-img{width:48px;height:48px;border-radius:50%;object-fit:cover;border:3px solid #ffe0b2;background:#fffde7;transition:transform .3s;cursor:pointer}
+  .group-img:hover{transform:scale(1.2) rotate(5deg)}
+  .group-img.joined{border-color:#81c784;box-shadow:0 0 8px rgba(129,199,132,.5)}
+  #status-bar{display:flex;justify-content:space-between;margin-bottom:12px;padding:7px 14px;background:#f3e5f5;border-radius:12px;font-size:.82em;color:#6a1b9a;flex-wrap:wrap;gap:4px}
+  #party-bar{display:flex;gap:6px;justify-content:center;margin-bottom:10px;flex-wrap:wrap;min-height:32px}
+  #party-bar img{width:32px;height:32px;border-radius:50%;border:2px solid #81c784;object-fit:cover;animation:img-pop .4s ease-out}
+  #story-box{background:#fffde7;border:2px solid #ffe082;border-radius:16px;padding:18px;margin-bottom:16px;line-height:1.8;color:#4e342e;font-size:1em;min-height:100px;white-space:pre-line}
+  #choices{display:flex;flex-direction:column;gap:8px}
+  .choice-btn{background:linear-gradient(135deg,#fff8e1,#fff3e0);border:2px solid #ffcc80;border-radius:14px;padding:12px 18px;font-size:.92em;font-family:inherit;color:#5d4037;cursor:pointer;transition:all .2s;text-align:left;display:flex;align-items:center;gap:8px}
+  .choice-btn:hover{background:linear-gradient(135deg,#ffe0b2,#ffcc80);transform:translateX(6px);box-shadow:0 3px 12px rgba(255,183,77,.3)}
+  .choice-btn:active{transform:translateX(3px) scale(.98)}
+  .choice-btn img{width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #ffe0b2;flex-shrink:0}
+  #restart-btn{margin-top:14px;background:linear-gradient(135deg,#f8bbd0,#f48fb1);border:none;border-radius:14px;padding:12px 32px;font-size:1em;font-family:inherit;color:#fff;cursor:pointer;transition:all .2s}
+  #restart-btn:hover{transform:scale(1.05);box-shadow:0 4px 16px rgba(244,143,177,.4)}
+  footer{text-align:center;margin-top:14px;font-size:.7em;color:#bdbdbd}
+  #setup-screen{text-align:center}
+  #setup-screen h2{color:#5d4037;margin-bottom:16px;font-size:1.2em}
+  .setup-section{margin-bottom:18px}
+  .setup-section h3{color:#8d6e63;font-size:.95em;margin-bottom:10px}
+  .role-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:10px}
+  .role-card{background:#fff8e1;border:3px solid #ffe0b2;border-radius:16px;padding:12px 8px;cursor:pointer;transition:all .2s;text-align:center}
+  .role-card:hover{transform:translateY(-4px);box-shadow:0 6px 20px rgba(255,183,77,.25);border-color:#ffb74d}
+  .role-card.selected{border-color:#ff9800;background:#fff3e0;box-shadow:0 4px 16px rgba(255,152,0,.3)}
+  .role-card img{width:60px;height:60px;border-radius:50%;object-fit:cover;margin-bottom:6px}
+  .role-card .role-name{font-weight:700;color:#5d4037;font-size:.88em}
+  .role-card .role-desc{font-size:.7em;color:#8d6e63;margin-top:3px;line-height:1.3}
+  #start-game-btn{margin-top:20px;background:linear-gradient(135deg,#c8e6c9,#a5d6a7);border:2px solid #81c784;border-radius:16px;padding:14px 40px;font-size:1.1em;font-family:inherit;color:#2e7d32;font-weight:700;cursor:pointer;transition:all .2s}
+  #start-game-btn:hover{transform:scale(1.05);box-shadow:0 4px 16px rgba(129,199,132,.4)}
+  #start-game-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .location-banner{text-align:center;padding:8px;margin-bottom:10px;background:linear-gradient(135deg,#e1f5fe,#e8f5e9);border-radius:12px;font-size:.85em;color:#37474f;font-weight:700}
+</style>
+</head>
+<body>
+<div class="bg-deco">🌸</div><div class="bg-deco">🍀</div><div class="bg-deco">⭐</div><div class="bg-deco">🌷</div><div class="bg-deco">☁️</div><div class="bg-deco">🎀</div>
+<div id="game-container">
+  <button id="music-toggle" onclick="toggleMusic()" title="BGM">🔇</button>
+  <button id="settings-toggle" onclick="toggleSettings()">⚙️</button>
+  <div id="settings-panel">
+    <div class="setting-row"><span class="setting-label" data-i18n="s_lang">語言</span><div class="pill-group" id="lang-pills"></div></div>
+    <div class="setting-row"><span class="setting-label" data-i18n="s_font">字體</span><div class="pill-group" id="font-pills"></div></div>
+    <div class="setting-row"><span class="setting-label" data-i18n="s_device">裝置</span><div class="pill-group" id="device-pills"></div></div>
+  </div>
+  <h1 id="game-title">🏠 角落小夥伴文字冒險</h1>
+  <div id="subtitle">すみっコぐらし ～ 尋找溫暖角落的旅程 ～</div>
+  <div id="setup-screen">
+    <div class="setup-section">
+      <h3 data-i18n="choose_role">選擇你要扮演的角色</h3>
+      <div class="role-grid" id="role-grid"></div>
+    </div>
+    <button id="start-game-btn" disabled onclick="startGame()" data-i18n="start_btn">開始冒險！</button>
+  </div>
+  <div id="game-screen" style="display:none">
+    <div id="status-bar"><span id="chapter-display"></span><span id="player-role-display"></span></div>
+    <div id="party-bar"></div>
+    <div id="scene-emoji">🌸</div>
+    <div id="character-image"></div>
+    <div id="story-box"></div>
+    <div id="choices"></div>
+  </div>
+  <footer>角落小夥伴 © San-X · Fan-made game</footer>
+</div>
+<script>
+// ========== i18n ==========
+const L = {
+zh: {
+  title:'🏠 角落小夥伴文字冒險', sub:'すみっコぐらし ～ 尋找溫暖角落的旅程 ～',
+  s_lang:'語言', s_font:'字體', s_device:'裝置',
+  choose_role:'選擇你要扮演的角色', start_btn:'開始冒險！', restart:'🔄 再次探索角落',
+  none:'無', party:'隊伍：',
+  // roles
+  r_zassou:'雜草', rd_zassou:'夢想被做成花束的正向小草',
+  r_ebifurai:'炸蝦尾', rd_ebifurai:'被吃剩的炸蝦尾巴',
+  r_tapioca:'珍珠', rd_tapioca:'被喝剩的珍珠奶茶珍珠',
+  r_obake:'小幽靈', rd_obake:'害怕嚇到別人的膽小幽靈',
+  r_furoshiki:'包裹布', rd_furoshiki:'白熊的萬能包裹布',
+  r_nisetsumuri:'偽蝸牛', rd_nisetsumuri:'背著殼假裝蝸牛的蛞蝓',
+  r_yama:'小山', rd_yama:'憧憬富士山的小山丘',
+  r_suzume:'麻雀', rd_suzume:'喜歡啄炸豬排的小麻雀',
+  // NPCs
+  n_shirokuma:'白熊', n_penguin:'企鵝？', n_tonkatsu:'炸豬排', n_neko:'貓咪', n_tokage:'蜥蜴',
+  // trust
+  trust_hi:'💖 最深的羈絆', trust_mid:'💕 溫暖的友誼', trust_lo:'💛 初萌的情誼',
+  // ===== Scenes =====
+  // --- CH1: Café ---
+  ch1:'第一章：角落咖啡廳',
+  start_text:'春天的午後，你——{p}，走進了一間溫暖的角落咖啡廳。\n\n窗邊的陽光灑落，空氣中瀰漫著茶香。你注意到咖啡廳的各個角落裡，有五位小小的身影。\n\n你想先接近誰呢？',
+  c_shiro:'靠近正在喝熱茶的白熊',
+  c_pen:'走向歪著頭看倒影的企鵝？',
+  c_ton:'看看被放在盤子邊緣的炸豬排',
+  c_neko:'找找躲在桌腳的貓咪',
+  c_toka:'觀察假裝曬太陽的蜥蜴',
+  // --- Shirokuma deep ---
+  shiro_t:'白熊的角落',
+  shiro1:'你走到窗邊的角落，白熊正捧著一杯熱茶微微發抖。\n\n「...好暖。」牠小聲說。抬頭看了你一眼：「啊，是{p}。你好...我是從北方來的。那裡太冷了，所以就一直往南走...」\n\n牠的眼神裡帶著寂寞。',
+  shiro1_a:'「要不要我幫你再點一杯熱茶？」',
+  shiro1_b:'「你一個人旅行不會寂寞嗎？」',
+  shiro1_c:'「北方是什麼樣的地方呢？」',
+  shiro2a:'你幫白熊點了一杯溫暖的焙茶。\n\n白熊接過茶杯，眼睛亮了起來：「謝謝你...{p}。這個溫度剛剛好。」\n\n牠從包裹布裡拿出一條小毛巾：「這個送給你。是我從北方帶來的。」\n\n你獲得了【白熊的小毛巾】！\n\n白熊站起來：「{p}...你願意讓我跟著你嗎？一個人果然還是太冷了。」',
+  shiro2b:'白熊停下了喝茶的動作，安靜了一會兒。\n\n「...有時候會。」牠輕聲說。「但是在角落裡的時候就不會了。因為角落很安心。」\n\n牠偷偷看了看你：「{p}你也是喜歡角落的夥伴呢...可以讓我跟你一起旅行嗎？一起的話就不寂寞了。」',
+  shiro2c:'「北方啊...到處都是冰和雪。其他北極熊都覺得很舒服，但我一直覺得好冷好冷...」\n\n「大家都說我是奇怪的北極熊。所以有一天就出發了，一直往南走...」\n\n白熊看著你：「{p}，你不覺得我奇怪嗎？...那我可以跟著你嗎？和你在一起感覺很安心。」',
+  shiro_join:'「太好了！」白熊收好茶杯，用包裹布把行李捲好。\n\n牠有點害羞但很開心地跟在你身邊：「有{p}在，好像不那麼冷了。」\n\n【白熊加入了隊伍！】',
+  shiro_join_btn:'「當然，一起走吧！」',
+  // --- Penguin deep ---
+  pen_t:'企鵝？的角落',
+  pen1:'你走向一隻綠色的小生物，牠正對著茶杯裡的倒影歪著頭。\n\n「啊...{p}你好。我是企鵝。大概是企鵝。應該是企鵝...吧？」\n\n牠頭上有一個小小的圓盤狀印記。「你覺得...我看起來像企鵝嗎？」',
+  pen1_a:'「你當然是企鵝啊！」',
+  pen1_b:'「不管是什麼，你就是你啊。」',
+  pen1_c:'「那個印記...很可愛呢。」',
+  pen2a:'企鵝？開心地拍了拍翅膀：「真的嗎！可是我不太會游泳，也比較喜歡小黃瓜...」\n\n牠想了想：「也許我是特別的企鵝！{p}，你願意帶我一起走嗎？我想找到更多關於自己的答案！」',
+  pen2b:'企鵝？愣住了：「不管是什麼...我就是我？」\n\n牠的眼眶有點濕潤：「從來沒人這樣跟我說過...謝謝你，{p}。我想跟著你！和你在一起，好像不那麼在意答案了。」',
+  pen2c:'「可...可愛？」企鵝？害羞地摸了摸頭頂。「大家都問那是什麼，你是第一個說可愛的...」\n\n牠掏出一根小黃瓜：「這個給你！{p}，我可以跟你一起冒險嗎？」\n\n你獲得了【企鵝？的小黃瓜】！',
+  pen_join:'企鵝？開心地跳了起來，小黃瓜差點掉出來。\n\n「太好了！我帶了很多小黃瓜，路上可以一起吃！」\n\n牠歪著頭跟在你身邊，偶爾看看自己的影子。\n\n【企鵝？加入了隊伍！】',
+  pen_join_btn:'「走吧，一起去冒險！」',
+  // --- Tonkatsu deep ---
+  ton_t:'炸豬排的角落',
+  ton1:'在咖啡廳的角落，盤子邊緣有一小塊炸豬排。99%是麵衣和油脂，只有1%是肉。\n\n旁邊跟著一隻小小的炸蝦尾。\n\n炸豬排察覺到你：「...{p}，你也覺得我太油了嗎？」',
+  ton1_a:'「邊角才是最好吃的部分！」',
+  ton1_b:'「被剩下一定很難過吧...」',
+  ton1_c:'默默坐在旁邊陪著牠',
+  ton2a:'「好...好吃？我？」炸豬排不敢相信。「可是酥脆的麵衣才是炸物的靈魂啊！」\n\n炸蝦尾也跳了跳。炸豬排眼眶紅了：「{p}...從來沒有人這樣說過。你去哪裡我都想跟著！」\n\n你獲得了【炸蝦尾的友誼徽章】！',
+  ton2b:'「...嗯。每次都被剩下。」炸蝦尾默默靠過來。\n\n「不過至少還有牠。被剩下的東西在一起，就沒那麼孤單了。」\n\n炸豬排看著你：「{p}你也願意和我們這些被剩下的在一起嗎？」',
+  ton2c:'你什麼都沒說，靜靜坐在旁邊。過了很久，炸豬排小聲說：「...{p}你沒有嫌我油。」\n\n炸蝦尾也滾了過來。「...謝謝你。」炸豬排說。「可以...跟著你嗎？你讓我覺得被剩下也沒關係。」',
+  ton_join:'炸豬排和炸蝦尾開心地（雖然表情不太明顯）跟了上來。\n\n「我們是被剩下的三人組！」炸豬排說。\n\n炸蝦尾在你肩上彈了一下表示同意。\n\n【炸豬排（和炸蝦尾）加入了隊伍！】',
+  ton_join_btn:'「一起走吧，夥伴！」',
+  // --- Neko deep ---
+  neko_t:'貓咪的角落',
+  neko1:'桌腳下，一隻貓咪縮成圓球。牠看著飼料又看看肚子：「吃太多會變更胖...但是好餓...」\n\n注意到你：「{p}...不要看...」',
+  neko1_a:'「圓圓的才可愛啊！」',
+  neko1_b:'「肚子餓就吃吧，不用在意！」',
+  neko1_c:'假裝沒看到，轉過身去',
+  neko2a:'「可...可愛？」貓咪摸了摸肚子。「圓圓的摸起來更舒服？」\n\n牠伸出小肉球放在你手上：「那...{p}，你以後都可以摸。但是要帶我一起走喔...在你旁邊我比較安心。」\n\n你獲得了【貓咪的信任肉球印】！',
+  neko2b:'「真的可以嗎？」貓咪小口小口地吃了起來。\n\n「...好吃。」牠一邊吃一邊流淚。「一直忍著不吃好辛苦。謝謝你{p}。」\n\n吃完後開始發出呼嚕聲：「{p}...你去哪裡都帶著我好嗎？」',
+  neko2c:'你轉過身去。身後傳來細小的進食聲。\n\n過了一會兒，貓咪用頭輕輕蹭了你的背：「...謝謝你假裝沒看到，{p}。你是第一個懂我的人。」\n\n「我願意在你面前當真正的自己...帶我一起走吧？」',
+  neko_join:'貓咪從桌子底下慢慢爬出來，雖然還是有點害羞。\n\n牠繞到你腳邊，輕輕蹭了一下，然後發出呼嚕聲。\n\n「...走吧。」牠小聲說。\n\n【貓咪加入了隊伍！】',
+  neko_join_btn:'輕輕摸摸貓咪的頭',
+  // --- Tokage deep ---
+  toka_t:'蜥蜴的角落',
+  toka1:'窗邊有一隻蜥蜴在曬太陽。看起來像普通的蜥蜴...但眼神裡藏著古老的寂寞。\n\n「啊，{p}你好。我是蜥蜴。普通的蜥蜴。」\n\n遠處的湖邊，有一個巨大的影子一閃而過。',
+  toka1_a:'「你真的是蜥蜴嗎？」',
+  toka1_b:'「湖裡好像有什麼東西...」',
+  toka1_c:'「一起曬太陽吧！」',
+  toka2a:'蜥蜴僵硬了：「當然是！普通的、小小的蜥蜴。才不是什麼很大很大的、很久以前的...」\n\n牠眼睛泛紅：「如果被發現就不能待在角落了...{p}，拜託讓我當蜥蜴。你願意帶我一起走嗎？和你在一起我覺得可以安心當自己。」',
+  toka2b:'蜥蜴表情變得溫柔：「那是...我的媽媽。牠也是最後僅存的...生物。住在湖裡，太大了沒辦法到岸上。」\n\n眼淚掉了下來：「只要知道彼此還在...{p}，你願意讓我跟著你嗎？你是第一個我願意說出秘密的人。」\n\n你獲得了【遠古化石碎片】！',
+  toka2c:'你們並肩坐著享受陽光。蜥蜴瞇起眼睛：「很久很久以前...陽光也是這個溫度。幾千萬年前...啊，我是說書上寫的。」\n\n牠看著你：「能和{p}一起曬太陽真好。你要去別的地方嗎？我可以跟著你嗎？」\n\n你獲得了【暖暖陽光的記憶】！',
+  toka_join:'蜥蜴開心地搖著尾巴——差點露出不太像蜥蜴的形狀。\n\n「太好了！我會努力當一隻好蜥蜴的！」\n\n牠偷偷回頭看了一眼湖面，水面泛起了一圈漣漪，像是在說再見。\n\n【蜥蜴加入了隊伍！】',
+  toka_join_btn:'「當然，一起出發！」',
+
+  // --- CH2-5: Travel & meet others ---
+  ch_travel:'第{n}章：{loc}',
+  loc_park:'角落公園', loc_shop:'角落商店', loc_beach:'角落海邊', loc_mountain:'角落山丘',
+  travel_intro:'你和夥伴們來到了{loc}。\n\n{scene}',
+  // Short encounters for remaining NPCs (when met later)
+  shiro_short:'在公園的長椅角落，你看見一隻白熊正獨自喝茶，呼出細細的白氣。長椅旁邊放著一個用包裹布紮起來的小行李，角落裡有一點點凍傷的痕跡。\n\n「{p}...你好。好冷...」白熊看見你的隊伍，眼神裡閃過一絲羨慕，又帶著一點不好意思：「你們看起來好溫暖...我一個人走了好久了，從沒想到會遇見這麼多夥伴...」\n\n牠把茶杯捧得更緊，像是在從茶的溫度裡借一點勇氣。',
+  shiro_short_a:'「一起來吧！人多了大家都更暖和！」',
+  shiro_short_b:'悄悄幫白熊續了一杯熱焙茶',
+  shiro_short_c:'「那個包裹布...是從北方帶來的嗎？」',
+  shiro_s2a:'你伸出手，笑著說一起走吧。白熊愣了一下，茶杯差點滑落。\n\n「真...真的可以嗎？我不會造成麻煩嗎？」牠緊緊抱著包裹布，耳朵紅了。「其實我一直都很想問有沒有人願意一起走，但又不敢開口...謝謝你，{p}。」\n\n你的夥伴們齊聲歡呼，白熊的眼淚差點掉下來。',
+  shiro_s2b:'不久後，服務生端來了一杯冒著熱氣的焙茶。白熊抬頭，看見你笑著點頭。\n\n「...這是你幫我點的？」牠輕聲問，聲音有點顫抖。慢慢喝了一口，閉上眼睛：「暖到心裡了。從來沒有人...」\n\n牠深呼吸了一下：「{p}，謝謝你懂得我想要什麼。我可以跟著你們嗎？」\n\n你獲得了【白熊的溫暖回憶】！',
+  shiro_s2c:'白熊撫摸著包裹布的邊角，眼神變得遙遠。\n\n「嗯...這是媽媽留給我的。她說只要帶著它，就不會忘記家的感覺。但是走啊走，家的方向越來越模糊了...」\n\n牠抬起頭，眼眶泛紅：「{p}...你們願意成為我新的家嗎？」',
+  shiro_short_join:'白熊小心翼翼地站起來，用包裹布把茶杯和小物件捲好，輕輕夾在腋下。\n\n「我...我不會佔太多空間的。」牠害羞地說，尾巴微微搖著。「如果大家冷的話，包裹布可以當墊子，也可以當毯子...我能做很多的。」\n\n夥伴們笑著讓出一個位置。白熊走進隊伍，第一次露出了從心底放鬆的微笑。\n\n【白熊加入了隊伍！】',
+  shiro_short_jbtn:'「當然歡迎！一起走吧！」',
+
+  pen_short:'角落商店的飲料區，企鵝？獨自站在冰箱前，對著一排小黃瓜汁歪著頭，尾羽輕輕搖晃。\n\n「這個...企鵝應該喝什麼呢？游泳的那種企鵝應該喝什麼？我連游泳都不太會...」\n\n牠回頭看見你們，眼睛瞬間亮了又暗下去：「哇，好熱鬧的隊伍...你們都找到彼此了呢...」',
+  pen_short_a:'「小黃瓜汁就是為你而存在的！」',
+  pen_short_b:'「要不要加入我們？一起找答案！」',
+  pen_short_c:'靜靜站在旁邊，也對著飲料歪頭研究',
+  pen_s2a:'「真的嗎！？」企鵝？激動地拍了拍翅膀，小黃瓜汁差點打翻。\n\n「你是怎麼知道的！？也許這就是答案——我天生就是要喝小黃瓜汁的企鵝！」\n\n牠抱著整排小黃瓜汁，認真地說：「{p}，你讓我覺得答案其實沒那麼難找。我可以跟著你繼續找嗎？」',
+  pen_s2b:'企鵝？愣住了，小圓眼睛眨了又眨。\n\n「一起...找答案？」牠把小黃瓜汁抱在胸前，聲音有點哽咽：「我找了好久了，一直以為要自己找...沒想到可以和大家一起。\n\n「{p}，我想跟你們走。不是因為找到答案，而是因為——和你們在一起，不知道答案也沒關係。」',
+  pen_s2c:'兩個人都歪著頭沉默了一會兒。企鵝？偷偷看了你一眼，忍不住噗哧笑出來。\n\n「你也不確定嗎？」牠問。你聳聳肩。\n\n「哈哈...原來大家都不確定。」企鵝？的眼睛彎成了月牙：「{p}，你是我見過最好的不確定的朋友。可以一起走嗎？」\n\n你獲得了【企鵝？的笑聲】！',
+  pen_short_join:'企鵝？把能拿的小黃瓜全都抱進懷裡，蹦蹦跳跳地跟上了隊伍。\n\n「我帶了好多小黃瓜，大家一起吃！還有——如果有人迷路了，我可以一直一直問路。因為我很擅長問問題。」\n\n牠歪著頭，對每個夥伴微微點頭行禮。\n\n【企鵝？加入了隊伍！】',
+  pen_short_jbtn:'「走吧！一起找答案！」',
+
+  ton_short:'海邊的礁石角落，炸豬排和炸蝦尾被浪花拍上了岸，靜靜地靠在一起，聽著海浪的聲音。\n\n「...又被沖上來了。」炸豬排嘆了口氣，聲音沒有太多起伏，像是已經習慣了。炸蝦尾默默靠著牠，也不說話。\n\n牠們看到你的隊伍走過來，對視了一下，又移開目光。',
+  ton_short_a:'「你們需要幫忙嗎？我們來了！」',
+  ton_short_b:'「跟我們走吧。我們不會把任何人留下的。」',
+  ton_short_c:'靜靜地坐在礁石旁，陪著牠們看海',
+  ton_s2a:'炸豬排抬起頭，表情難以置信。炸蝦尾也豎起了身子。\n\n「幫...幫我們？」炸豬排的聲音有點抖：「但是我們只是被剩下的...沒有人會特地來幫被剩下的東西。」\n\n你蹲下來，跟牠視線齊平地點了點頭。炸豬排沉默了很久，然後小聲說：「謝謝你把我們當成需要幫忙的樣子，而不是——應該被遺忘的樣子。」',
+  ton_s2b:'炸豬排整個僵住了。炸蝦尾也不動了。\n\n「不會...被留下？」炸豬排把這句話輕輕念了一遍，像是第一次嘗到某種滋味。\n\n「我們被剩下過很多次了。」牠緩緩說。「每次都以為習慣了，但還是會難過。{p}...你是認真的嗎？」\n\n你用力點頭。炸豬排和炸蝦尾對視，同時做出了決定。',
+  ton_s2c:'你坐下來，什麼都沒說，只是看著海。炸豬排和炸蝦尾也繼續看海，三個人沉默地聽著浪聲。\n\n不知道過了多久，炸豬排輕輕開口：「你不問我們為什麼在這裡嗎？」\n\n你搖搖頭。牠又沉默了一會兒，然後說：「謝謝你。被陪著卻不被追問...這是我第一次覺得——被剩下也沒關係。{p}，我們可以跟著你嗎？」\n\n你獲得了【礁石旁的靜默】！',
+  ton_short_join:'炸豬排慢慢站起來，用身體推了推炸蝦尾，兩個一起拍掉身上的沙。\n\n「我們沒什麼特別的能力。」炸豬排平靜地說。「但是被剩下過太多次，所以我們很擅長——找到被遺忘在角落的東西。」\n\n炸蝦尾跳上了你的肩膀，用小小的身體碰了碰你的臉頰。\n\n【炸豬排（和炸蝦尾）加入了隊伍！】',
+  ton_short_jbtn:'「一起走，絕對不分開。」',
+
+  neko_short:'山丘的草叢角落裡，有一個圓圓的影子縮著不動，只有耳朵尖偶爾抖一下。\n\n貓咪透過草葉的縫隙偷偷打量著你們的隊伍，又縮得更小了：「好...好多人...會不會吵...」\n\n但這時，牠的肚子不合時宜地咕嚕咕嚕叫了一聲。耳朵立刻紅了。',
+  neko_short_a:'「要一起吃點心嗎？我有帶呢。」',
+  neko_short_b:'假裝沒看到，把點心放在草叢邊就轉身',
+  neko_short_c:'「...沒關係，我們會在這裡等你。」',
+  neko_s2a:'貓咪從草叢裡探出一半身子，圓眼睛看著你手上的點心，又看看你。\n\n「...真的給我嗎？」牠問，聲音細細的。「我很胖了...還可以吃嗎？」\n\n你把點心放在牠面前，沒有說任何關於身材的話。貓咪慢慢伸出爪子，吃了一小口，然後抬頭：「{p}...你不嫌我嗎？」',
+  neko_s2b:'你把點心輕輕放在草叢邊，然後若無其事地轉過身。身後傳來極小聲的咀嚼聲，然後是停頓，再咀嚼。\n\n過了一會兒，草叢裡傳來細小的聲音：「{p}...謝謝你假裝沒看到。」\n\n然後是更長的沉默。「...我可以出來嗎？」\n\n你點點頭，沒有回頭。貓咪慢慢從草叢裡爬出來，第一次感覺被好好對待。',
+  neko_s2c:'你在草叢外靜靜坐下，跟貓咪保持著距離，也不看牠。\n\n過了很久，貓咪輕輕說：「...還沒走？」\n\n「嗯。」你回答。\n\n又過了一段時間，草叢裡傳來窸窸窣窣的聲音。貓咪慢慢挪到了草叢邊緣：「...{p}，你等我，是因為真的想讓我來嗎？不是憐憫？」\n\n你回頭認真看著牠，點頭。貓咪的眼睛亮了。\n\n你獲得了【貓咪的信任目光】！',
+  neko_short_join:'貓咪從草叢裡完全走出來，毛蓬鬆著，耳朵還壓著，但腳步一步一步地朝你走來。\n\n「...我不太會和很多人相處。」牠誠實地說。「而且我很容易躲起來。」\n\n牠停在你腳邊，輕輕蹭了一下。「但是如果是{p}的隊伍...我願意試試看。」\n\n然後發出了細細的呼嚕聲。\n\n【貓咪加入了隊伍！】',
+  neko_short_jbtn:'輕輕蹲下來，對貓咪微笑',
+
+  toka_short:'山頂的一塊陽光充足的岩石上，蜥蜴趴著曬太陽，尾巴懶洋洋地掃著石面。眼神看向遠處的湖，有一種說不清楚的安靜。\n\n「啊...{p}你好。」蜥蜴說，翻了個身繼續曬。「你們的隊伍真熱鬧。我就是普通的蜥蜴，在這裡曬曬太陽...沒什麼特別的。」\n\n但牠的眼神在落回湖面的那一秒，有一絲深得像海溝的寂寞。',
+  toka_short_a:'「普通的蜥蜴也很棒！來加入我們嘛！」',
+  toka_short_b:'默默在旁邊找了塊岩石，跟著一起曬太陽',
+  toka_short_c:'「你在看湖嗎？那裡有什麼呢？」',
+  toka_s2a:'蜥蜴尾巴搖了一下：「真的嗎？普通的蜥蜴也可以加入嗎？」\n\n牠偷偷瞄了瞄湖的方向，又把視線收回來。「我沒有什麼特別的技能...就是喜歡曬太陽，還有，記得很多很多年前的事...書上的事。」\n\n牠站起來，有點期待地搖著尾巴：「{p}...如果你們不介意帶著一隻普通的蜥蜴，我想去更多地方看看太陽。」',
+  toka_s2b:'你找了塊岩石坐下，閉上眼睛感受陽光。蜥蜴側頭看了你一眼，沒說話，又繼續曬。\n\n不知道過了多久，蜥蜴輕聲說：「你知道嗎...我曬過很多地方的太陽。沙漠的、海邊的、山頂的...」停頓了一下，「但是這樣有人陪著曬，感覺不一樣。」\n\n「{p}，我可以一直跟著你曬太陽嗎？」\n\n你獲得了【共享的陽光時光】！',
+  toka_s2c:'蜥蜴的身子微微繃了一下，尾巴停止了擺動。\n\n「湖啊...」牠沉默了一會兒。「那裡有我很重要的存在。只是——太大了，沒辦法上岸來。我只能在這裡，讓牠知道我還好。」\n\n蜥蜴的眼眶閃著光：「{p}...你是第二個知道這件事的生物。只要有你們在，我覺得我不需要一直守在湖邊也沒關係了。」\n\n你獲得了【蜥蜴的深湖秘密】！',
+  toka_short_join:'蜥蜴從岩石上跳下來，搖著尾巴走到隊伍旁邊——尾巴搖得有點用力，差點露出不太像蜥蜴的輪廓。\n\n「我會找最好的曬太陽地點。」牠鄭重地宣布。「還有，如果大家走累了，我知道哪些岩石最平坦、最溫暖。」\n\n牠回頭看了一眼湖面，水面泛起了一圈寬闊的漣漪，像是祝福，也像是道別。\n\n【蜥蜴加入了隊伍！】',
+  toka_short_jbtn:'「一起出發，去看更多的太陽！」',
+
+  // --- Final chapter ---
+  ch_final:'最終章：最溫暖的角落',
+  final_text:'所有的夥伴都到齊了！你們找到了一個完美的大角落——溫暖、安全，剛好夠每個人縮進來。\n\n🐻‍❄️ 白熊幫大家泡茶\n🐧 企鵝？分享小黃瓜\n🍖 炸豬排和炸蝦尾靠著暖爐\n🐱 貓咪窩在軟墊上\n🦎 蜥蜴在窗邊曬太陽\n\n外面開始下起了小雨，但角落裡溫暖又安心。\n\n突然，窗外傳來細小的聲音...',
+  final_a:'去窗邊查看', final_b:'先確認大家都安全',
+
+  rescue_text:'窗外，你看見幾個小小的身影在雨中——是迷你夥伴們！\n\n雜草、珍珠、小幽靈、包裹布...牠們找不到可以躲雨的角落。\n\n「請問...這裡還有位子嗎？」',
+  rescue_a:'「當然有！快進來！」', rescue_b:'問問大家的意見',
+
+  protect_text:'你環顧四周確認每個夥伴：\n\n白熊 ✓ 有熱茶\n企鵝？ ✓ 有小黃瓜\n炸豬排 ✓ 有暖爐\n貓咪 ✓ 有軟墊\n蜥蜴 ✓ 有陽光\n\n「{p}一個一個確認呢...」白熊感動地說。\n\n門口傳來敲門聲——是迷你夥伴們在雨中求助！',
+  protect_a:'趕緊開門！',
+
+  vote_text:'你問大家的意見。\n\n白熊：「我也是從外面來的...當然歡迎。」\n企鵝？：「越多朋友越多小黃瓜可以分享！」\n炸豬排：「被剩下的東西要互相幫助。」\n貓咪：「...如果不會太擠的話。」\n蜥蜴：「角落的好處就是，可以一直往裡面擠。」\n\n大家一致同意！',
+  vote_a:'開門迎接大家！',
+
+  ending_text:'你打開了門，迷你夥伴們歡呼著衝進來。\n\n角落裡變得熱鬧又溫暖。大家擠在一起，但沒有人覺得不舒服——因為角落就是這樣的地方。\n\n一路上陪伴你的每位夥伴都靠了過來。\n\n白熊：「謝謝你讓我不再孤單。」\n企鵝？：「和{p}在一起，不管我是什麼都沒關係了。」\n炸豬排：「被剩下也很幸福...因為有你們。」\n貓咪：「...呼嚕呼嚕。」\n蜥蜴：「這個角落，比幾千萬年前的陽光還溫暖。」\n\n所有角落小夥伴一起說：\n「角落是讓人安心的地方。不是因為角落本身，而是因為——角落裡有大家。」',
+
+  end_title:'🌟 遊戲結束 🌟', end_sub:'～最溫暖的角落～',
+  end_role:'你的角色：', end_party:'你的隊伍：', end_trust:'信任等級：', end_items:'寶物：',
+  end_msg:'所有的角落小夥伴都成為了你的朋友！\n不管什麼時候，角落都在等著你回來。',
+},
+en: {
+  title:'🏠 Sumikko Gurashi Text Adventure', sub:'すみっコぐらし ~ A Journey to Find a Warm Corner ~',
+  s_lang:'Lang', s_font:'Font', s_device:'Device',
+  choose_role:'Choose your character', start_btn:'Start Adventure!', restart:'🔄 Explore again',
+  none:'None', party:'Party: ',
+  r_zassou:'Zassou', rd_zassou:'A positive weed dreaming of bouquets',
+  r_ebifurai:'Ebifurai', rd_ebifurai:'Leftover fried shrimp tail',
+  r_tapioca:'Tapioca', rd_tapioca:'Leftover tapioca pearls',
+  r_obake:'Obake', rd_obake:'A shy ghost afraid of scaring others',
+  r_furoshiki:'Furoshiki', rd_furoshiki:"Shirokuma's versatile wrapping cloth",
+  r_nisetsumuri:'Nisetsumuri', rd_nisetsumuri:'A slug pretending to be a snail',
+  r_yama:'Yama', rd_yama:'A small hill admiring Mt. Fuji',
+  r_suzume:'Suzume', rd_suzume:'A sparrow who loves pecking Tonkatsu',
+  n_shirokuma:'Shirokuma', n_penguin:'Penguin?', n_tonkatsu:'Tonkatsu', n_neko:'Neko', n_tokage:'Tokage',
+  trust_hi:'💖 Deepest Bond', trust_mid:'💕 Warm Friendship', trust_lo:'💛 Budding Affection',
+  ch1:'Chapter 1: Corner Café',
+  start_text:'One spring afternoon, you — {p} — walk into a warm corner café.\n\nSunlight streams in, and the air smells of tea. You notice five little figures in the corners.\n\nWho would you like to approach?',
+  c_shiro:'Approach Shirokuma sipping hot tea',
+  c_pen:'Walk to Penguin? tilting its head',
+  c_ton:'Check on Tonkatsu on the plate edge',
+  c_neko:'Find Neko hiding under the table',
+  c_toka:'Watch Tokage pretending to sunbathe',
+  shiro_t:"Shirokuma's Corner",
+  shiro1:'You approach the window corner. A white bear holds hot tea, shivering.\n\n"...So warm," Shirokuma whispers. "Oh, {p}. Hello... I came from the north. Too cold, so I walked south..."\n\nLoneliness lingers in his eyes.',
+  shiro1_a:'"Shall I order you more hot tea?"', shiro1_b:'"Don\'t you feel lonely traveling alone?"', shiro1_c:'"What was the north like?"',
+  shiro2a:'You order warm roasted tea. His eyes light up: "Thank you, {p}... Perfect temperature."\n\nHe pulls out a small towel: "This is for you. From the north."\n\nYou received [Shirokuma\'s Towel]!\n\n"Would you... let me come with you? Being alone is too cold."',
+  shiro2b:'"...Sometimes." He says softly. "But not in corners. Corners are comforting."\n\nHe peeks at you: "{p}, you understand corners... May I travel with you? Together, I won\'t be lonely."',
+  shiro2c:'"The north... all ice and snow. Other polar bears loved it, but I was always cold..."\n\n"Everyone said I was strange." He looks at you: "{p}, you don\'t think I\'m strange? Can I come with you? I feel safe with you."',
+  shiro_join:'"Wonderful!" Shirokuma packs his wrapping cloth.\n\nHe follows you shyly but happily: "With {p} here, it\'s not so cold."\n\n[Shirokuma joined your party!]',
+  shiro_join_btn:'"Of course, let\'s go together!"',
+  pen_t:"Penguin?'s Corner",
+  pen1:'A green creature tilts its head at its reflection.\n\n"Oh, hello {p}. I\'m a penguin. Probably. Maybe... right?"\n\nThere\'s a small disc-shaped mark on its head. "Do I... look like a penguin?"',
+  pen1_a:'"Of course you\'re a penguin!"', pen1_b:'"Whatever you are, you\'re you!"', pen1_c:'"That mark is... cute!"',
+  pen2a:'"Really!?" It flaps excitedly. "But I can\'t swim well and I like cucumbers..."\n\n"Maybe I\'m a special penguin! {p}, take me with you? I want to find more answers!"',
+  pen2b:'Penguin? freezes: "I\'m... me? No one ever said that..."\n\nTears well up: "Thank you, {p}. I want to follow you! With you, the answer doesn\'t matter."',
+  pen2c:'"C-cute?" It touches its head shyly. "You\'re the first to say that!"\n\nIt offers a cucumber: "For you! {p}, may I join your adventure?"\n\nYou received [Penguin?\'s Cucumber]!',
+  pen_join:'Penguin? hops excitedly, almost dropping its cucumbers.\n\n"I brought lots of cucumbers for the road!"\n\nIt follows you, occasionally checking its reflection.\n\n[Penguin? joined your party!]',
+  pen_join_btn:'"Let\'s adventure together!"',
+  ton_t:"Tonkatsu's Corner",
+  ton1:'A small piece of tonkatsu sits on the plate edge. 99% breading, 1% meat.\n\nA tiny shrimp tail stays close by.\n\n"...{p}, do you think I\'m too oily too?"',
+  ton1_a:'"Crispy edges are the best part!"', ton1_b:'"Being left behind must be hard..."', ton1_c:'Sit quietly beside it',
+  ton2a:'"D-delicious? Me?" The shrimp tail hops happily.\n\n"No one ever said that... {p}, I want to follow you everywhere!"\n\nYou received [Shrimp Tail\'s Badge]!',
+  ton2b:'"...Yeah. Always left behind." The shrimp tail stays close.\n\n"But together, it\'s less lonely." Tonkatsu looks at you: "{p}, will you let us leftovers tag along?"',
+  ton2c:'You sit quietly. After a long while: "...{p}, you don\'t mind the oil."\n\n"...Thank you. Can we... follow you? You make being left behind feel okay."',
+  ton_join:'Tonkatsu and shrimp tail happily follow along.\n\n"We\'re the leftover crew!" Tonkatsu says.\n\nShrimp tail bounces on your shoulder.\n\n[Tonkatsu (& Shrimp Tail) joined your party!]',
+  ton_join_btn:'"Let\'s go, partners!"',
+  neko_t:"Neko's Corner",
+  neko1:'Under the table, a round cat curls into a ball. It eyes its food, then its tummy.\n\n"If I eat more I\'ll get fatter... but hungry..."\n\nNoticing you: "{p}... don\'t look..."',
+  neko1_a:'"Round is cute!"', neko1_b:'"Just eat if you\'re hungry!"', neko1_c:'Pretend not to see, turn away',
+  neko2a:'"C-cute?" Neko touches its tummy. "Rounder is cozier to hug?"\n\nIt extends a paw: "{p}, you can always pet me. But... take me with you? I feel safe near you."\n\nYou received [Neko\'s Paw Print]!',
+  neko2b:'"Really okay?" Neko eats, little bites. "...Yummy." Tears fall.\n\n"Holding back was so hard. Thank you, {p}."\n\nPurring: "Take me with you?"',
+  neko2c:'You turn away. Soft eating sounds behind you.\n\nNeko nuzzles your back: "Thank you for pretending, {p}. First person who understood."\n\n"Take me along? I want to be my real self with you."',
+  neko_join:'Neko crawls out from under the table, still shy.\n\nIt circles your feet, nuzzles once, and purrs.\n\n"...Let\'s go." it whispers.\n\n[Neko joined your party!]',
+  neko_join_btn:'Gently pet Neko\'s head',
+  toka_t:"Tokage's Corner",
+  toka1:'A small lizard sunbathes by the window. Normal-looking... but ancient loneliness hides in its eyes.\n\n"Oh, hello {p}. I\'m a lizard. Ordinary."\n\nBy the lake, a huge shadow flickers.',
+  toka1_a:'"Are you really a lizard?"', toka1_b:'"I saw something in the lake..."', toka1_c:'"Let\'s sunbathe together!"',
+  toka2a:'Tokage stiffens: "Of course! Ordinary, small..."\n\n"Definitely not something big from long ago..."\n\nEyes redden: "If found out, I can\'t stay... {p}, please let me be a lizard. Can I come with you? I feel safe being myself around you."',
+  toka2b:'Tokage softens: "That\'s... my mother. Like me, the last of our kind. Too big for shore."\n\nTears fall: "As long as we know each other\'s there... {p}, may I follow you? You\'re the first I\'ve told."\n\nYou received [Ancient Fossil]!',
+  toka2c:'You sit together in warm sunlight. "Long ago the sun felt like this. Millions of years... I mean, books say so."\n\n"Being here with {p} is the happiest thing. Can I come along?"\n\nYou received [Warm Sunlight Memory]!',
+  toka_join:'Tokage wags its tail excitedly — almost revealing a very un-lizard shape.\n\n"I\'ll be the best lizard!" It glances at the lake; ripples wave goodbye.\n\n[Tokage joined your party!]',
+  toka_join_btn:'"Of course, let\'s go!"',
+  ch_travel:'Chapter {n}: {loc}',
+  loc_park:'Corner Park', loc_shop:'Corner Shop', loc_beach:'Corner Beach', loc_mountain:'Corner Hilltop',
+  travel_intro:'You and your friends arrive at {loc}.\n\n{scene}',
+  shiro_short:'In a corner of the park, Shirokuma sits alone on a bench, sipping tea and breathing small puffs of white into the cold air. A neatly bundled wrapping cloth sits beside the bench — a few worn spots at the corners.\n\n"...{p}, hello. So cold..." Shirokuma notices your group, a flicker of longing crossing its face. "Your party looks so warm. I\'ve been walking alone for a long time..."\n\nIt holds the tea cup tighter, as if borrowing courage from its warmth.',
+  shiro_short_a:'"Come with us! More friends, more warmth!"',
+  shiro_short_b:'Quietly order a fresh cup of roasted tea for Shirokuma',
+  shiro_short_c:'"Is that wrapping cloth... from the north?"',
+  shiro_s2a:'You reach out your hand and smile. Shirokuma nearly drops its cup.\n\n"R-really? I won\'t be a burden?" It clutches the wrapping cloth to its chest, ears turning pink. "I\'ve wanted to ask someone if I could join them for so long, but I was always too scared..."\n\nYour companions cheer. Shirokuma blinks back tears.',
+  shiro_s2b:'A moment later, the server brings a steaming cup of roasted tea. Shirokuma looks up and sees you nodding.\n\n"...You ordered this for me?" it whispers, voice trembling. It takes one careful sip and closes its eyes.\n\n"Warm all the way through. No one has ever..." A deep breath. "{p}, thank you for knowing what I needed. May I come with you?"\n\nYou received [Shirokuma\'s Warm Memory]!',
+  shiro_s2c:'Shirokuma gently strokes the worn corner of the wrapping cloth, its gaze growing distant.\n\n"Mother gave this to me. She said as long as I kept it close, I\'d never forget what home felt like. But I\'ve walked so far... home feels harder and harder to picture now."\n\nIt looks up, eyes glistening. "{p}... would you all be my new home?"',
+  shiro_short_join:'Shirokuma carefully rises, rolls the wrapping cloth around its few belongings, and tucks the bundle under one arm.\n\n"I won\'t take up much space," it says shyly, tail giving a tiny wag. "And if anyone gets cold, the cloth can be a mat or a blanket. I\'ll do my best."\n\nThe party makes room with warm smiles. Shirokuma steps in and, for the first time, exhales with a smile that comes from somewhere deep.\n\n[Shirokuma joined your party!]',
+  shiro_short_jbtn:'"Of course! Let\'s walk together."',
+
+  pen_short:'In a corner of the shop\'s drink aisle, Penguin? stands alone before the refrigerator, tilting its head at a row of cucumber juice, tail feathers swaying.\n\n"What should... a penguin drink? What do swimming penguins drink? I\'m not very good at swimming..."\n\nIt turns and spots your group, eyes brightening then dimming again. "Wow, what a full party. You all found each other..."',
+  pen_short_a:'"Cucumber juice was made for you, I\'m sure of it!"',
+  pen_short_b:'"Why don\'t you join us? We can look for answers together!"',
+  pen_short_c:'Stand quietly beside it, tilting your own head at the drinks too',
+  pen_s2a:'"R-really!?" Penguin? flaps excitedly, nearly knocking over the juice. "How did you know!? Maybe that\'s the answer — I\'m a cucumber-juice penguin!"\n\nIt hugs a bottle to its chest and looks up. "{p}, you make answers seem easier to find. Can I come with you to find more?"',
+  pen_s2b:'Penguin? freezes, small round eyes blinking rapidly.\n\n"Together... look for answers?" It holds the cucumber juice to its chest, voice catching. "I\'ve been searching alone for so long. I didn\'t know you could do it with other people."\n\n"{p}, I want to come with you. Not because I found my answer — but because with all of you, not knowing feels okay."',
+  pen_s2c:'Two heads tilt in silence. Penguin? sneaks a glance at you, then quietly bursts out giggling.\n\n"You don\'t know either?" You shrug.\n\n"Ha... so nobody knows." Its eyes crinkle into crescents. "{p}, you\'re the best uncertain friend I\'ve ever met. Can we walk together?"\n\nYou received [Penguin?\'s Laughter]!',
+  pen_short_join:'Penguin? gathers every cucumber it can carry and bounces after the party.\n\n"I brought lots of cucumbers — everyone gets one! Also," it adds seriously, "if anyone gets lost, I\'m very good at asking questions. I ask questions about everything."\n\nIt tilts its head at each companion in a small, earnest bow.\n\n[Penguin? joined your party!]',
+  pen_short_jbtn:'"Let\'s go — we\'ll search together!"',
+
+  ton_short:'At a rocky corner of the shore, Tonkatsu and the shrimp tail have washed up again, leaning quietly against each other, listening to the waves.\n\n"...Washed up again." Tonkatsu\'s voice is flat — like it has said this many times before. The shrimp tail says nothing, just leans closer.\n\nThey notice your group approaching. They glance at each other, then look away.',
+  ton_short_a:'"Do you need help? We\'re here!"',
+  ton_short_b:'"Come with us. We won\'t leave anyone behind."',
+  ton_short_c:'Sit quietly on a nearby rock, watching the waves alongside them',
+  ton_s2a:'Tonkatsu lifts its head, disbelief on its face. The shrimp tail stands up straighter.\n\n"Help... us?" Tonkatsu\'s voice wavers. "But we\'re just leftovers. No one comes looking for leftovers on purpose."\n\nYou crouch down to meet its eyes and nod firmly. A long silence. Then, quietly: "Thank you... for seeing us like something worth helping. Not something that should just be forgotten."',
+  ton_s2b:'Tonkatsu goes completely still. The shrimp tail freezes too.\n\n"Never left behind?" It repeats the words slowly, as if tasting them for the first time.\n\n"We\'ve been left behind so many times," it says after a moment. "Every time I thought I\'d gotten used to it. But it still hurt." It looks at you carefully. "{p}... do you mean it?"\n\nYou nod. Tonkatsu and the shrimp tail look at each other — and decide together.',
+  ton_s2c:'You sit down and say nothing. Just watch the sea. Tonkatsu and the shrimp tail keep watching too — three of you in silence, listening to the waves roll in and out.\n\nAfter a while, Tonkatsu speaks softly: "You\'re not going to ask why we\'re here?"\n\nYou shake your head. Another long pause. "Thank you. Being kept company without being questioned... it\'s the first time being left behind felt... okay. {p}, can we follow you?"\n\nYou received [Silence by the Reef]!',
+  ton_short_join:'Tonkatsu slowly gets up and nudges the shrimp tail with its side. They brush the sand off each other in silence.\n\n"We don\'t have any special abilities," Tonkatsu says plainly. "But we\'ve been left behind so many times, we\'re very good at noticing things everyone else overlooks."\n\nThe shrimp tail hops to your shoulder and bumps its tiny body gently against your cheek.\n\n[Tonkatsu (& Shrimp Tail) joined your party!]',
+  ton_short_jbtn:'"Together — and we don\'t leave anyone behind."',
+
+  neko_short:'In the corner of the hilltop grass, a round shadow sits perfectly still — only the tips of its ears twitch now and then.\n\nNeko watches your party through the gaps in the grass, then curls even smaller. "So... many people... would it be noisy..."\n\nThen its tummy lets out a loud, involuntary grumble. Its ears go bright red.',
+  neko_short_a:'"Want to share some snacks? I brought plenty."',
+  neko_short_b:'Pretend not to notice — set snacks by the grass and turn away',
+  neko_short_c:'"...It\'s okay. We\'ll just wait here for you."',
+  neko_s2a:'Neko peers out from the grass, round eyes moving between the snack and your face.\n\n"...Really for me?" it asks, voice very small. "I\'m already so round... is it okay to eat?"\n\nYou place the snack down without saying a word about its size or shape. Neko slowly extends a paw, takes a careful bite, then looks up.\n\n"{p}... you don\'t mind me?"',
+  neko_s2b:'You set the snack gently at the edge of the grass, then turn your back and look at the sky. Tiny crunching sounds come from behind you. A pause. More crunching.\n\nThen a very small voice: "{p}... thank you for pretending not to see."\n\nA longer silence. "...Can I come out now?"\n\nYou nod without turning. Neko crawls out slowly, feeling, perhaps for the first time, genuinely looked after.',
+  neko_s2c:'You sit just outside the grass and stay there. You don\'t look at Neko. You just... wait.\n\nAfter a long time, a small voice: "...You\'re still here?"\n\n"Mm." you answer.\n\nMore time passes. A rustling. Neko edges to the border of the grass. "...{p}, are you waiting because you actually want me there? Not out of pity?"\n\nYou turn and meet its eyes — and nod without hesitation. Neko\'s eyes light up.\n\nYou received [Neko\'s Trusting Gaze]!',
+  neko_short_join:'Neko steps fully out of the grass, fur still a bit puffed, ears still pressed low — but each small step carries intention, moving toward you.\n\n"I\'m not good with crowds," it admits quietly. "And I hide a lot."\n\nIt stops at your feet and gives one soft nuzzle. "But if it\'s {p}\'s group... I want to try."\n\nThen it purrs — barely audible, but there.\n\n[Neko joined your party!]',
+  neko_short_jbtn:'Crouch down and smile gently at Neko',
+
+  toka_short:'On a sun-warmed rock near the hilltop, Tokage basks lazily, tail sweeping the stone. Its gaze drifts to the lake in the distance — holding a stillness that feels older than the mountain.\n\n"Ah... hello, {p}." It rolls over without urgency. "Your group is lively. I\'m just an ordinary lizard, catching some sun. Nothing special."\n\nBut in the single moment its eyes find the lake, there is a loneliness as deep as the water itself.',
+  toka_short_a:'"Ordinary lizards are wonderful! Come join us!"',
+  toka_short_b:'Find a rock nearby and quietly bask in the sun too',
+  toka_short_c:'"Are you watching the lake? What\'s out there?"',
+  toka_s2a:'Tokage\'s tail gives one slow wag. "Really? Ordinary lizards... are allowed?"\n\nIt steals a glance at the lake, then pulls its eyes back. "I don\'t have special skills. I like sunbathing. And I remember a lot of things from a long time ago — things books describe."\n\nIt stands and looks at you with quiet hope: "{p}... if you don\'t mind a very ordinary lizard, I\'d like to see the sun from more places."',
+  toka_s2b:'You find a warm rock and sit down, closing your eyes in the sun. Tokage watches you for a moment, says nothing, and goes back to basking.\n\nAfter a long, unhurried while, it speaks softly: "I\'ve basked under many suns. Desert suns. Sea suns. Mountain suns..."\n\nA pause. "Having someone here makes it feel different."\n\n"{p}... may I keep basking beside you, wherever you go?"\n\nYou received [Shared Sunlight]!',
+  toka_s2c:'Tokage\'s body stiffens slightly. Its tail goes still.\n\n"The lake..." It is quiet for a moment. "Someone important lives there. Like me, the last of their kind. Too large to come ashore. I come here so they know I\'m okay."\n\nIts eyes shine. "{p}... you\'re only the second creature I\'ve told. If I have all of you, I think I don\'t need to guard this shore alone anymore."\n\nYou received [Tokage\'s Deep Lake Secret]!',
+  toka_short_join:'Tokage hops down from the rock and walks to the party, tail wagging with enthusiasm — a little too much enthusiasm, the shape almost giving something away.\n\n"I will find the best sunbathing spots," it declares solemnly. "Also, I know which rocks are the warmest and flattest for resting. This is very useful."\n\nIt glances back at the lake one last time. A broad ripple spreads across the water — like a blessing, like a farewell.\n\n[Tokage joined your party!]',
+  toka_short_jbtn:'"Let\'s go — more suns to find!"',
+  ch_final:'Final Chapter: The Warmest Corner',
+  final_text:'Everyone is here! You find a perfect big corner — warm, safe, just right.\n\n🐻‍❄️ Shirokuma makes tea\n🐧 Penguin? shares cucumbers\n🍖 Tonkatsu by the heater\n🐱 Neko on cushions\n🦎 Tokage in the sunlight\n\nRain begins, but the corner stays warm.\n\nSuddenly, sounds from outside...',
+  final_a:'Go check the window', final_b:'Make sure everyone is safe first',
+  rescue_text:'Outside, tiny figures in the rain — the mini friends!\n\nZassou, Tapioca, Obake, Furoshiki... can\'t find shelter.\n\n"Excuse me... is there room?"',
+  rescue_a:'"Of course! Come in!"', rescue_b:"Ask everyone's opinion",
+  protect_text:'You check on everyone:\n\nShirokuma ✓ Hot tea\nPenguin? ✓ Cucumbers\nTonkatsu ✓ Heater\nNeko ✓ Cushions\nTokage ✓ Sunlight\n\n"{p} checked on everyone..." Shirokuma says, moved.\n\nA knock — the mini friends need help!',
+  protect_a:'Open the door quickly!',
+  vote_text:'You ask for opinions.\n\nShirokuma: "I came from outside too — welcome."\nPenguin?: "More friends = more cucumbers!"\nTonkatsu: "Leftovers should help each other."\nNeko: "If it\'s not too crowded..."\nTokage: "Corners can always fit more."\n\nEveryone agrees!',
+  vote_a:'Open the door!',
+  ending_text:'You open the door. The mini friends rush in cheering.\n\nThe corner becomes warm and lively. Everyone squeezes in, but no one minds.\n\nEach companion comes close:\n\nShirokuma: "Thank you for ending my loneliness."\nPenguin?: "With {p}, it doesn\'t matter what I am."\nTonkatsu: "Being left behind is okay... because you\'re here."\nNeko: "...Purrrr."\nTokage: "This corner is warmer than sunlight from millions of years ago."\n\nAll together:\n"A corner is comforting. Not because of the corner, but because — everyone is here."',
+  end_title:'🌟 The End 🌟', end_sub:'~ The Warmest Corner ~',
+  end_role:'Your role: ', end_party:'Your party: ', end_trust:'Trust level: ', end_items:'Treasures: ',
+  end_msg:'All Sumikko friends are now your friends!\nThe corner is always waiting for you.',
+},
+fr: {
+  title:'🏠 Sumikko Gurashi Aventure Textuelle', sub:'すみっコぐらし ~ Voyage vers un Coin Chaleureux ~',
+  s_lang:'Langue', s_font:'Police', s_device:'Appareil',
+  choose_role:'Choisissez votre personnage', start_btn:"Commencer !", restart:'🔄 Rejouer',
+  none:'Aucun', party:'Équipe : ',
+  r_zassou:'Zassou', rd_zassou:'Herbe positive rêvant de bouquets',
+  r_ebifurai:'Ebifurai', rd_ebifurai:'Queue de crevette frite oubliée',
+  r_tapioca:'Tapioca', rd_tapioca:'Perles de tapioca oubliées',
+  r_obake:'Obake', rd_obake:"Fantôme timide qui a peur d'effrayer",
+  r_furoshiki:'Furoshiki', rd_furoshiki:'Tissu polyvalent de Shirokuma',
+  r_nisetsumuri:'Nisetsumuri', rd_nisetsumuri:'Limace déguisée en escargot',
+  r_yama:'Yama', rd_yama:'Colline admirant le Mont Fuji',
+  r_suzume:'Suzume', rd_suzume:'Moineau qui adore picorer Tonkatsu',
+  n_shirokuma:'Shirokuma', n_penguin:'Pingouin ?', n_tonkatsu:'Tonkatsu', n_neko:'Neko', n_tokage:'Tokage',
+  trust_hi:'💖 Lien Profond', trust_mid:'💕 Amitié Chaleureuse', trust_lo:'💛 Affection Naissante',
+  ch1:'Chapitre 1 : Café du Coin',
+  start_text:"Un après-midi de printemps, vous — {p} — entrez dans un café chaleureux.\n\nLumière du soleil, parfum de thé. Cinq petites silhouettes dans les coins.\n\nQui approcher en premier ?",
+  c_shiro:'Approcher Shirokuma et son thé', c_pen:'Aller vers Pingouin ? et son reflet',
+  c_ton:"Voir Tonkatsu au bord de l'assiette", c_neko:'Trouver Neko sous la table', c_toka:'Observer Tokage au soleil',
+  shiro_t:'Le Coin de Shirokuma',
+  shiro1:"Près de la fenêtre, un ours blanc tient du thé chaud en tremblant.\n\n« ...Si chaud. » murmure-t-il. « Oh, {p}. Bonjour... Je viens du nord. Trop froid, alors j'ai marché vers le sud... »\n\nDe la solitude dans ses yeux.",
+  shiro1_a:'« Un autre thé chaud ? »', shiro1_b:'« Pas trop seul en voyageant ? »', shiro1_c:'« Comment était le nord ? »',
+  shiro2a:"Vous commandez du thé. Ses yeux brillent : « Merci, {p}... Parfait. »\n\nIl sort une serviette : « Pour vous. Du nord. »\n\nVous recevez [Serviette de Shirokuma] !\n\n« {p}... puis-je vous suivre ? Seul, j'ai trop froid. »",
+  shiro2b:"« ...Parfois. » dit-il doucement. « Mais pas dans un coin. Les coins sont rassurants. »\n\n« {p}, vous comprenez les coins... Puis-je voyager avec vous ? »",
+  shiro2c:"« Le nord... que de la glace. Les autres aimaient ça, mais moi j'avais toujours froid... »\n\n« On disait que j'étais bizarre. » Il vous regarde : « {p}, vous ne trouvez pas ? Puis-je venir ? Je me sens en sécurité avec vous. »",
+  shiro_join:"« Merveilleux ! » Shirokuma fait son baluchon.\n\nIl vous suit timidement : « Avec {p}, moins froid. »\n\n[Shirokuma rejoint l'équipe !]",
+  shiro_join_btn:'« Bien sûr, allons-y ! »',
+  pen_t:'Le Coin de Pingouin ?',
+  pen1:"Une créature verte penche la tête devant son reflet.\n\n« Oh, {p}. Je suis un pingouin. Probablement. Peut-être... ? »\n\nUne marque en disque sur sa tête. « Je ressemble à un pingouin ? »",
+  pen1_a:'« Bien sûr ! »', pen1_b:'« Quoi que tu sois, tu es toi ! »', pen1_c:'« Cette marque est mignonne ! »',
+  pen2a:"« Vraiment !? » Il bat des ailes. « Mais je nage mal et j'aime les concombres... »\n\n« Peut-être un pingouin spécial ! {p}, emmenez-moi ? Je veux trouver des réponses ! »",
+  pen2b:"Il se fige : « Je suis... moi ? Personne n'avait dit ça... »\n\nLarmes : « Merci, {p}. Je veux vous suivre ! Avec vous, la réponse importe peu. »",
+  pen2c:"« M-mignon ? » Il touche sa tête. « Le premier à dire ça ! »\n\nUn concombre : « Pour vous ! {p}, puis-je venir ? »\n\nVous recevez [Concombre de Pingouin ?] !",
+  pen_join:"Pingouin ? sautille joyeusement.\n\n« J'ai plein de concombres pour la route ! »\n\n[Pingouin ? rejoint l'équipe !]",
+  pen_join_btn:'« Partons ensemble ! »',
+  ton_t:'Le Coin de Tonkatsu',
+  ton1:"Un morceau de tonkatsu au bord de l'assiette. 99% panure, 1% viande.\n\nUne petite queue de crevette à côté.\n\n« ...{p}, trop gras pour vous aussi ? »",
+  ton1_a:'« Les bords croustillants sont les meilleurs ! »', ton1_b:'« Être oublié doit être dur... »', ton1_c:"S'asseoir tranquillement à côté",
+  ton2a:"« D-délicieux ? Moi ? » La queue de crevette sautille.\n\n« Personne n'avait dit ça... {p}, je veux vous suivre partout ! »\n\nVous recevez [Badge de Queue de Crevette] !",
+  ton2b:"« ...Oui. Toujours oublié. » La crevette reste proche.\n\n« Mais ensemble, c'est moins triste. {p}, on peut venir avec vous ? »",
+  ton2c:"Silence. Longtemps après : « ...{p}, le gras ne vous dérange pas. »\n\n« Merci. Puis-je... vous suivre ? »",
+  ton_join:"Tonkatsu et queue de crevette suivent joyeusement.\n\n« L'équipe des oubliés ! »\n\n[Tonkatsu (et Queue de Crevette) rejoint l'équipe !]",
+  ton_join_btn:'« Allons-y, partenaires ! »',
+  neko_t:'Le Coin de Neko',
+  neko1:"Sous la table, un chat en boule. Regarde sa gamelle, puis son ventre.\n\n« Encore plus gros... mais faim... »\n\n« {p}... ne regardez pas... »",
+  neko1_a:'« Être rond c\'est mignon ! »', neko1_b:'« Mangez si vous avez faim ! »', neko1_c:'Se retourner, faire semblant',
+  neko2a:"« M-mignon ? » Neko touche son ventre. « Plus doux à câliner ? »\n\nUne patte : « {p}, caressez quand vous voulez. Mais emmenez-moi... je suis rassuré près de vous. »\n\nVous recevez [Empreinte de Neko] !",
+  neko2b:"« Vraiment ? » Neko mange, petites bouchées. Larmes.\n\n« Se retenir était si dur. Merci, {p}. Emmenez-moi ? »",
+  neko2c:"Vous vous retournez. Petits bruits derrière.\n\nNeko frotte votre dos : « Merci de faire semblant, {p}. Le premier à comprendre. Emmenez-moi ? »",
+  neko_join:"Neko sort timidement, tourne autour de vos pieds, ronronne.\n\n« ...Allons-y. »\n\n[Neko rejoint l'équipe !]",
+  neko_join_btn:'Caresser Neko doucement',
+  toka_t:'Le Coin de Tokage',
+  toka1:"Un lézard bronze à la fenêtre. Normal... mais une solitude ancienne dans ses yeux.\n\n« Bonjour {p}. Un lézard. Ordinaire. »\n\nAu lac, une ombre immense.",
+  toka1_a:'« Vraiment un lézard ? »', toka1_b:'« Quelque chose dans le lac... »', toka1_c:'« Bronzons ensemble ! »',
+  toka2a:"Raide : « Bien sûr ! Ordinaire, petit... »\n\n« Pas quelque chose de grand d'il y a longtemps... »\n\nYeux rouges : « Si on découvrait... {p}, laissez-moi être un lézard. Puis-je venir ? Je me sens moi-même avec vous. »",
+  toka2b:"Doux : « C'est... ma maman. Comme moi, la dernière. Trop grande pour la rive. »\n\nLarmes : « {p}, puis-je vous suivre ? Vous êtes le premier à qui j'ai confié mon secret. »\n\nVous recevez [Fossile Ancien] !",
+  toka2c:"Au soleil ensemble. « Il y a longtemps... le soleil était pareil. Des millions d'années... les livres disent. »\n\n« Être ici avec {p}... le plus grand bonheur. Puis-je venir ? »\n\nVous recevez [Mémoire de Soleil] !",
+  toka_join:"Queue qui remue (forme presque non-lézardesque).\n\n« Je serai le meilleur lézard ! » Regard au lac ; des ondulations.\n\n[Tokage rejoint l'équipe !]",
+  toka_join_btn:'« Bien sûr, partons ! »',
+  ch_travel:'Chapitre {n} : {loc}',
+  loc_park:'Parc du Coin', loc_shop:'Boutique du Coin', loc_beach:'Plage du Coin', loc_mountain:'Colline du Coin',
+  travel_intro:'Vous et vos amis arrivez à {loc}.\n\n{scene}',
+  shiro_short:"Dans un coin du parc, Shirokuma est assis seul sur un banc, soufflant de petits nuages blancs dans l'air froid. Un baluchon soigneusement ficelé repose à ses pieds — les bords un peu usés par le voyage.\n\n« ...{p}, bonjour. Si froid... » Shirokuma aperçoit votre groupe, un éclair de nostalgie traversant son regard. « Vous avez l'air si chaleureux. Ça fait longtemps que je marche seul... »\n\nIl serre sa tasse plus fort, comme s'il y puisait du courage.",
+  shiro_short_a:'« Rejoignez-nous ! Plus on est, plus on a chaud ! »',
+  shiro_short_b:'Commander discrètement un thé chaud pour Shirokuma',
+  shiro_short_c:'« Ce baluchon... vous l\'avez apporté du nord ? »',
+  shiro_s2a:"Vous tendez la main en souriant. Shirokuma manque de lâcher sa tasse.\n\n« V-vraiment ? Je ne serai pas un fardeau ? » Il serre le baluchon contre lui, les oreilles roses. « J'ai voulu demander à quelqu'un de m'accompagner depuis si longtemps... mais je n'osais pas. »\n\nVos compagnons acclament. Shirokuma retient ses larmes.",
+  shiro_s2b:"Un instant plus tard, le serveur apporte un thé fumant. Shirokuma lève les yeux et vous voit hocher la tête.\n\n« ...C'est vous qui l'avez commandé ? » murmure-t-il, la voix tremblante. Une gorgée prudente, les yeux fermés.\n\n« Chaud jusqu'au fond du cœur. Jamais personne... » Un souffle profond. « {p}, merci de savoir ce dont j'ai besoin. Puis-je venir avec vous ? »\n\nVous recevez [Souvenir Chaleureux de Shirokuma] !",
+  shiro_s2c:"Shirokuma caresse doucement le coin élimé du tissu, le regard perdu au loin.\n\n« Maman me l'a donné. Elle disait que tant que je le garderais, je n'oublierais pas ce que ça fait d'être chez soi. Mais j'ai tellement marché... la maison devient de plus en plus floue. »\n\nIl lève les yeux, les siens brillants. « {p}... accepteriez-vous d'être ma nouvelle maison ? »",
+  shiro_short_join:"Shirokuma se lève avec précaution, enroule ses affaires dans le tissu et le cale sous son bras.\n\n« Je ne prendrai pas trop de place », dit-il timidement, la queue frémissant légèrement. « Et si quelqu'un a froid, le tissu peut servir de tapis ou de couverture. Je ferai de mon mieux. »\n\nL'équipe s'écarte en souriant. Shirokuma entre dans le groupe et, pour la première fois, expire avec un sourire qui vient du fond du cœur.\n\n[Shirokuma rejoint l'équipe !]",
+  shiro_short_jbtn:'« Bien sûr ! Marchons ensemble. »',
+
+  pen_short:"Dans un coin du rayon boissons, Pingouin ? se tient seul devant le réfrigérateur, penchant la tête devant une rangée de jus de concombre, les plumes de la queue oscillant.\n\n« Que doit boire... un pingouin ? Un pingouin qui nage bien ? Moi, je ne nage pas très bien... »\n\nIl vous aperçoit, les yeux qui s'illuminent puis s'éteignent. « Oh, quel groupe complet. Vous avez tous trouvé les autres... »",
+  pen_short_a:'« Le jus de concombre a été créé pour toi, j\'en suis sûr ! »',
+  pen_short_b:'« Pourquoi ne pas nous rejoindre ? On cherchera des réponses ensemble ! »',
+  pen_short_c:"Se poster tranquillement à côté et pencher la tête devant les boissons",
+  pen_s2a:"« V-vraiment !? » Pingouin ? bat des ailes, manquant de renverser le jus. « Comment vous saviez !? C'est peut-être ça la réponse — je suis un pingouin au jus de concombre ! »\n\nIl serre une bouteille contre lui. « {p}, vous rendez les réponses faciles à trouver. Puis-je vous suivre pour en trouver d'autres ? »",
+  pen_s2b:"Pingouin ? se fige, ses petits yeux ronds clignotant rapidement.\n\n« Ensemble... chercher des réponses ? » Il serre le jus contre sa poitrine, la voix étranglée. « Je cherche seul depuis si longtemps. Je ne savais pas qu'on pouvait le faire à plusieurs. »\n\n« {p}, je veux venir avec vous. Pas parce que j'ai trouvé ma réponse — mais parce qu'avec vous, ne pas savoir, c'est acceptable. »",
+  pen_s2c:"Deux têtes penchées en silence. Pingouin ? vous jette un coup d'œil, puis éclate d'un petit rire.\n\n« Vous ne savez pas non plus ? » Vous haussez les épaules.\n\n« Ha... personne ne sait. » Ses yeux se plissent en croissants. « {p}, vous êtes le meilleur ami incertain que j'aie jamais eu. On peut marcher ensemble ? »\n\nVous recevez [Le Rire de Pingouin ?] !",
+  pen_short_join:"Pingouin ? attrape tous les concombres qu'il peut porter et sautille à la suite du groupe.\n\n« J'en ai plein — un pour chacun ! Et aussi », ajoute-t-il sérieusement, « si quelqu'un se perd, je suis très fort pour poser des questions. Je pose des questions sur tout. »\n\nIl penche la tête devant chaque compagnon en une petite révérence sincère.\n\n[Pingouin ? rejoint l'équipe !]",
+  pen_short_jbtn:'« Allons-y — cherchons ensemble ! »',
+
+  ton_short:"Sur les rochers de la côte, Tonkatsu et la queue de crevette se sont encore échoués, appuyés tranquillement l'un contre l'autre, écoutant les vagues.\n\n« ...Encore échoué. » La voix de Tonkatsu est plate — comme si ce mot avait été dit des centaines de fois. La queue de crevette ne dit rien, se contente de se rapprocher.\n\nIls voient votre groupe s'approcher. Ils échangent un regard, puis détournent les yeux.",
+  ton_short_a:'« Vous avez besoin d\'aide ? On est là ! »',
+  ton_short_b:'« Venez avec nous. On n\'abandonne personne. »',
+  ton_short_c:'S\'asseoir tranquillement sur un rocher et regarder la mer avec eux',
+  ton_s2a:"Tonkatsu lève la tête, incrédule. La queue de crevette se redresse.\n\n« Nous... aider ? » La voix de Tonkatsu vacille. « Mais on n'est que des restes. Personne ne vient chercher des restes exprès. »\n\nVous vous accroupissez pour croiser son regard et hochez fermement la tête. Un long silence. Puis, doucement : « Merci... de nous voir comme quelque chose qui mérite de l'aide. Pas comme quelque chose à oublier. »",
+  ton_s2b:"Tonkatsu reste figé. La queue de crevette aussi.\n\n« Jamais... abandonné ? » Il répète les mots lentement, comme s'il en goûtait la saveur pour la première fois.\n\n« On a été laissé derrière tellement de fois », dit-il après un moment. « Chaque fois, je croyais y être habitué. Mais ça faisait toujours mal. » Il vous regarde attentivement. « {p}... vous êtes sérieux ? »\n\nVous hochez la tête. Tonkatsu et la queue de crevette se regardent — et décident ensemble.",
+  ton_s2c:"Vous vous asseyez et ne dites rien. Juste regarder la mer. Tonkatsu et la queue de crevette continuent de regarder aussi — trois silhouettes silencieuses, écoutant les vagues.\n\nAu bout d'un moment, Tonkatsu parle doucement : « Vous n'allez pas demander pourquoi on est là ? »\n\nVous secouez la tête. Une longue pause. « Merci. Être accompagné sans être questionné... c'est la première fois que rester derrière me semblait... acceptable. {p}, peut-on vous suivre ? »\n\nVous recevez [Silence au Bord des Rochers] !",
+  ton_short_join:"Tonkatsu se lève lentement et pousse doucement la queue de crevette. Ils s'enlèvent le sable mutuellement en silence.\n\n« On n'a pas de capacités spéciales », dit Tonkatsu simplement. « Mais on a été oublié tellement de fois qu'on est très bons pour remarquer ce que tout le monde néglige. »\n\nLa queue de crevette saute sur votre épaule et appuie doucement son petit corps contre votre joue.\n\n[Tonkatsu (et Queue de Crevette) rejoint l'équipe !]",
+  ton_short_jbtn:'« Ensemble — et on n\'abandonne personne. »',
+
+  neko_short:"Dans un coin de l'herbe au sommet de la colline, une ombre ronde est parfaitement immobile — seules les pointes de ses oreilles frémissent de temps en temps.\n\nNeko observe votre groupe à travers les brins d'herbe, puis se recroqueville encore plus. « Tant de... monde... ce serait bruyant... »\n\nPuis son ventre émet un gargouillage sonore et involontaire. Ses oreilles deviennent cramoisies.",
+  neko_short_a:'« On partage le goûter ? J\'en ai apporté plein. »',
+  neko_short_b:"Faire semblant de ne pas remarquer — poser des snacks au bord de l'herbe puis se retourner",
+  neko_short_c:'« ...C\'est bon. On va attendre ici. »',
+  neko_s2a:"Neko passe la moitié du corps hors de l'herbe, ses grands yeux allant du goûter à votre visage.\n\n« ...C'est vraiment pour moi ? » demande-t-il, la voix très petite. « Je suis déjà si rond... c'est permis de manger ? »\n\nVous posez le goûter sans dire un mot sur sa taille. Neko tend une patte prudemment, croque une petite bouchée, puis lève les yeux.\n\n« {p}... ça ne vous dérange pas, moi ? »",
+  neko_s2b:"Vous posez doucement le goûter au bord de l'herbe, puis vous retournez pour regarder le ciel. De tout petits bruits de mastication s'élèvent derrière vous. Une pause. Encore des bruits.\n\nPuis une toute petite voix : « {p}... merci de faire semblant. »\n\nUn long silence. « ...Je peux sortir maintenant ? »\n\nVous hochez la tête sans vous retourner. Neko rampe lentement dehors, ayant peut-être pour la première fois l'impression d'être vraiment bien traité.",
+  neko_s2c:"Vous vous asseyez juste devant l'herbe et restez là. Vous ne regardez pas Neko. Vous attendez, c'est tout.\n\nAu bout d'un long moment, une petite voix : « ...Vous êtes encore là ? »\n\n« Mm. » vous répondez.\n\nEncore du temps passe. Un froissement. Neko se rapproche de la lisière de l'herbe. « ...{p}, vous attendez parce que vous voulez vraiment que je vienne ? Pas par pitié ? »\n\nVous vous retournez et croisez son regard — et hochez la tête sans hésiter. Les yeux de Neko s'illuminent.\n\nVous recevez [Le Regard de Confiance de Neko] !",
+  neko_short_join:"Neko sort entièrement de l'herbe, le pelage encore un peu ébouriffé, les oreilles encore basses — mais chaque petit pas est intentionnel, dirigé vers vous.\n\n« Je ne suis pas à l'aise avec les foules », admet-il doucement. « Et je me cache souvent. »\n\nIl s'arrête à vos pieds et frotte doucement son museau une fois. « Mais si c'est le groupe de {p}... je veux bien essayer. »\n\nPuis il ronronne — à peine audible, mais bien là.\n\n[Neko rejoint l'équipe !]",
+  neko_short_jbtn:"S'accroupir et sourire doucement à Neko",
+
+  toka_short:"Sur une roche bien ensoleillée près du sommet, Tokage bronze paresseusement, la queue balayant la pierre. Son regard dérive vers le lac dans le lointain — portant une quiétude qui semble plus ancienne que la montagne elle-même.\n\n« Ah... bonjour, {p}. » Il se retourne sans hâte. « Votre groupe est vivant. Moi, je suis juste un lézard ordinaire, au soleil. Rien de spécial. »\n\nMais au moment où ses yeux trouvent le lac, une solitude aussi profonde que l'eau s'y glisse.",
+  toka_short_a:'« Les lézards ordinaires sont merveilleux ! Venez avec nous ! »',
+  toka_short_b:'Trouver un rocher à côté et bronzer tranquillement aussi',
+  toka_short_c:'« Vous regardez le lac ? Qu\'est-ce qu\'il y a là-bas ? »',
+  toka_s2a:"La queue de Tokage donne un lent battement. « Vraiment ? Les lézards ordinaires... sont acceptés ? »\n\nIl jette un coup d'œil au lac, puis ramène son regard. « Je n'ai pas de compétences spéciales. J'aime le soleil. Et je me souviens de choses de très, très longtemps — des choses dans les livres. »\n\nIl se lève et vous regarde avec un espoir tranquille : « {p}... si vous ne vous opposez pas à un lézard très ordinaire, j'aimerais voir le soleil depuis d'autres endroits. »",
+  toka_s2b:"Vous trouvez une roche chaude et vous asseyez, fermant les yeux au soleil. Tokage vous regarde un instant, ne dit rien, et reprend son bain de soleil.\n\nAprès un long moment sans hâte, il parle doucement : « J'ai bronzé sous beaucoup de soleils. Soleils du désert. Soleils de la mer. Soleils de montagne... »\n\nUne pause. « Avoir quelqu'un à côté, c'est différent. »\n\n« {p}... puis-je continuer à bronzer à vos côtés, où que vous alliez ? »\n\nVous recevez [Soleil Partagé] !",
+  toka_s2c:"Le corps de Tokage se raidit légèrement. Sa queue s'immobilise.\n\n« Le lac... » Un moment de silence. « Quelqu'un d'important y vit. Comme moi, le dernier de son espèce. Trop grand pour venir sur le rivage. Je viens ici pour qu'il sache que je vais bien. »\n\nSes yeux brillent. « {p}... vous êtes la deuxième créature à qui je le dis. Si je vous ai tous, je crois que je n'ai plus besoin de garder ce rivage seul. »\n\nVous recevez [Le Secret du Lac Profond de Tokage] !",
+  toka_short_join:"Tokage saute de son rocher et rejoint le groupe, la queue agitant avec enthousiasme — un peu trop, la forme révélant presque quelque chose d'un peu trop grand pour un lézard.\n\n« Je trouverai les meilleurs spots de bronzage », déclare-t-il solennellement. « Et je sais quels rochers sont les plus plats et les plus chauds pour se reposer. C'est très utile. »\n\nIl jette un dernier regard au lac. Une large ondulation se répand sur l'eau — comme une bénédiction, comme un au revoir.\n\n[Tokage rejoint l'équipe !]",
+  toka_short_jbtn:'« Allons-y — d\'autres soleils nous attendent ! »',
+  ch_final:'Chapitre Final : Le Coin le Plus Chaud',
+  final_text:"Tout le monde est là ! Un coin parfait — chaud, sûr.\n\n🐻‍❄️ Shirokuma fait du thé\n🐧 Pingouin ? partage des concombres\n🍖 Tonkatsu au chauffage\n🐱 Neko sur les coussins\n🦎 Tokage au soleil\n\nLa pluie commence, mais le coin reste chaud.\n\nSoudain, des bruits dehors...",
+  final_a:'Aller voir', final_b:'Vérifier que tout le monde va bien',
+  rescue_text:"Dehors, des petites silhouettes sous la pluie — les mini amis !\n\n« Excusez-moi... il y a de la place ? »",
+  rescue_a:'« Bien sûr ! Entrez ! »', rescue_b:"Demander l'avis de tous",
+  protect_text:"Vous vérifiez chacun :\n\nShirokuma ✓ Thé\nPingouin ? ✓ Concombres\nTonkatsu ✓ Chauffage\nNeko ✓ Coussins\nTokage ✓ Soleil\n\n« {p} a vérifié chacun... » dit Shirokuma, ému.\n\nOn frappe — les mini amis !",
+  protect_a:'Ouvrir vite !',
+  vote_text:"Shirokuma : « Bienvenue. »\nPingouin ? : « Plus de concombres ! »\nTonkatsu : « Les oubliés s'entraident. »\nNeko : « Si c'est pas trop serré... »\nTokage : « Les coins, on peut toujours se serrer. »\n\nTout le monde d'accord !",
+  vote_a:'Ouvrir la porte !',
+  ending_text:"Vous ouvrez. Les mini amis entrent en criant de joie.\n\nLe coin est chaleureux. Serrés, mais heureux.\n\nChaque compagnon s'approche :\n\nShirokuma : « Merci de m'avoir sorti de la solitude. »\nPingouin ? : « Avec {p}, peu importe ce que je suis. »\nTonkatsu : « Être oublié, c'est bien... car vous êtes là. »\nNeko : « ...Ronnnn. »\nTokage : « Ce coin est plus chaud que le soleil d'il y a des millions d'années. »\n\nTous ensemble :\n« Un coin est rassurant. Pas grâce au coin — mais parce que tout le monde est là. »",
+  end_title:'🌟 Fin 🌟', end_sub:'~ Le Coin le Plus Chaud ~',
+  end_role:'Votre rôle : ', end_party:'Votre équipe : ', end_trust:'Confiance : ', end_items:'Trésors : ',
+  end_msg:"Tous les amis Sumikko sont vos amis !\nLe coin vous attend toujours.",
+}
+};
+
+function T(k) { return (L[S.lang]||L.zh)[k] || L.zh[k] || k; }
+function Tp(k) { // with placeholder replacement
+  let t = T(k);
+  if (S.playerRole) t = t.replace(/\{p\}/g, T('r_'+S.playerRole));
+  if (S.firstNpc) t = t.replace(/\{npc\}/g, T('n_'+S.firstNpc));
+  return t;
+}
+
+// ========== State ==========
+const S = { lang:'en', fontSize:'medium', device:'mobile', playerRole:null, firstNpc:null, party:[], trust:0, items:[], curScene:null };
+const npcOrder = ['shirokuma','penguin','tonkatsu','neko','tokage'];
+const npcData = {
+  shirokuma:{emoji:'🐻‍❄️',img:'https://i0.wp.com/yumetwinsblog.wpcomstaging.com/wp-content/uploads/2021/12/5f52de3a-c806-49e5-aa96-ad97c2db9467_unnamed281429.jpg?w=620&ssl=1'},
+  penguin:{emoji:'🐧',img:'https://i0.wp.com/yumetwinsblog.wpcomstaging.com/wp-content/uploads/2021/12/940c7eed-9c44-4fe3-9c1c-29233a2040a4_unnamed281129.jpg?w=620&ssl=1'},
+  tonkatsu:{emoji:'🍖',img:'https://i0.wp.com/yumetwinsblog.wpcomstaging.com/wp-content/uploads/2021/12/293ee987-0538-42d8-a9d2-fa19cc8cbc28_unnamed281329.jpg?w=620&ssl=1'},
+  neko:{emoji:'🐱',img:'https://i0.wp.com/yumetwinsblog.wpcomstaging.com/wp-content/uploads/2021/12/8b8f3f99-901c-4587-b48c-b901208bc553_unnamed281029.jpg?w=620&ssl=1'},
+  tokage:{emoji:'🦎',img:'https://i0.wp.com/yumetwinsblog.wpcomstaging.com/wp-content/uploads/2021/12/ae91b5b4-f7b7-4ebf-b815-14da8875d5c4_unnamed281229.jpg?w=620&ssl=1'}
+};
+const roleData = {
+  zassou:{emoji:'🌱',img:'https://i0.wp.com/yumetwinsblog.wpcomstaging.com/wp-content/uploads/2021/12/dab3c4d3-9929-42b6-ae4b-5056344dac6e_unnamed28829.jpg?w=620&ssl=1'},
+  ebifurai:{emoji:'🍤',img:'https://i0.wp.com/yumetwinsblog.wpcomstaging.com/wp-content/uploads/2021/12/8bc5fbe9-9dbd-4e5a-9d4d-e0f934ddaeb4_unnamed28329.jpg?w=620&ssl=1'},
+  tapioca:{emoji:'🧋',img:'https://i0.wp.com/yumetwinsblog.wpcomstaging.com/wp-content/uploads/2021/12/8020fc50-136a-4a46-a39c-c03dda20b166_unnamed28729.jpg?w=620&ssl=1'},
+  obake:{emoji:'👻',img:'https://i0.wp.com/yumetwinsblog.wpcomstaging.com/wp-content/uploads/2021/12/359ebfb5-6722-4620-884c-dd6a5bc915fc_unnamed28629.jpg?w=620&ssl=1'},
+  furoshiki:{emoji:'🎀',img:'https://i0.wp.com/yumetwinsblog.wpcomstaging.com/wp-content/uploads/2021/12/a4112e29-6195-4ffa-b5ed-7f4815a8b8fa_unnamed28429.jpg?w=620&ssl=1'},
+  nisetsumuri:{emoji:'🐌',img:'https://i0.wp.com/yumetwinsblog.wpcomstaging.com/wp-content/uploads/2021/12/53aca50b-e7db-4a36-982c-7c0bb59b3793_unnamed28129.jpg?w=620&ssl=1'},
+  yama:{emoji:'⛰️',img:'https://i0.wp.com/yumetwinsblog.wpcomstaging.com/wp-content/uploads/2021/12/a2502761-9633-483f-aca3-81c019adfdcc_unnamed.jpg?w=620&ssl=1'},
+  suzume:{emoji:'🐦',img:'https://i0.wp.com/yumetwinsblog.wpcomstaging.com/wp-content/uploads/2021/12/79be4e57-eaf1-4dba-ad9d-57f2a694757a_unnamed28529.jpg?w=620&ssl=1'}
+};
+
+// ========== Scene definitions ==========
+// Each scene: { emoji, npc(optional), text:key, choices:[{text:key, next:sceneId}], onEnter:fn }
+const scenes = {
+  start: { emoji:'🌸', text:'start_text', showGroup:true, choices:[
+    {text:'c_shiro',next:'shiro1',img:'shirokuma'},{text:'c_pen',next:'pen1',img:'penguin'},
+    {text:'c_ton',next:'ton1',img:'tonkatsu'},{text:'c_neko',next:'neko1',img:'neko'},{text:'c_toka',next:'toka1',img:'tokage'}
+  ]},
+  // Shirokuma deep
+  shiro1:{emoji:'🐻‍❄️',npc:'shirokuma',text:'shiro1',onEnter(){S.firstNpc='shirokuma'},choices:[
+    {text:'shiro1_a',next:'shiro2a'},{text:'shiro1_b',next:'shiro2b'},{text:'shiro1_c',next:'shiro2c'}]},
+  shiro2a:{emoji:'☕',npc:'shirokuma',text:'shiro2a',onEnter(){S.trust+=2;S.items.push('🧣')},choices:[{text:'shiro_join_btn',next:'shiro_join'}]},
+  shiro2b:{emoji:'💭',npc:'shirokuma',text:'shiro2b',onEnter(){S.trust+=2},choices:[{text:'shiro_join_btn',next:'shiro_join'}]},
+  shiro2c:{emoji:'❄️',npc:'shirokuma',text:'shiro2c',onEnter(){S.trust+=2},choices:[{text:'shiro_join_btn',next:'shiro_join'}]},
+  shiro_join:{emoji:'🎉',npc:'shirokuma',text:'shiro_join',onEnter(){addParty('shirokuma')},choices:[{text:'→',next:'travel_next'}]},
+  // Penguin deep
+  pen1:{emoji:'🐧',npc:'penguin',text:'pen1',onEnter(){S.firstNpc='penguin'},choices:[
+    {text:'pen1_a',next:'pen2a'},{text:'pen1_b',next:'pen2b'},{text:'pen1_c',next:'pen2c'}]},
+  pen2a:{emoji:'🐧',npc:'penguin',text:'pen2a',onEnter(){S.trust+=2},choices:[{text:'pen_join_btn',next:'pen_join'}]},
+  pen2b:{emoji:'💚',npc:'penguin',text:'pen2b',onEnter(){S.trust+=3},choices:[{text:'pen_join_btn',next:'pen_join'}]},
+  pen2c:{emoji:'⭐',npc:'penguin',text:'pen2c',onEnter(){S.trust+=2;S.items.push('🥒')},choices:[{text:'pen_join_btn',next:'pen_join'}]},
+  pen_join:{emoji:'🎉',npc:'penguin',text:'pen_join',onEnter(){addParty('penguin')},choices:[{text:'→',next:'travel_next'}]},
+  // Tonkatsu deep
+  ton1:{emoji:'🍖',npc:'tonkatsu',text:'ton1',onEnter(){S.firstNpc='tonkatsu'},choices:[
+    {text:'ton1_a',next:'ton2a'},{text:'ton1_b',next:'ton2b'},{text:'ton1_c',next:'ton2c'}]},
+  ton2a:{emoji:'😊',npc:'tonkatsu',text:'ton2a',onEnter(){S.trust+=3;S.items.push('🍤')},choices:[{text:'ton_join_btn',next:'ton_join'}]},
+  ton2b:{emoji:'😢',npc:'tonkatsu',text:'ton2b',onEnter(){S.trust+=2},choices:[{text:'ton_join_btn',next:'ton_join'}]},
+  ton2c:{emoji:'🤫',npc:'tonkatsu',text:'ton2c',onEnter(){S.trust+=3},choices:[{text:'ton_join_btn',next:'ton_join'}]},
+  ton_join:{emoji:'🎉',npc:'tonkatsu',text:'ton_join',onEnter(){addParty('tonkatsu')},choices:[{text:'→',next:'travel_next'}]},
+  // Neko deep
+  neko1:{emoji:'🐱',npc:'neko',text:'neko1',onEnter(){S.firstNpc='neko'},choices:[
+    {text:'neko1_a',next:'neko2a'},{text:'neko1_b',next:'neko2b'},{text:'neko1_c',next:'neko2c'}]},
+  neko2a:{emoji:'💗',npc:'neko',text:'neko2a',onEnter(){S.trust+=3;S.items.push('🐾')},choices:[{text:'neko_join_btn',next:'neko_join'}]},
+  neko2b:{emoji:'🍽️',npc:'neko',text:'neko2b',onEnter(){S.trust+=2},choices:[{text:'neko_join_btn',next:'neko_join'}]},
+  neko2c:{emoji:'🔄',npc:'neko',text:'neko2c',onEnter(){S.trust+=3},choices:[{text:'neko_join_btn',next:'neko_join'}]},
+  neko_join:{emoji:'🎉',npc:'neko',text:'neko_join',onEnter(){addParty('neko')},choices:[{text:'→',next:'travel_next'}]},
+  // Tokage deep
+  toka1:{emoji:'🦎',npc:'tokage',text:'toka1',onEnter(){S.firstNpc='tokage'},choices:[
+    {text:'toka1_a',next:'toka2a'},{text:'toka1_b',next:'toka2b'},{text:'toka1_c',next:'toka2c'}]},
+  toka2a:{emoji:'🦕',npc:'tokage',text:'toka2a',onEnter(){S.trust+=2},choices:[{text:'toka_join_btn',next:'toka_join'}]},
+  toka2b:{emoji:'🌊',npc:'tokage',text:'toka2b',onEnter(){S.trust+=3;S.items.push('🦴')},choices:[{text:'toka_join_btn',next:'toka_join'}]},
+  toka2c:{emoji:'☀️',npc:'tokage',text:'toka2c',onEnter(){S.trust+=2;S.items.push('☀️')},choices:[{text:'toka_join_btn',next:'toka_join'}]},
+  toka_join:{emoji:'🎉',npc:'tokage',text:'toka_join',onEnter(){addParty('tokage')},choices:[{text:'→',next:'travel_next'}]},
+
+  // Short encounters (generated dynamically via travel_next) — 3-choice deep versions
+  shiro_s:{emoji:'🐻‍❄️',npc:'shirokuma',text:'shiro_short',choices:[
+    {text:'shiro_short_a',next:'shiro_s2a'},{text:'shiro_short_b',next:'shiro_s2b'},{text:'shiro_short_c',next:'shiro_s2c'}]},
+  shiro_s2a:{emoji:'🤝',npc:'shirokuma',text:'shiro_s2a',onEnter(){S.trust+=2},choices:[{text:'shiro_short_jbtn',next:'shiro_sj'}]},
+  shiro_s2b:{emoji:'☕',npc:'shirokuma',text:'shiro_s2b',onEnter(){S.trust+=3;S.items.push('🌡️')},choices:[{text:'shiro_short_jbtn',next:'shiro_sj'}]},
+  shiro_s2c:{emoji:'🧣',npc:'shirokuma',text:'shiro_s2c',onEnter(){S.trust+=2},choices:[{text:'shiro_short_jbtn',next:'shiro_sj'}]},
+  shiro_sj:{emoji:'🎉',npc:'shirokuma',text:'shiro_short_join',onEnter(){addParty('shirokuma');S.trust+=1},choices:[{text:'→',next:'travel_next'}]},
+
+  pen_s:{emoji:'🐧',npc:'penguin',text:'pen_short',choices:[
+    {text:'pen_short_a',next:'pen_s2a'},{text:'pen_short_b',next:'pen_s2b'},{text:'pen_short_c',next:'pen_s2c'}]},
+  pen_s2a:{emoji:'🥒',npc:'penguin',text:'pen_s2a',onEnter(){S.trust+=2},choices:[{text:'pen_short_jbtn',next:'pen_sj'}]},
+  pen_s2b:{emoji:'💚',npc:'penguin',text:'pen_s2b',onEnter(){S.trust+=3},choices:[{text:'pen_short_jbtn',next:'pen_sj'}]},
+  pen_s2c:{emoji:'😄',npc:'penguin',text:'pen_s2c',onEnter(){S.trust+=2;S.items.push('😄')},choices:[{text:'pen_short_jbtn',next:'pen_sj'}]},
+  pen_sj:{emoji:'🎉',npc:'penguin',text:'pen_short_join',onEnter(){addParty('penguin');S.trust+=1},choices:[{text:'→',next:'travel_next'}]},
+
+  ton_s:{emoji:'🍖',npc:'tonkatsu',text:'ton_short',choices:[
+    {text:'ton_short_a',next:'ton_s2a'},{text:'ton_short_b',next:'ton_s2b'},{text:'ton_short_c',next:'ton_s2c'}]},
+  ton_s2a:{emoji:'🙏',npc:'tonkatsu',text:'ton_s2a',onEnter(){S.trust+=2},choices:[{text:'ton_short_jbtn',next:'ton_sj'}]},
+  ton_s2b:{emoji:'💙',npc:'tonkatsu',text:'ton_s2b',onEnter(){S.trust+=3},choices:[{text:'ton_short_jbtn',next:'ton_sj'}]},
+  ton_s2c:{emoji:'🌊',npc:'tonkatsu',text:'ton_s2c',onEnter(){S.trust+=2;S.items.push('🪨')},choices:[{text:'ton_short_jbtn',next:'ton_sj'}]},
+  ton_sj:{emoji:'🎉',npc:'tonkatsu',text:'ton_short_join',onEnter(){addParty('tonkatsu');S.trust+=1},choices:[{text:'→',next:'travel_next'}]},
+
+  neko_s:{emoji:'🐱',npc:'neko',text:'neko_short',choices:[
+    {text:'neko_short_a',next:'neko_s2a'},{text:'neko_short_b',next:'neko_s2b'},{text:'neko_short_c',next:'neko_s2c'}]},
+  neko_s2a:{emoji:'🍪',npc:'neko',text:'neko_s2a',onEnter(){S.trust+=2},choices:[{text:'neko_short_jbtn',next:'neko_sj'}]},
+  neko_s2b:{emoji:'🔄',npc:'neko',text:'neko_s2b',onEnter(){S.trust+=3},choices:[{text:'neko_short_jbtn',next:'neko_sj'}]},
+  neko_s2c:{emoji:'👁️',npc:'neko',text:'neko_s2c',onEnter(){S.trust+=3;S.items.push('👁️')},choices:[{text:'neko_short_jbtn',next:'neko_sj'}]},
+  neko_sj:{emoji:'🎉',npc:'neko',text:'neko_short_join',onEnter(){addParty('neko');S.trust+=1},choices:[{text:'→',next:'travel_next'}]},
+
+  toka_s:{emoji:'🦎',npc:'tokage',text:'toka_short',choices:[
+    {text:'toka_short_a',next:'toka_s2a'},{text:'toka_short_b',next:'toka_s2b'},{text:'toka_short_c',next:'toka_s2c'}]},
+  toka_s2a:{emoji:'🌞',npc:'tokage',text:'toka_s2a',onEnter(){S.trust+=2},choices:[{text:'toka_short_jbtn',next:'toka_sj'}]},
+  toka_s2b:{emoji:'☀️',npc:'tokage',text:'toka_s2b',onEnter(){S.trust+=2;S.items.push('🌅')},choices:[{text:'toka_short_jbtn',next:'toka_sj'}]},
+  toka_s2c:{emoji:'🌊',npc:'tokage',text:'toka_s2c',onEnter(){S.trust+=3;S.items.push('🌊')},choices:[{text:'toka_short_jbtn',next:'toka_sj'}]},
+  toka_sj:{emoji:'🎉',npc:'tokage',text:'toka_short_join',onEnter(){addParty('tokage');S.trust+=1},choices:[{text:'→',next:'travel_next'}]},
+
+  // Final
+  final:{emoji:'🏠',text:'final_text',showGroup:true,choices:[{text:'final_a',next:'rescue'},{text:'final_b',next:'protect'}]},
+  rescue:{emoji:'🌧️',text:'rescue_text',showGroup:true,choices:[{text:'rescue_a',next:'ending'},{text:'rescue_b',next:'vote'}]},
+  protect:{emoji:'🛡️',text:'protect_text',showGroup:true,onEnter(){S.trust+=2},choices:[{text:'protect_a',next:'rescue'}]},
+  vote:{emoji:'💬',text:'vote_text',showGroup:true,onEnter(){S.trust+=1},choices:[{text:'vote_a',next:'ending'}]},
+  ending:{emoji:'🎉',text:'ending_text',showGroup:true,isEnding:true,choices:[]}
+};
+
+const shortSceneMap = {shirokuma:'shiro_s',penguin:'pen_s',tonkatsu:'ton_s',neko:'neko_s',tokage:'toka_s'};
+const locations = ['loc_park','loc_shop','loc_beach','loc_mountain'];
+
+function addParty(npc) { if (!S.party.includes(npc)) S.party.push(npc); }
+
+function getNextUnmet() { return npcOrder.find(n => !S.party.includes(n)); }
+
+// ========== Settings ==========
+function buildPills(id,opts,cur,cb){const c=document.getElementById(id);c.innerHTML='';opts.forEach(o=>{const b=document.createElement('button');b.className='pill'+(o.v===cur?' active':'');b.textContent=o.l;b.onclick=()=>{cb(o.v);c.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));b.classList.add('active')};c.appendChild(b)})}
+function initSettings(){
+  buildPills('lang-pills',[{l:'中文',v:'zh'},{l:'English',v:'en'},{l:'Français',v:'fr'}],S.lang,v=>{S.lang=v;refreshAll()});
+  buildPills('font-pills',[{l:'S',v:'small'},{l:'M',v:'medium'},{l:'L',v:'large'},{l:'XL',v:'xlarge'}],S.fontSize,v=>{S.fontSize=v;applyClasses()});
+  buildPills('device-pills',[{l:'📱',v:'mobile'},{l:'📱💻',v:'tablet'},{l:'🖥️',v:'desktop'}],S.device,v=>{S.device=v;applyClasses()});
+}
+function applyClasses(){document.body.className='size-'+S.fontSize+' device-'+S.device}
+function toggleSettings(){document.getElementById('settings-panel').classList.toggle('open')}
+
+function refreshAll(){
+  document.getElementById('game-title').textContent=T('title');
+  document.getElementById('subtitle').textContent=T('sub');
+  document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=T(el.getAttribute('data-i18n'))});
+  buildRoleGrid();
+  // Re-render current game scene if playing
+  if(S.curScene && document.getElementById('game-screen').style.display!=='none'){
+    renderScene(S.curScene);
+  }
+}
+
+// ========== Role Selection ==========
+function buildRoleGrid(){
+  const g=document.getElementById('role-grid');g.innerHTML='';
+  Object.entries(roleData).forEach(([k,r])=>{
+    const c=document.createElement('div');c.className='role-card'+(S.playerRole===k?' selected':'');
+    c.innerHTML=`<img src="${r.img}" onerror="this.style.display='none'"><div class="role-name">${r.emoji} ${T('r_'+k)}</div><div class="role-desc">${T('rd_'+k)}</div>`;
+    c.onclick=()=>{S.playerRole=k;g.querySelectorAll('.role-card').forEach(x=>x.classList.remove('selected'));c.classList.add('selected');document.getElementById('start-game-btn').disabled=false};
+    g.appendChild(c);
+  });
+}
+
+// ========== Render ==========
+function updatePartyBar(){
+  const bar=document.getElementById('party-bar');bar.innerHTML='';
+  S.party.forEach(n=>{
+    const img=document.createElement('img');img.src=npcData[n].img;img.title=T('n_'+n);
+    img.onerror=function(){this.textContent=npcData[n].emoji;this.style.fontSize='1.2em'};
+    bar.appendChild(img);
+  });
+}
+
+function renderScene(id){
+  // Handle dynamic travel
+  if(id==='travel_next'){
+    const next=getNextUnmet();
+    if(!next){id='final';}
+    else{
+      const locIdx=S.party.length-1;
+      const loc=locations[locIdx%locations.length];
+      const chNum=S.party.length+1;
+      // Show travel intro then short scene
+      const shortId=shortSceneMap[next];
+      showTravelIntro(chNum,loc,next,shortId);
+      return;
+    }
+  }
+
+  S.curScene=id;
+  const scene=scenes[id];if(!scene)return;
+  if(scene.onEnter)scene.onEnter();
+
+  // Chapter
+  let chapter='';
+  if(id==='start')chapter=T('ch1');
+  else if(['shiro1','shiro2a','shiro2b','shiro2c','shiro_join'].includes(id))chapter=T('shiro_t');
+  else if(id.startsWith('pen'))chapter=T('pen_t');
+  else if(id.startsWith('ton'))chapter=T('ton_t');
+  else if(id.startsWith('neko'))chapter=T('neko_t');
+  else if(id.startsWith('toka'))chapter=T('toka_t');
+  else if(['final','rescue','protect','vote','ending'].includes(id))chapter=T('ch_final');
+  else if(scene.npc)chapter=T('n_'+scene.npc);
+  document.getElementById('chapter-display').textContent=chapter;
+
+  const pr=S.playerRole?roleData[S.playerRole]:null;
+  document.getElementById('scene-emoji').textContent=scene.emoji||'🌸';
+  updatePartyBar();
+
+  // Character image
+  const ci=document.getElementById('character-image');ci.innerHTML='';
+  if(scene.showGroup){
+    const d=document.createElement('div');d.style.cssText='display:flex;justify-content:center;gap:6px;flex-wrap:wrap';
+    npcOrder.forEach(n=>{
+      const img=document.createElement('img');img.src=npcData[n].img;img.className='group-img'+(S.party.includes(n)?' joined':'');
+      img.title=T('n_'+n);img.onerror=function(){this.style.display='none'};d.appendChild(img);
+    });
+    ci.appendChild(d);
+  } else if(scene.npc&&npcData[scene.npc]){
+    const img=document.createElement('img');img.src=npcData[scene.npc].img;img.className='char-main-img';
+    img.onerror=function(){this.style.display='none'};ci.appendChild(img);
+    const tag=document.createElement('div');tag.className='char-name-tag';
+    tag.textContent=npcData[scene.npc].emoji+' '+T('n_'+scene.npc);ci.appendChild(tag);
+  }
+
+  // Text
+  const text=Tp(scene.text);
+  const sb=document.getElementById('story-box');sb.textContent='';
+  typeWriter(sb,text,0);
+
+  // Choices
+  const cd=document.getElementById('choices');cd.innerHTML='';
+  if(scene.isEnding){
+    setTimeout(()=>{
+      // Show ending stats
+      const trustLvl=S.trust>=10?T('trust_hi'):S.trust>=6?T('trust_mid'):T('trust_lo');
+      const stats=document.createElement('div');stats.style.cssText='text-align:center;margin-top:12px;padding:16px;background:#f3e5f5;border-radius:16px';
+      let h=`<h2>${T('end_title')}</h2><p>${T('end_sub')}</p><br>`;
+      h+=`<p>${T('end_role')}${pr?pr.emoji:''} ${T('r_'+S.playerRole)}</p>`;
+      h+=`<p>${T('end_party')}${S.party.map(n=>npcData[n].emoji+' '+T('n_'+n)).join(', ')}</p>`;
+      h+=`<p>${T('end_trust')}${trustLvl}</p>`;
+      if(S.items.length)h+=`<p>${T('end_items')}${S.items.join(' ')}</p>`;
+      h+=`<br><p style="white-space:pre-line">${T('end_msg')}</p>`;
+      stats.innerHTML=h;
+      cd.appendChild(stats);
+      const btn=document.createElement('button');btn.id='restart-btn';btn.textContent=T('restart');
+      btn.onclick=resetGame;cd.appendChild(btn);
+    },2000);
+    return;
+  }
+
+  const choiceList=scene.choices||[];
+  setTimeout(()=>{
+    choiceList.forEach(ch=>{
+      const btn=document.createElement('button');btn.className='choice-btn';
+      if(ch.img&&npcData[ch.img]){
+        const im=document.createElement('img');im.src=npcData[ch.img].img;im.onerror=function(){this.style.display='none'};btn.appendChild(im);
+      }
+      const sp=document.createElement('span');sp.textContent=Tp(ch.text);btn.appendChild(sp);
+      btn.onclick=()=>renderScene(ch.next);
+      cd.appendChild(btn);
+    });
+  },Math.min(text.length*10,1800));
+}
+
+function showTravelIntro(chNum,locKey,nextNpc,shortSceneId){
+  S.curScene='travel_'+nextNpc;
+  const locName=T(locKey);
+  const chapter=T('ch_travel').replace('{n}',chNum).replace('{loc}',locName);
+  document.getElementById('chapter-display').textContent=chapter;
+  document.getElementById('scene-emoji').textContent=['🌳','🏪','🏖️','⛰️'][S.party.length-1]||'🗺️';
+  updatePartyBar();
+
+  const ci=document.getElementById('character-image');ci.innerHTML='';
+  const img=document.createElement('img');img.src=npcData[nextNpc].img;img.className='char-main-img';
+  img.onerror=function(){this.style.display='none'};ci.appendChild(img);
+  const tag=document.createElement('div');tag.className='char-name-tag';
+  tag.textContent=npcData[nextNpc].emoji+' '+T('n_'+nextNpc);ci.appendChild(tag);
+
+  const shortScene=scenes[shortSceneId];
+  const text=Tp(shortScene.text);
+  const sb=document.getElementById('story-box');sb.textContent='';
+  typeWriter(sb,text,0);
+
+  const cd=document.getElementById('choices');cd.innerHTML='';
+  setTimeout(()=>{
+    shortScene.choices.forEach(ch=>{
+      const btn=document.createElement('button');btn.className='choice-btn';
+      const sp=document.createElement('span');sp.textContent=Tp(ch.text);btn.appendChild(sp);
+      btn.onclick=()=>renderScene(ch.next);
+      cd.appendChild(btn);
+    });
+  },Math.min(text.length*10,1800));
+}
+
+function typeWriter(el,text,i){if(i<text.length){el.textContent+=text.charAt(i);setTimeout(()=>typeWriter(el,text,i+1),15)}}
+
+function startGame(){
+  if(!S.playerRole)return;
+  document.getElementById('setup-screen').style.display='none';
+  document.getElementById('game-screen').style.display='block';
+  renderScene('start');
+}
+
+function resetGame(){
+  S.firstNpc=null;S.party=[];S.trust=0;S.items=[];S.curScene=null;S.playerRole=null;
+  document.getElementById('game-screen').style.display='none';
+  document.getElementById('setup-screen').style.display='block';
+  document.getElementById('start-game-btn').disabled=true;
+  buildRoleGrid();
+}
+
+// ========== Music ==========
+let audioCtx=null,musicPlaying=false,musicNodes=[],musicTimer=null;
+function createMusic(){
+  if(audioCtx)stopMusic();
+  audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  const master=audioCtx.createGain();master.gain.value=0.18;master.connect(audioCtx.destination);
+  const delay=audioCtx.createDelay();delay.delayTime.value=0.3;
+  const fb=audioCtx.createGain();fb.gain.value=0.2;
+  const dg=audioCtx.createGain();dg.gain.value=0.15;
+  delay.connect(fb);fb.connect(delay);delay.connect(dg);dg.connect(master);
+  const notes=[261.63,293.66,329.63,392,440,523.25,587.33,659.25,783.99,880];
+  const pats=[[4,3,2,0,2,3,4,5],[5,7,6,5,4,3,2,4],[0,2,4,5,4,2,3,0],[2,4,5,7,5,4,2,3],[5,4,2,0,2,4,5,7],[7,5,4,2,4,5,7,9],[4,2,0,2,4,5,4,2],[0,0,2,4,5,5,4,2]];
+  const chords=[[261.63,329.63,392],[293.66,369.99,440],[261.63,329.63,440],[293.66,392,493.88]];
+  let pi=0;const gap=0.42;
+  function playNote(f,t,d){
+    const o=audioCtx.createOscillator();o.type='sine';o.frequency.value=f;
+    const o2=audioCtx.createOscillator();o2.type='triangle';o2.frequency.value=f*2;
+    const e=audioCtx.createGain();e.gain.setValueAtTime(0,t);e.gain.linearRampToValueAtTime(.6,t+.05);e.gain.exponentialRampToValueAtTime(.01,t+d);
+    const e2=audioCtx.createGain();e2.gain.setValueAtTime(0,t);e2.gain.linearRampToValueAtTime(.08,t+.05);e2.gain.exponentialRampToValueAtTime(.01,t+d);
+    o.connect(e);e.connect(master);e.connect(delay);o2.connect(e2);e2.connect(master);
+    o.start(t);o.stop(t+d+.1);o2.start(t);o2.stop(t+d+.1);musicNodes.push(o,o2);
+  }
+  function sched(){
+    if(!musicPlaying)return;
+    const pat=pats[pi%pats.length];const now=audioCtx.currentTime+.1;
+    const ch=chords[pi%chords.length];
+    ch.forEach(f=>{const o=audioCtx.createOscillator();o.type='sine';o.frequency.value=f/2;const e=audioCtx.createGain();
+      e.gain.setValueAtTime(0,now);e.gain.linearRampToValueAtTime(.04,now+.2);e.gain.setValueAtTime(.04,now+gap*7);e.gain.exponentialRampToValueAtTime(.001,now+gap*8);
+      o.connect(e);e.connect(master);o.start(now);o.stop(now+gap*8+.2);musicNodes.push(o)});
+    for(let i=0;i<pat.length;i++)playNote(notes[pat[i]],now+i*gap,.35);
+    pi++;musicTimer=setTimeout(sched,gap*8*1000);
+  }
+  musicPlaying=true;sched();
+}
+function stopMusic(){musicPlaying=false;if(musicTimer){clearTimeout(musicTimer);musicTimer=null}musicNodes.forEach(n=>{try{n.stop()}catch(e){}});musicNodes=[];if(audioCtx){audioCtx.close().catch(()=>{});audioCtx=null}}
+function toggleMusic(){const b=document.getElementById('music-toggle');if(musicPlaying){stopMusic();b.textContent='🔇';b.classList.remove('playing')}else{createMusic();b.textContent='🎵';b.classList.add('playing')}}
+
+// ========== Init ==========
+applyClasses();initSettings();buildRoleGrid();refreshAll();
+</script>
+</body>
+</html>
