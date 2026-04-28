@@ -2451,11 +2451,32 @@ const CHARACTERS = {
     avatar: 'https://bpvybuvjbdfgrjgwiqkb.supabase.co/storage/v1/object/public/bot/penguin.png',
     color: '#c8e6c9',
     greeting: '你好!我是企鵝？最近在研究有趣的東西呢!想知道什麼嗎? (・ω・)?'
-  }
+  },
+    pochacco: {
+    name: '帕恰狗',
+    sub: '陽光運動夥伴 (^o^)',
+    avatar: 'https://bpvybuvjbdfgrjgwiqkb.supabase.co/storage/v1/object/public/bot/pochacco.png',
+    color: '#ffd54f',
+    greeting: '嗨!我是帕恰狗!今天要不要一起做點什麼呢? \\(^▽^)/'
+  },
+  purin: {
+    name: '布丁狗',
+    sub: '慵懶午睡夥伴 (´-ω-`)',
+    avatar: 'https://bpvybuvjbdfgrjgwiqkb.supabase.co/storage/v1/object/public/bot/purin.png',
+    color: '#ffb74d',
+    greeting: '嗯~你好啊~ 我剛剛在睡午覺呢~ 要不要聊一下? ( ´ ▽ ` )'
+  },
+  cinnamoroll: {
+    name: '大耳狗',
+    sub: '雲朵咖啡廳夥伴 (´ω`*)',
+    avatar: 'https://bpvybuvjbdfgrjgwiqkb.supabase.co/storage/v1/object/public/bot/cinnamoroll.png',
+    color: '#b3e5fc',
+    greeting: '小朋友你好呀~ 我是大耳狗喔~ 今天要喝點什麼呢? (◍•ᴗ•◍)'
+  },
 };
 
 let currentChar = 'tokage';
-const charHistories = { tokage: [], neko: [], penguin: [] };
+const charHistories = { tokage: [], neko: [], penguin: [], pochacco: [], purin: [], cinnamoroll: [] };
 let tokagePhotoB64 = null;
 let tokageRecognition = null;
 let tokageRecording = false;
