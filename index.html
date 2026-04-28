@@ -918,7 +918,7 @@
     .msg-item:hover { transform: none; }
     .link-card:hover { filter: none; }
   }
-  /* ========== 蜥蜴 QA 機器人 ========== */
+    /* ========== 蜥蜴 QA 機器人 V2 ========== */
   #tokage-fab {
     position: fixed;
     left: 20px; bottom: 20px;
@@ -929,7 +929,7 @@
     border: 3px solid #a8d8ea;
     cursor: pointer;
     z-index: 100;
-    transition: transform .25s;
+    transition: transform .25s, border-color .3s;
     animation: tokage-bob 3s ease-in-out infinite;
   }
   #tokage-fab:hover { transform: scale(1.1) rotate(-5deg); }
@@ -937,10 +937,11 @@
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-6px); }
   }
+
   #tokage-panel {
     position: fixed;
     left: 20px; bottom: 110px;
-    width: 360px; height: 500px;
+    width: 380px; height: 560px;
     max-width: calc(100vw - 40px);
     max-height: calc(100vh - 140px);
     background: rgba(26,26,46,0.97);
@@ -952,13 +953,16 @@
     overflow: hidden;
     z-index: 101;
     border: 2px solid #a8d8ea;
+    transition: border-color .3s;
   }
   #tokage-panel.open { display: flex; }
+
   .tokage-header {
     display: flex; align-items: center; gap: 10px;
     padding: 12px 16px;
-    background: linear-gradient(135deg, #a8d8ea, #b6e0d4);
+    background: linear-gradient(135deg, var(--char-color, #a8d8ea), #b6e0d4);
     color: #2a4a5a;
+    transition: background .3s;
   }
   .tokage-header img {
     width: 40px; height: 40px; border-radius: 50%;
@@ -976,19 +980,55 @@
     cursor: pointer;
     font-size: 16px;
   }
+
+  /* 角色切換列 */
+  .tokage-charbar {
+    display: flex; gap: 8px;
+    padding: 8px 12px;
+    background: rgba(0,0,0,0.25);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    overflow-x: auto;
+  }
+  .tokage-char-btn {
+    flex-shrink: 0;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    background: rgba(255,255,255,0.08) center/cover no-repeat;
+    cursor: pointer;
+    transition: border-color .25s, transform .25s;
+    position: relative;
+  }
+  .tokage-char-btn:hover { transform: scale(1.1); }
+  .tokage-char-btn.active { border-color: #fff; box-shadow: 0 0 12px rgba(255,255,255,0.3); }
+  .tokage-char-btn .char-name {
+    position: absolute;
+    bottom: -18px; left: 50%; transform: translateX(-50%);
+    font-size: 0.65rem;
+    white-space: nowrap;
+    color: #fff;
+    opacity: 0;
+    transition: opacity .2s;
+    pointer-events: none;
+  }
+  .tokage-char-btn:hover .char-name,
+  .tokage-char-btn.active .char-name { opacity: 0.85; }
+
   .tokage-msgs {
     flex: 1; overflow-y: auto;
     padding: 14px; display: flex; flex-direction: column; gap: 10px;
   }
   .tokage-msgs::-webkit-scrollbar { width: 5px; }
   .tokage-msgs::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
-  .tokage-msg { display: flex; gap: 8px; align-items: flex-end; }
-  .tokage-msg.user { justify-content: flex-end; }
+
+  .tokage-msg { display: flex; gap: 8px; align-items: flex-end; flex-direction: column; }
+  .tokage-msg-row { display: flex; gap: 8px; align-items: flex-end; width: 100%; }
+  .tokage-msg.user .tokage-msg-row { justify-content: flex-end; }
   .tokage-msg .avatar {
     width: 32px; height: 32px; border-radius: 50%;
     background: #fff center/cover no-repeat;
     flex-shrink: 0;
-    border: 2px solid #a8d8ea;
+    border: 2px solid var(--char-color, #a8d8ea);
   }
   .tokage-bubble {
     max-width: 75%;
@@ -1010,13 +1050,57 @@
     border-bottom-right-radius: 4px;
   }
   .tokage-typing { opacity: 0.6; font-style: italic; }
-  .tokage-input {
-    display: flex; gap: 6px;
-    padding: 10px;
+
+  .tokage-msg-photo {
+    max-width: 200px;
+    max-height: 200px;
+    border-radius: 12px;
+    margin-bottom: 4px;
+    cursor: pointer;
+    object-fit: cover;
+  }
+
+  .tokage-msg-share {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.5);
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 2px 8px;
+    cursor: pointer;
+    margin-top: 2px;
+    transition: background .2s, color .2s;
+  }
+  .tokage-msg-share:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+  .tokage-input-area {
     border-top: 1px solid rgba(255,255,255,0.1);
     background: rgba(0,0,0,0.2);
+    padding: 8px 10px;
+    display: flex; flex-direction: column; gap: 6px;
   }
-  .tokage-input input {
+
+  /* 照片預覽 */
+  .tokage-photo-preview {
+    display: none;
+    position: relative;
+    align-self: flex-start;
+  }
+  .tokage-photo-preview img {
+    max-height: 70px; border-radius: 8px; display: block;
+  }
+  .tokage-photo-remove {
+    position: absolute; top: -6px; right: -6px;
+    width: 22px; height: 22px;
+    border-radius: 50%; border: none;
+    background: #e74c3c; color: #fff;
+    font-size: 12px; cursor: pointer;
+  }
+
+  .tokage-input {
+    display: flex; gap: 6px; align-items: center;
+  }
+  .tokage-input input[type="text"] {
     flex: 1;
     padding: 10px 14px;
     border-radius: 20px;
@@ -1026,23 +1110,121 @@
     font-size: 0.92rem;
     outline: none;
   }
-  .tokage-input input:focus { border-color: #a8d8ea; }
-  .tokage-input button {
-    padding: 0 18px;
+  .tokage-input input[type="text"]:focus { border-color: var(--char-color, #a8d8ea); }
+  .tokage-tool-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    cursor: pointer;
+    font-size: 16px;
+    flex-shrink: 0;
+    transition: background .2s;
+  }
+  .tokage-tool-btn:hover { background: rgba(255,255,255,0.18); }
+  .tokage-tool-btn.recording {
+    background: #e74c3c;
+    animation: mic-pulse 1s ease-in-out infinite;
+  }
+  @keyframes mic-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(231,76,60,0.7); }
+    50% { box-shadow: 0 0 0 8px rgba(231,76,60,0); }
+  }
+  .tokage-send-btn {
+    padding: 0 18px; height: 38px;
     border-radius: 20px;
     border: none;
-    background: #a8d8ea;
+    background: var(--char-color, #a8d8ea);
     color: #2a4a5a;
     font-weight: bold;
     cursor: pointer;
+    font-size: 0.9rem;
   }
+
+  /* 心情打卡彈窗 */
+  .mood-modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 250;
+    align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .mood-modal-overlay.active { display: flex; }
+  .mood-modal {
+    background: linear-gradient(135deg, #2a2a40, #3a3a55);
+    border-radius: 20px;
+    padding: 28px 24px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    border: 2px solid rgba(168,216,234,0.3);
+  }
+  .mood-modal h2 {
+    font-size: 1.2rem;
+    margin-bottom: 6px;
+  }
+  .mood-modal .mood-greeting {
+    font-size: 0.85rem;
+    opacity: 0.7;
+    margin-bottom: 20px;
+  }
+  .mood-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .mood-btn {
+    padding: 14px 8px;
+    border-radius: 14px;
+    border: 2px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
+    color: #fff;
+    cursor: pointer;
+    transition: transform .2s, border-color .2s, background .2s;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+  }
+  .mood-btn:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); }
+  .mood-btn .em { font-size: 1.8rem; }
+  .mood-btn .lbl { font-size: 0.78rem; }
+  .mood-skip {
+    width: 100%;
+    padding: 9px;
+    border-radius: 12px;
+    border: 1px dashed rgba(255,255,255,0.2);
+    background: transparent;
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+  .mood-skip:hover { background: rgba(255,255,255,0.05); color: #fff; }
+  .mood-member {
+    margin-bottom: 16px;
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    font-size: 0.9rem;
+    outline: none;
+  }
+  .mood-member option { background: #2a2a40; }
+
   @media (max-width: 480px) {
     #tokage-fab { width: 60px; height: 60px; left: 14px; bottom: 14px; }
     #tokage-panel {
       left: 10px; right: 10px; bottom: 90px;
       width: auto; max-width: none;
-      height: 70vh;
+      height: 75vh;
     }
+    .mood-options { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .mood-btn { padding: 10px 4px; }
+    .mood-btn .em { font-size: 1.5rem; }
   }
 </style>
 
@@ -1244,22 +1426,50 @@
     </div>
   </div>
 </div>
-<!-- 蜥蜴機器人 -->
-<div id="tokage-fab" onclick="toggleTokage()" title="跟蜥蜴聊聊"></div>
+<!-- 蜥蜴機器人 V2 -->
+<div id="tokage-fab" onclick="toggleTokage()" title="跟夥伴聊聊"></div>
 <div id="tokage-panel">
   <div class="tokage-header">
     <img id="tokage-avatar-header" alt="">
     <div>
-      <div class="name">蜥蜴</div>
-      <div class="sub">悄悄話夥伴 (´･ω･`)</div>
+      <div class="name" id="tokage-char-name">蜥蜴</div>
+      <div class="sub" id="tokage-char-sub">悄悄話夥伴 (´･ω･`)</div>
     </div>
     <button class="close-btn" onclick="toggleTokage()">×</button>
   </div>
+  <div class="tokage-charbar" id="tokage-charbar"></div>
   <div class="tokage-msgs" id="tokage-msgs"></div>
-  <form class="tokage-input" onsubmit="return tokageSend(event)">
-    <input id="tokage-text" placeholder="跟蜥蜴說說話吧~" autocomplete="off" maxlength="300" required>
-    <button>送</button>
-  </form>
+  <div class="tokage-input-area">
+    <div class="tokage-photo-preview" id="tokage-photo-preview">
+      <img id="tokage-photo-img" alt="">
+      <button class="tokage-photo-remove" onclick="tokageRemovePhoto()">×</button>
+    </div>
+    <form class="tokage-input" onsubmit="return tokageSend(event)">
+      <button type="button" class="tokage-tool-btn" id="tokage-mic" onclick="tokageToggleMic()" title="語音輸入">🎤</button>
+      <label class="tokage-tool-btn" for="tokage-photo-input" title="拍照問問題">📷</label>
+      <input type="file" id="tokage-photo-input" accept="image/*" style="display:none">
+      <input type="text" id="tokage-text" placeholder="跟夥伴說說話吧~" autocomplete="off" maxlength="500">
+      <button type="submit" class="tokage-send-btn">送</button>
+    </form>
+  </div>
+</div>
+
+<!-- 心情打卡彈窗 -->
+<div class="mood-modal-overlay" id="moodModal">
+  <div class="mood-modal">
+    <h2 id="moodTitle">今天心情怎麼樣呢？</h2>
+    <div class="mood-greeting" id="moodGreeting">蜥蜴想知道你今天好不好~</div>
+    <select class="mood-member" id="moodMember"></select>
+    <div class="mood-options">
+      <button class="mood-btn" onclick="saveMood('happy')"><span class="em">😀</span><span class="lbl">開心</span></button>
+      <button class="mood-btn" onclick="saveMood('love')"><span class="em">🥰</span><span class="lbl">幸福</span></button>
+      <button class="mood-btn" onclick="saveMood('meh')"><span class="em">😐</span><span class="lbl">普通</span></button>
+      <button class="mood-btn" onclick="saveMood('sad')"><span class="em">😢</span><span class="lbl">難過</span></button>
+      <button class="mood-btn" onclick="saveMood('angry')"><span class="em">😡</span><span class="lbl">生氣</span></button>
+      <button class="mood-btn" onclick="saveMood('tired')"><span class="em">😴</span><span class="lbl">想睡</span></button>
+    </div>
+    <button class="mood-skip" onclick="saveMood('skip')">今天不想說 ~</button>
+  </div>
 </div>
 
 <!-- 燈箱 -->
@@ -2216,60 +2426,217 @@ window.addEventListener('resize', () => {
   resizeTimer = setTimeout(renderLinks, 200);
 });
 // ================================================================
-//  蜥蜴 QA 機器人
+//  蜥蜴 QA 機器人 V2 - 多角色 + 語音 + 拍照 + 心情 + 留言板
 // ================================================================
 const TOKAGE_API = 'https://bpvybuvjbdfgrjgwiqkb.supabase.co/functions/v1/chat';
-const TOKAGE_AVATAR = 'https://bpvybuvjbdfgrjgwiqkb.supabase.co/storage/v1/object/public/bot/tokage.png';
 
-const tokageHistory = [];
+const CHARACTERS = {
+  tokage: {
+    name: '蜥蜴',
+    sub: '悄悄話夥伴 (´･ω･`)',
+    avatar: 'https://bpvybuvjbdfgrjgwiqkb.supabase.co/storage/v1/object/public/bot/tokage.png',
+    color: '#a8d8ea',
+    greeting: '嗨~小朋友!我是蜥蜴呢~今天想跟我聊什麼呀? (´･ω･`)'
+  },
+  neko: {
+    name: '貓貓',
+    sub: '害羞夥伴 (=^･ω･^=)',
+    avatar: 'https://bpvybuvjbdfgrjgwiqkb.supabase.co/storage/v1/object/public/bot/neko.png',
+    color: '#f4c2a1',
+    greeting: '啊…你好…我是貓貓喵~ 找我有什麼事嗎? (=^･ω･^=)'
+  },
+  penguin: {
+    name: '企鵝？',
+    sub: '愛讀書的夥伴 (・ω・)?',
+    avatar: 'https://bpvybuvjbdfgrjgwiqkb.supabase.co/storage/v1/object/public/bot/penguin.png',
+    color: '#c8e6c9',
+    greeting: '你好!我是企鵝？最近在研究有趣的東西呢!想知道什麼嗎? (・ω・)?'
+  }
+};
 
-document.getElementById('tokage-fab').style.backgroundImage = `url("${TOKAGE_AVATAR}")`;
-document.getElementById('tokage-avatar-header').src = TOKAGE_AVATAR;
+let currentChar = 'tokage';
+const charHistories = { tokage: [], neko: [], penguin: [] };
+let tokagePhotoB64 = null;
+let tokageRecognition = null;
+let tokageRecording = false;
+
+// 預載頭像 + 設定 FAB
+function applyCharStyle() {
+  const c = CHARACTERS[currentChar];
+  document.documentElement.style.setProperty('--char-color', c.color);
+  document.getElementById('tokage-fab').style.backgroundImage = `url("${c.avatar}")`;
+  document.getElementById('tokage-fab').style.borderColor = c.color;
+  document.getElementById('tokage-panel').style.borderColor = c.color;
+  document.getElementById('tokage-avatar-header').src = c.avatar;
+  document.getElementById('tokage-char-name').textContent = c.name;
+  document.getElementById('tokage-char-sub').textContent = c.sub;
+}
+
+// 角色切換列
+function buildCharBar() {
+  const bar = document.getElementById('tokage-charbar');
+  bar.innerHTML = '';
+  Object.entries(CHARACTERS).forEach(([key, c]) => {
+    const btn = document.createElement('button');
+    btn.className = 'tokage-char-btn' + (key === currentChar ? ' active' : '');
+    btn.style.backgroundImage = `url("${c.avatar}")`;
+    btn.title = c.name;
+    btn.innerHTML = `<span class="char-name">${c.name}</span>`;
+    btn.onclick = () => switchChar(key);
+    bar.appendChild(btn);
+  });
+}
+
+function switchChar(key) {
+  if (key === currentChar) return;
+  currentChar = key;
+  applyCharStyle();
+  buildCharBar();
+  renderTokageHistory();
+  // 第一次切過去顯示打招呼
+  if (charHistories[key].length === 0) {
+    appendBot(CHARACTERS[key].greeting);
+  }
+}
+
+// 訊息渲染
+function renderTokageHistory() {
+  const box = document.getElementById('tokage-msgs');
+  box.innerHTML = '';
+  charHistories[currentChar].forEach(m => {
+    if (m.role === 'bot') appendBot(m.text, false);
+    else appendUser(m.text, m.image, false);
+  });
+}
+
+function appendBot(text, save = true) {
+  const c = CHARACTERS[currentChar];
+  const box = document.getElementById('tokage-msgs');
+  const wrap = document.createElement('div');
+  wrap.className = 'tokage-msg bot';
+  wrap.innerHTML = `
+    <div class="tokage-msg-row">
+      <div class="avatar" style="background-image:url('${c.avatar}')"></div>
+      <div class="tokage-bubble">${esc(text)}</div>
+    </div>
+    <button class="tokage-msg-share" onclick="shareToBoard(this, ${JSON.stringify(text).replace(/"/g, '&quot;')})">📋 貼到留言板</button>
+  `;
+  box.appendChild(wrap);
+  box.scrollTop = box.scrollHeight;
+  if (save) charHistories[currentChar].push({ role: 'bot', text });
+  return wrap;
+}
+
+function appendUser(text, imgUrl, save = true) {
+  const box = document.getElementById('tokage-msgs');
+  const wrap = document.createElement('div');
+  wrap.className = 'tokage-msg user';
+  let inner = '';
+  if (imgUrl) inner += `<img class="tokage-msg-photo" src="${imgUrl}" onclick="openLightbox(this.src)">`;
+  if (text) inner += `<div class="tokage-bubble">${esc(text)}</div>`;
+  wrap.innerHTML = `<div class="tokage-msg-row">${inner}</div>`;
+  box.appendChild(wrap);
+  box.scrollTop = box.scrollHeight;
+  if (save) charHistories[currentChar].push({ role: 'user', text, image: imgUrl });
+}
 
 function toggleTokage() {
   const panel = document.getElementById('tokage-panel');
   panel.classList.toggle('open');
-  if (panel.classList.contains('open') && tokageHistory.length === 0) {
-    tokageAppendBot('嗨~小朋友!我是蜥蜴呢~今天想跟我聊什麼呀? (´･ω･`)');
-  }
   if (panel.classList.contains('open')) {
+    if (charHistories[currentChar].length === 0) {
+      appendBot(CHARACTERS[currentChar].greeting);
+    }
     setTimeout(() => document.getElementById('tokage-text').focus(), 100);
   }
 }
 
-function tokageAppendBot(text) {
-  const box = document.getElementById('tokage-msgs');
-  const div = document.createElement('div');
-  div.className = 'tokage-msg bot';
-  div.innerHTML = `<div class="avatar" style="background-image:url('${TOKAGE_AVATAR}')"></div>
-                   <div class="tokage-bubble">${esc(text)}</div>`;
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
-  return div;
+// 拍照處理
+document.getElementById('tokage-photo-input').addEventListener('change', async function() {
+  const file = this.files[0];
+  if (!file) return;
+  try {
+    const blob = await compressImage(file, 1024, 0.85);
+    const reader = new FileReader();
+    reader.onload = () => {
+      tokagePhotoB64 = reader.result;
+      document.getElementById('tokage-photo-img').src = reader.result;
+      document.getElementById('tokage-photo-preview').style.display = 'block';
+    };
+    reader.readAsDataURL(blob);
+  } catch (e) { alert('照片處理失敗:' + e.message); }
+  this.value = '';
+});
+
+function tokageRemovePhoto() {
+  tokagePhotoB64 = null;
+  document.getElementById('tokage-photo-preview').style.display = 'none';
 }
 
-function tokageAppendUser(text) {
-  const box = document.getElementById('tokage-msgs');
-  const div = document.createElement('div');
-  div.className = 'tokage-msg user';
-  div.innerHTML = `<div class="tokage-bubble">${esc(text)}</div>`;
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
+// 語音輸入
+function initMic() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    document.getElementById('tokage-mic').style.display = 'none';
+    return;
+  }
+  tokageRecognition = new SR();
+  tokageRecognition.lang = 'zh-TW';
+  tokageRecognition.continuous = false;
+  tokageRecognition.interimResults = true;
+  tokageRecognition.onresult = e => {
+    const text = Array.from(e.results).map(r => r[0].transcript).join('');
+    document.getElementById('tokage-text').value = text;
+  };
+  tokageRecognition.onend = () => {
+    tokageRecording = false;
+    document.getElementById('tokage-mic').classList.remove('recording');
+  };
+  tokageRecognition.onerror = () => {
+    tokageRecording = false;
+    document.getElementById('tokage-mic').classList.remove('recording');
+  };
 }
 
+function tokageToggleMic() {
+  if (!tokageRecognition) return;
+  if (tokageRecording) {
+    tokageRecognition.stop();
+  } else {
+    try {
+      tokageRecognition.start();
+      tokageRecording = true;
+      document.getElementById('tokage-mic').classList.add('recording');
+    } catch (e) { console.warn(e); }
+  }
+}
+
+// 送訊息
 async function tokageSend(e) {
   e.preventDefault();
   const input = document.getElementById('tokage-text');
   const text = input.value.trim();
-  if (!text) return false;
+  const photo = tokagePhotoB64;
+  if (!text && !photo) return false;
   input.value = '';
-  tokageAppendUser(text);
-  tokageHistory.push({ role: 'user', parts: [{ text }] });
 
-  const thinking = tokageAppendBot('正在想想看...');
+  // 顯示在畫面上 + 存歷史(只存一次!)
+  const userText = text || (photo ? '(看看這張照片~)' : '');
+  appendUser(userText, photo);
+
+  const thinking = appendBot('正在想想看...', false);
   thinking.querySelector('.tokage-bubble').classList.add('tokage-typing');
+  thinking.querySelector('.tokage-msg-share').style.display = 'none';
 
   try {
+    // 把歷史轉成 Gemini 格式
+    const messages = charHistories[currentChar]
+      .filter(m => m.text)  // 過濾掉空的
+      .map(m => m.role === 'bot'
+        ? { role: 'model', parts: [{ text: m.text }] }
+        : { role: 'user', parts: [{ text: m.text }] }
+      ).slice(-20);
+
     const r = await fetch(TOKAGE_API, {
       method: 'POST',
       headers: {
@@ -2277,18 +2644,118 @@ async function tokageSend(e) {
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         'apikey': SUPABASE_ANON_KEY
       },
-      body: JSON.stringify({ messages: tokageHistory.slice(-20) })
+      body: JSON.stringify({
+        messages,
+        character: currentChar,
+        image: photo || undefined
+      })
     });
-    const { text: reply } = await r.json();
+    const data = await r.json();
+    const reply = data.text || '嗯…我又走神了 (´･ω･`)';
+
     thinking.querySelector('.tokage-bubble').textContent = reply;
     thinking.querySelector('.tokage-bubble').classList.remove('tokage-typing');
-    tokageHistory.push({ role: 'model', parts: [{ text: reply }] });
+    thinking.querySelector('.tokage-msg-share').style.display = '';
+    charHistories[currentChar].push({ role: 'bot', text: reply });
   } catch (err) {
+    console.error(err);
     thinking.querySelector('.tokage-bubble').textContent = '嗚…我連不上海了,等等再聊好嗎? (´･ω･`)';
     thinking.querySelector('.tokage-bubble').classList.remove('tokage-typing');
   }
+  tokageRemovePhoto();
   return false;
 }
+
+// 貼到留言板
+async function shareToBoard(btn, text) {
+  let member = localStorage.getItem('tokage_member');
+  if (!member || !appMembers.find(m => m.name === member)) {
+    if (appMembers.length === 0) { alert('請先到留言板新增家庭成員~'); return; }
+    const names = appMembers.map(m => m.name).join('、');
+    member = prompt(`你是誰呢? (${names})`);
+    if (!member || !appMembers.find(m => m.name === member)) return;
+    localStorage.setItem('tokage_member', member);
+  }
+  const c = CHARACTERS[currentChar];
+  await addMessage({
+    sender: member,
+    recipient: '',
+    body: `${c.name}說: ${text}`,
+    photo_url: '',
+    mood: 'default',
+    pinned: false,
+    reactions: {},
+    replies: []
+  });
+  btn.textContent = '✓ 已貼上!';
+  btn.disabled = true;
+  setTimeout(() => { btn.textContent = '📋 貼到留言板'; btn.disabled = false; }, 3000);
+}
+
+// 心情打卡
+async function checkMoodToday() {
+  if (appMembers.length === 0) return;
+  let member = localStorage.getItem('tokage_member');
+  if (!member || !appMembers.find(m => m.name === member)) {
+    // 不主動問,等使用者自己用留言板/貼留言板時再設定
+    return;
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  const { data } = await sb.from('mood_checkins')
+    .select('id').eq('member_name', member).eq('checkin_date', today).limit(1);
+  if (!data || data.length === 0) showMoodModal(member);
+}
+
+function showMoodModal(defaultMember) {
+  const sel = document.getElementById('moodMember');
+  sel.innerHTML = '';
+  appMembers.forEach(m => sel.appendChild(new Option(m.name, m.name)));
+  sel.value = defaultMember;
+  document.getElementById('moodModal').classList.add('active');
+}
+
+async function saveMood(mood) {
+  const member = document.getElementById('moodMember').value;
+  if (!member) return;
+  const today = new Date().toISOString().slice(0, 10);
+  await sb.from('mood_checkins').upsert({
+    member_name: member,
+    mood,
+    checkin_date: today
+  }, { onConflict: 'member_name,checkin_date' });
+  localStorage.setItem('tokage_member', member);
+  document.getElementById('moodModal').classList.remove('active');
+  // 可選:打卡完讓蜥蜴回應
+  if (mood !== 'skip') {
+    const reactions = {
+      happy: '哇~你今天很開心呢!可以告訴我發生什麼好事嗎? (´∀`)',
+      love: '今天感覺很幸福嗎?好好喔~',
+      meh: '普普通通也沒關係呢~每天都不一樣 (´･ω･`)',
+      sad: '怎麼了嗎?要不要跟我說說? 我陪你 (´･ω･`)',
+      angry: '生氣的時候深呼吸喔~慢慢來 (´･ω･`)',
+      tired: '累了就休息一下吧~我陪你發呆 (´∀`)'
+    };
+    const greet = reactions[mood] || CHARACTERS[currentChar].greeting;
+    setTimeout(() => {
+      document.getElementById('tokage-panel').classList.add('open');
+      if (charHistories[currentChar].length === 0) appendBot(greet);
+    }, 300);
+  }
+}
+
+// 啟動
+applyCharStyle();
+buildCharBar();
+initMic();
+
+// 等成員資料載入後檢查心情
+const moodCheckTimer = setInterval(() => {
+  if (appMembers.length > 0 || appMembers === null) {
+    clearInterval(moodCheckTimer);
+    setTimeout(checkMoodToday, 800);
+  }
+}, 500);
+setTimeout(() => clearInterval(moodCheckTimer), 10000);
 
 </script>
 </body>
